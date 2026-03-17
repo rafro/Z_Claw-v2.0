@@ -51,28 +51,31 @@ Credentials: load `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` from `C:\Users\Matty\Open
 
 Run all three queries per cycle:
 
+Note: /ca/ endpoint returns 0 results — Canada is not indexed by Adzuna. Use /us/ for all queries.
+Remote roles post to US endpoint regardless of location. Toronto/NB filtering is handled by hard-filter.
+
 **Query 1 — Remote Web3/tech roles:**
 ```
-GET http://api.adzuna.com/v1/api/jobs/ca/search/1
+GET http://api.adzuna.com/v1/api/jobs/us/search/1
   ?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}
   &what=blockchain+OR+solidity+OR+web3+OR+defi+OR+AI+developer
   &where=remote&salary_min=60000&results_per_page=50&sort_by=date
 ```
 
-**Query 2 — Toronto/GTA 6-figure roles:**
+**Query 2 — Remote software dev / high-comp roles:**
 ```
-GET http://api.adzuna.com/v1/api/jobs/ca/search/1
+GET http://api.adzuna.com/v1/api/jobs/us/search/1
   ?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}
   &what=software+developer+OR+engineer+OR+technical+analyst
-  &where=toronto&salary_min=100000&results_per_page=50&sort_by=date
+  &where=remote&salary_min=100000&results_per_page=50&sort_by=date
 ```
 
-**Query 3 — Campbellton/NB local roles ($25/hr = ~$52k/yr):**
+**Query 3 — Remote support / telecom sales:**
 ```
-GET http://api.adzuna.com/v1/api/jobs/ca/search/1
+GET http://api.adzuna.com/v1/api/jobs/us/search/1
   ?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}
-  &what=developer+OR+analyst+OR+support
-  &where=new+brunswick&salary_min=52000&results_per_page=20&sort_by=date
+  &what=telecom+sales+OR+customer+support+OR+technical+support
+  &where=remote&salary_min=35000&results_per_page=20&sort_by=date
 ```
 
 Returns JSON. Fields: id, title, company.display_name, location.display_name, salary_min, salary_max, redirect_url, created.
