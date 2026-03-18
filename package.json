@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-orchestrator",
+  "version": "1.0.0",
+  "description": "OpenClaw Mission Control server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "pm2": "pm2 start server.js --name openclaw"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3"
+  }
+}

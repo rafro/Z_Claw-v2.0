@@ -114,7 +114,8 @@ Returns JSON. Fields: id, title, company.display_name, location.display_name, sa
      "fetched_at": "<ISO timestamp>",
      "seen": false,
      "filtered": false,
-     "tier": null
+     "tier": null,
+     "resume": null
    }
    ```
    - Extract pay from salary field or description where possible

@@ -62,16 +62,23 @@ Runs automatically after job-intake completes. Receives new_jobs array as input.
    - **Tier C** (score 4.0–5.9): Interim income — acceptable but not strategic
    - **Tier D** (score < 4.0 OR hard rejected): Reject — do not surface
 
-6. **Update state**
-   - Write Tier A, B, C jobs to `state/applications.json` pipeline
+6. **Assign resume**
+   Tag each accepted job with the correct resume before saving:
+   - `resume: "technical"` → software development, AI/automation, blockchain/crypto/DeFi/Web3, fintech, trading, technical analyst, anything involving code
+   - `resume: "general"` → telecom sales, customer support, call centers, sales, non-technical roles
+   Never ask Matthew which resume to use — route automatically based on role type.
+
+7. **Update state**
+   - Write Tier A, B, C jobs to `state/applications.json` pipeline (include `resume` field)
    - Update `stats.pending_review` count
 
-7. **Send Telegram report** (Tier A & B only)
+8. **Send Telegram report** (Tier A & B only)
    Format per job:
    ```
    [TIER A] Senior Solidity Dev — Remote
    Pay: $120k | Source: Web3.career
    Fit: 9.1/10 | Interview prob: 8/10
+   Resume: Technical
    Link: https://...
    ```
    Group Tier A first, then Tier B. Add header:

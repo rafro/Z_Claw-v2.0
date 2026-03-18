@@ -1,19 +1,49 @@
+# Dependencies
+node_modules/
+dashboard/node_modules/
+
 # Secrets — never commit
 .env
+*.env
 
-# State files — contain personal data, health logs, trade data
+# State files — runtime data and personal data
 state/health-log.json
 state/trade-log.json
 state/applications.json
+state/jclaw-stats.json
+state/activity-log.json
+state/briefing.json
+state/chat-history.json
+state/control.json
+state/funding-pipeline.json
+state/funding-seen.json
+state/live-context.txt
+state/telegram-draft.txt
+state/agent-overrides.json
+state/remoteok-feed.json
+state/remotive-feed.json
+state/rok-new.json
+state/wwr-feed.xml
+state/adzuna-*.json
+state/.seen-ids-tmp.json
+state/_seen_ids_tmp.json
 
-# Logs
+# Health log inside skills dir
+skills/health-logger/state/
+
+# Logs and reports — generated output
 logs/
-
-# Reports — generated output, not source
 reports/
 
-# Dashboard node_modules if ever added
-dashboard/node_modules/
+# Debug/investigation artifacts
+monitor-output.txt
+monitor-processes.ps1
+
+# Personal files
+resumes/
+
+# Claude Code session data
+.claude/
 
 # OS
 .DS_Store

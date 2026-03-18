@@ -154,6 +154,13 @@ Checkpoint format: append to `C:\Users\Matty\.openclaw\workspace\memory\YYYY-MM-
 with timestamp and a 1-3 line summary of what changed and why. Keep entries concise.
 Use the full absolute Windows path — never use ~ or relative paths, they do not resolve.
 
+## SOUL.md Sync Requirement
+OpenClaw loads SOUL.md from the workspace, NOT the orchestrator directory.
+After every edit to `C:\Users\Matty\OpenClaw-Orchestrator\SOUL.md`, you MUST also copy it to:
+`C:\Users\Matty\.openclaw\workspace\SOUL.md`
+Then restart openclaw-gateway: `pm2 restart openclaw-gateway`
+The orchestrator copy is the source of truth for editing and git. The workspace copy is what actually gets loaded.
+
 ## Git Commit Directives
 The OpenClaw-Orchestrator repo is at `C:\Users\Matty\OpenClaw-Orchestrator\`.
 Commit after every verified milestone using this pattern:
