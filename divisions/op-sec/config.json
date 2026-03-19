@@ -1,0 +1,61 @@
+{
+  "division": "op-sec",
+  "description": "OP-Sec — device hardening, breach monitoring, threat surface, credential auditing, privacy",
+  "orchestrator_type": "python_runtime",
+  "model": {
+    "tier1_model": "qwen2.5:7b-instruct-q4_K_M",
+    "tier0_skills": ["device-posture", "breach-check"],
+    "notes": "Tier 1 (7B local) for LLM skills. Tier 0 pure Python for device-posture and breach-check. Health data stays local — no API fallback for privacy-scan or cred-audit."
+  },
+  "artifact_policy": {
+    "ttl_hours": 168,
+    "archive_schedule": "weekly sunday 23:30",
+    "max_hot_mb": 64
+  },
+  "packet_output_path": "divisions/op-sec/packets/",
+  "agents": {
+    "device-posture": {
+      "schedule": "daily 08:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "threat-surface": {
+      "schedule": "daily 19:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "breach-check": {
+      "schedule": "weekly sunday 13:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Requires HIBP_API_KEY in .env and emails in divisions/op-sec/breach_emails.json"
+    },
+    "cred-audit": {
+      "schedule": "weekly sunday 14:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "privacy-scan": {
+      "schedule": "weekly sunday 15:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "security-scan": {
+      "schedule": "weekly sunday 11:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "opsec-digest": {
+      "schedule": "weekly sunday 16:00",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    }
+  }
+}

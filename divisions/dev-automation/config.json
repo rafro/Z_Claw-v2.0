@@ -43,13 +43,6 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
-    },
-    "security-scan": {
-      "schedule": "weekly",
-      "day": "friday",
-      "enabled": true,
-      "last_run": null,
-      "status": "idle"
     }
   }
 }

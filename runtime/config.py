@@ -26,7 +26,7 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 # Tier 1 models (3060 Ti, CUDA)
 MODEL_7B   = os.getenv("MODEL_7B",   "qwen2.5:7b-instruct-q4_K_M")
-MODEL_8B   = os.getenv("MODEL_8B",   "llama3.1:8b-q4_K_M")
+MODEL_8B   = os.getenv("MODEL_8B",   "llama3.1:8b-instruct-q4_K_M")
 
 # Tier 2 model (friend's 9070 XT, ROCm) — fallback to Tier 3 API if unavailable
 MODEL_14B  = os.getenv("MODEL_14B",  "qwen2.5:14b-instruct-q4_K_M")
@@ -46,8 +46,12 @@ SKILL_MODELS = {
     "repo-monitor":      MODEL_14B,
     "debug-agent":       MODEL_14B,
     "refactor-scan":     MODEL_14B,
-    "security-scan":     MODEL_14B,
+    "security-scan":     MODEL_7B,   # fallback to 7B until 14B machine is online
     "doc-update":        MODEL_14B,
+    # OP-Sec — Tier 1 (7B local); device-posture and breach-check are Tier 0 (no model)
+    "threat-surface":    MODEL_7B,
+    "cred-audit":        MODEL_7B,
+    "privacy-scan":      MODEL_7B,
 }
 
 
@@ -65,6 +69,6 @@ def ensure_dirs():
     """Create any missing runtime directories."""
     for d in [STATE_DIR, LOGS_DIR, REPORTS_DIR]:
         d.mkdir(exist_ok=True)
-    for div in ["opportunity", "trading", "personal", "dev-automation"]:
+    for div in ["opportunity", "trading", "personal", "dev-automation", "op-sec"]:
         for sub in ["packets", "hot", "cold", "manifests"]:
             (DIVISIONS_DIR / div / sub).mkdir(parents=True, exist_ok=True)

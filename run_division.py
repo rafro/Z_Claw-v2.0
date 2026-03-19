@@ -6,9 +6,18 @@ Usage:
   python run_division.py opportunity job-intake
   python run_division.py opportunity funding-finder
   python run_division.py trading trading-report
+  python run_division.py trading market-scan
   python run_division.py personal health-logger <reply_text>
   python run_division.py personal perf-correlation
-  python run_division.py dev-automation repo-monitor [--digest]
+  python run_division.py personal burnout-monitor
+  python run_division.py personal personal-digest
+  python run_division.py dev-automation repo-monitor
+  python run_division.py dev-automation debug-agent <error_text> [context_file ...]
+  python run_division.py dev-automation refactor-scan
+  python run_division.py dev-automation security-scan
+  python run_division.py dev-automation doc-update
+  python run_division.py dev-automation artifact-manager
+  python run_division.py dev-automation dev-digest
   python run_division.py realm-keeper grant-skill <skill_name>
   python run_division.py realm-keeper grant-base <amount> [reason]
 """
@@ -34,37 +43,88 @@ def run(division: str, task: str, args: list) -> dict:
 
     # ── Opportunity ───────────────────────────────────────────────────────────
     if division == "opportunity":
-        from runtime.orchestrators.opportunity import run_job_intake
+        from runtime.orchestrators.opportunity import run_job_intake, run_funding_finder
         if task == "job-intake":
             return run_job_intake()
+        if task == "funding-finder":
+            return run_funding_finder()
         raise ValueError(f"Unknown task for opportunity: {task}")
 
     # ── Trading ───────────────────────────────────────────────────────────────
     elif division == "trading":
-        from runtime.orchestrators.trading import run_trading_report
+        from runtime.orchestrators.trading import run_trading_report, run_market_scan
         if task == "trading-report":
             return run_trading_report()
+        if task == "market-scan":
+            return run_market_scan()
         raise ValueError(f"Unknown task for trading: {task}")
 
     # ── Personal ──────────────────────────────────────────────────────────────
     elif division == "personal":
-        from runtime.orchestrators.personal import run_health_logger, run_perf_correlation
+        from runtime.orchestrators.personal import run_health_logger, run_perf_correlation, run_burnout_monitor, run_personal_digest
         if task == "health-logger":
             reply_text = args[0] if args else ""
             if not reply_text:
-                log.error("health-logger requires reply_text argument")
-                sys.exit(1)
+                log.warning("health-logger skipped — no reply_text provided (requires Telegram check-in)")
+                return {
+                    "status": "skipped",
+                    "reason": "no reply_text — health-logger requires Telegram interaction",
+                    "escalate": False,
+                }
             return run_health_logger(reply_text)
         if task == "perf-correlation":
             return run_perf_correlation()
+        if task == "burnout-monitor":
+            return run_burnout_monitor()
+        if task == "personal-digest":
+            return run_personal_digest()
         raise ValueError(f"Unknown task for personal: {task}")
+
+    # ── OP-Sec ────────────────────────────────────────────────────────────────
+    elif division == "op-sec":
+        from runtime.orchestrators.op_sec import (
+            run_device_posture, run_breach_check, run_threat_surface,
+            run_cred_audit, run_privacy_scan, run_security_scan, run_opsec_digest,
+        )
+        if task == "device-posture":
+            return run_device_posture()
+        if task == "breach-check":
+            return run_breach_check()
+        if task == "threat-surface":
+            return run_threat_surface()
+        if task == "cred-audit":
+            return run_cred_audit()
+        if task == "privacy-scan":
+            return run_privacy_scan()
+        if task == "security-scan":
+            return run_security_scan()
+        if task == "opsec-digest":
+            return run_opsec_digest()
+        raise ValueError(f"Unknown task for op-sec: {task}")
 
     # ── Dev Automation ────────────────────────────────────────────────────────
     elif division == "dev-automation":
-        from runtime.orchestrators.dev_automation import run_repo_monitor
+        from runtime.orchestrators.dev_automation import (
+            run_repo_monitor, run_debug_agent, run_refactor_scan,
+            run_doc_update, run_artifact_manager, run_dev_digest,
+        )
         if task == "repo-monitor":
-            send_digest = "--digest" in args
-            return run_repo_monitor(send_digest=send_digest)
+            return run_repo_monitor()
+        if task == "debug-agent":
+            error_text = args[0] if args else ""
+            if not error_text:
+                log.error("debug-agent requires error_text argument")
+                sys.exit(1)
+            context_files = [a for a in args[1:] if not a.startswith("--")]
+            return run_debug_agent(error_text, context_files or None)
+        if task == "refactor-scan":
+            return run_refactor_scan()
+        if task == "doc-update":
+            return run_doc_update()
+        if task == "artifact-manager":
+            return run_artifact_manager()
+        if task == "dev-digest":
+            return run_dev_digest()
         raise ValueError(f"Unknown task for dev-automation: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────

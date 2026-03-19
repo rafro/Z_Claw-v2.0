@@ -129,9 +129,45 @@ const SKILL_XP = {
   'hard-filter':      { division: 'opportunity',    amount: 5  },
   'trading-report':   { division: 'trading',        amount: 15 },
   'repo-monitor':     { division: 'dev_automation', amount: 10 },
+  'security-scan':    { division: 'op_sec',         amount: 15 },
+  'device-posture':   { division: 'op_sec',         amount: 5  },
+  'breach-check':     { division: 'op_sec',         amount: 10 },
+  'threat-surface':   { division: 'op_sec',         amount: 10 },
+  'cred-audit':       { division: 'op_sec',         amount: 15 },
+  'privacy-scan':     { division: 'op_sec',         amount: 10 },
   'health-logger':    { division: 'personal',       amount: 15 },
   'perf-correlation': { division: 'personal',       amount: 10 },
   'funding-finder':   { division: 'opportunity',    amount: 5  },
+};
+
+const PYTHON_EXE = 'C:/Users/Matty/AppData/Local/Programs/Python/Python312/python.exe';
+
+// Maps skill name → divState (orchestrator-state.json key) + division + task (run_division.py args)
+// divState uses underscore (legacy state file key); division uses hyphen (run_division.py arg)
+const SKILL_TASK_MAP = {
+  'job-intake':       { divState: 'opportunity',    division: 'opportunity',    task: 'job-intake'       },
+  'hard-filter':      { divState: 'opportunity',    division: 'opportunity',    task: 'job-intake'       }, // hard-filter runs inside job-intake Python pipeline
+  'funding-finder':   { divState: 'opportunity',    division: 'opportunity',    task: 'funding-finder'   },
+  'trading-report':   { divState: 'trading',        division: 'trading',        task: 'trading-report'   },
+  'market-scan':      { divState: 'trading',        division: 'trading',        task: 'market-scan'      },
+  'health-logger':    { divState: 'personal',       division: 'personal',       task: 'health-logger'    },
+  'perf-correlation': { divState: 'personal',       division: 'personal',       task: 'perf-correlation' },
+  'burnout-monitor':  { divState: 'personal',       division: 'personal',       task: 'burnout-monitor'  },
+  'personal-digest':  { divState: 'personal',       division: 'personal',       task: 'personal-digest'  },
+  'repo-monitor':     { divState: 'dev_automation', division: 'dev-automation', task: 'repo-monitor'     },
+  'debug-agent':      { divState: 'dev_automation', division: 'dev-automation', task: 'debug-agent'      },
+  'refactor-scan':    { divState: 'dev_automation', division: 'dev-automation', task: 'refactor-scan'    },
+  'doc-update':       { divState: 'dev_automation', division: 'dev-automation', task: 'doc-update'       },
+  'artifact-manager': { divState: 'dev_automation', division: 'dev-automation', task: 'artifact-manager' },
+  'dev-digest':       { divState: 'dev_automation', division: 'dev-automation', task: 'dev-digest'       },
+  // OP-Sec Division
+  'device-posture':   { divState: 'op_sec', division: 'op-sec', task: 'device-posture'  },
+  'breach-check':     { divState: 'op_sec', division: 'op-sec', task: 'breach-check'    },
+  'threat-surface':   { divState: 'op_sec', division: 'op-sec', task: 'threat-surface'  },
+  'cred-audit':       { divState: 'op_sec', division: 'op-sec', task: 'cred-audit'      },
+  'privacy-scan':     { divState: 'op_sec', division: 'op-sec', task: 'privacy-scan'    },
+  'security-scan':    { divState: 'op_sec', division: 'op-sec', task: 'security-scan'   },
+  'opsec-digest':     { divState: 'op_sec', division: 'op-sec', task: 'opsec-digest'    },
 };
 
 function rankForLevel(level) {
@@ -609,6 +645,13 @@ const server = http.createServer(async (req, res) => {
       if (method === 'POST' && reqPath === '/api/chat/clear') {
         return handleChatClear(res);
       }
+      if (method === 'POST' && reqPath === '/api/briefing') {
+        const body = await parseBody(req);
+        const content = body.content || '';
+        if (!content) return jsonError(res, 400, 'content required');
+        writeState('briefing.json', { content, last_generated: new Date().toISOString() });
+        return jsonOk(res, { ok: true });
+      }
       return jsonError(res, 404, 'unknown endpoint');
     } catch (e) {
       return jsonError(res, 500, e.message);
@@ -619,56 +662,47 @@ const server = http.createServer(async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// ── SKILL RUNNER (Tier 2 — Claude subprocess) ──
+// ── SKILL RUNNER (Python runtime) ──
 // ─────────────────────────────────────────────
-// Spawns claude --print with the skill's SKILL.md piped to stdin.
-// Grants XP on success. Returns a Promise that resolves when done.
-function runSkillViaClaude(skillName, division, logDiv, extraData = null) {
+// Spawns run_division.py directly — no SKILL.md, no Claude subprocess.
+// XP is granted by the Python skill itself via runtime/tools/xp.py — no double-grant here.
+function runSkillViaPython(skillName, logDiv) {
   return new Promise(resolve => {
-    const skillPath = path.join(ROOT, 'skills', skillName, 'SKILL.md');
-    let prompt;
-    try {
-      prompt = fs.readFileSync(skillPath, 'utf8');
-    } catch(e) {
-      logActivity(logDiv, `${skillName}: SKILL.md not found`, 'red');
+    const mapping = SKILL_TASK_MAP[skillName];
+    if (!mapping) {
+      logActivity(logDiv || 'SYS', `${skillName}: no task mapping defined`, 'red');
       return resolve(false);
     }
 
-    if (extraData) {
-      prompt += `\n\n---\n\nInput data for this run:\n${JSON.stringify(extraData, null, 2)}`;
-    }
+    updateDivisionState(mapping.divState, 'running');
 
-    updateDivisionState(division, 'running');
+    const runDivisionPath = path.join(ROOT, 'run_division.py');
+    const proc = spawn(PYTHON_EXE, [runDivisionPath, mapping.division, mapping.task], {
+      env: { ...process.env },
+      windowsHide: true,
+      cwd: ROOT,
+    });
 
-    const claude = spawn('claude', [
-      '--print',
-      '--model', 'claude-sonnet-4-6',
-      '--output-format', 'text',
-      '--no-session-persistence',
-    ], { env: { ...process.env }, windowsHide: true });
+    let stderr = '';
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.stdout.on('data', () => {}); // JSON packet written to disk — no need to capture
 
-    claude.stdin.write(prompt);
-    claude.stdin.end();
-
-    claude.stderr.on('data', () => {});
-    claude.stdout.on('data', () => {});
-
-    claude.on('close', code => {
-      updateDivisionState(division, 'idle');
+    proc.on('close', code => {
+      updateDivisionState(mapping.divState, 'idle');
       if (code === 0) {
-        if (SKILL_XP[skillName]) {
-          grantDivisionXP(SKILL_XP[skillName].division, SKILL_XP[skillName].amount);
-        }
+        logActivity(logDiv || 'SYS', `${skillName} complete`, 'green');
         resolve(true);
       } else {
-        logActivity(logDiv, `${skillName} failed (exit ${code})`, 'red');
+        const errLine = stderr.split('\n').filter(l => l.includes('ERROR') || l.includes('FAILED')).pop()
+          || `exit ${code}`;
+        logActivity(logDiv || 'SYS', `${skillName} failed — ${errLine.trim()}`, 'red');
         resolve(false);
       }
     });
 
-    claude.on('error', err => {
-      updateDivisionState(division, 'idle');
-      logActivity(logDiv, `${skillName} error: ${err.message}`, 'red');
+    proc.on('error', err => {
+      updateDivisionState(mapping.divState, 'idle');
+      logActivity(logDiv || 'SYS', `${skillName} spawn error: ${err.message}`, 'red');
       resolve(false);
     });
   });
@@ -679,7 +713,7 @@ function runSkillViaClaude(skillName, division, logDiv, extraData = null) {
 // ─────────────────────────────────────────────
 // Fetches RSS/API sources directly — no Claude spawn, zero token cost.
 // Calls hard-filter (Claude spawn) only when new jobs are found.
-async function runJobIntakeNative(skipHardFilter = false) {
+async function runJobIntakeNative() {
   logActivity('OPPS', 'job-intake starting...', 'blue');
   updateDivisionState('opportunity', 'running');
 
@@ -767,16 +801,7 @@ async function runJobIntakeNative(skipHardFilter = false) {
   updateDivisionState('opportunity', 'idle');
   grantDivisionXP('opportunity', 10);
 
-  // ── Handoff to hard-filter (Claude) only if there's work to do ──
-  // skipHardFilter=true when called from server.js scheduler — OpenClaw's
-  // own cron handles hard-filter with proper Telegram delivery.
-  if (!skipHardFilter) {
-    if (newJobs.length > 0) {
-      await runSkillViaClaude('hard-filter', 'opportunity', 'OPPS', newJobs);
-    } else {
-      logActivity('OPPS', 'hard-filter skipped — no new listings to score', 'blue');
-    }
-  }
+  // hard-filter scoring is handled by the Python pipeline when triggered via control queue
 }
 
 // ─────────────────────────────────────────────
@@ -803,24 +828,36 @@ async function processControlQueue() {
     }
     writeState('control.json', state);
 
-    const divMap = {
-      'hard-filter':      ['opportunity',    'OPPS'],
-      'repo-monitor':     ['dev_automation', 'DEV'],
-      'health-logger':    ['personal',       'PERSONAL'],
-      'trading-report':   ['trading',        'TRADING'],
-      'funding-finder':   ['opportunity',    'OPPS'],
-      'perf-correlation': ['personal',       'PERSONAL'],
-      'daily-briefing':   ['personal',       'SYS'],
+    const logDivMap = {
+      'job-intake':       'OPPS',
+      'hard-filter':      'OPPS',
+      'funding-finder':   'OPPS',
+      'trading-report':   'TRADING',
+      'market-scan':      'TRADING',
+      'health-logger':    'PERSONAL',
+      'perf-correlation': 'PERSONAL',
+      'burnout-monitor':  'PERSONAL',
+      'personal-digest':  'PERSONAL',
+      'repo-monitor':     'DEV',
+      'debug-agent':      'DEV',
+      'refactor-scan':    'DEV',
+      'doc-update':       'DEV',
+      'artifact-manager': 'DEV',
+      'dev-digest':       'DEV',
+      'device-posture':   'OP_SEC',
+      'breach-check':     'OP_SEC',
+      'threat-surface':   'OP_SEC',
+      'cred-audit':       'OP_SEC',
+      'privacy-scan':     'OP_SEC',
+      'security-scan':    'OP_SEC',
+      'opsec-digest':     'OP_SEC',
+      'daily-briefing':   'SYS',
     };
 
     for (const entry of queued) {
       try {
-        if (entry.skill === 'job-intake') {
-          await runJobIntakeNative(false); // manual trigger — run hard-filter too
-          entry.status = 'completed';
-        } else if (divMap[entry.skill]) {
-          const [div, logDiv] = divMap[entry.skill];
-          const ok = await runSkillViaClaude(entry.skill, div, logDiv);
+        if (logDivMap[entry.skill] !== undefined) {
+          const ok = await runSkillViaPython(entry.skill, logDivMap[entry.skill]);
           entry.status = ok ? 'completed' : 'failed';
         } else {
           logActivity('SYS', `Unknown skill in queue: ${entry.skill}`, 'red');
@@ -864,7 +901,7 @@ const TZ = 'America/Halifax';
 // This server.js run handles the fetch+dedup only; hard-filter is skipped
 // here since OpenClaw's cron already runs hard-filter with Telegram delivery.
 cron.schedule('7 */6 * * *', async () => {
-  await runJobIntakeNative(true); // skipHardFilter = true
+  await runJobIntakeNative();
 }, { timezone: TZ });
 
 // ── Live context file — refreshed every 5 minutes for Telegram J_Claw ──

@@ -550,6 +550,21 @@
     .interval-btn:hover { background: var(--blue); color: var(--bg); }
     #interval-display-repo-monitor { min-width: 14px; text-align: center; }
 
+    /* ── Per-skill run button ── */
+    .skill-run-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      padding: 2px 5px;
+      cursor: pointer;
+      margin: 0 3px;
+      flex-shrink: 0;
+    }
+    .skill-run-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+    .skill-run-btn:disabled { color: var(--overlay); border-color: var(--overlay); cursor: not-allowed; }
+
     /* ── Job Review Panel ── */
     #job-review-panel { display: none; margin-bottom: 12px; }
     #job-review-panel.active { display: block; }
@@ -704,8 +719,9 @@
       <div class="division-badges">
         <div class="div-badge"><span>TRADING</span><span id="badge-trading">Market Scout</span><span id="xp-trading" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>OPPORTUNITY</span><span id="badge-opportunity">Hunter</span><span id="xp-opportunity" class="div-xp">0 XP</span></div>
-        <div class="div-badge"><span>DEV AUTO</span><span id="badge-dev_automation">Code Ward</span><span id="xp-dev_automation" class="div-xp">0 XP</span></div>
+        <div class="div-badge"><span>DEV TEAM</span><span id="badge-dev_automation">Code Ward</span><span id="xp-dev_automation" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>PERSONAL</span><span id="badge-personal">Keeper</span><span id="xp-personal" class="div-xp">0 XP</span></div>
+        <div class="div-badge"><span>OP-SEC</span><span id="badge-op_sec">Sentinel</span><span id="xp-op_sec" class="div-xp">0 XP</span></div>
       </div>
     </div>
   </div>
@@ -769,6 +785,14 @@
       <div class="stat-label">HEALTH LOGGED</div>
       <div class="stat-value" style="color:var(--green);" id="stat-health">—</div>
     </div>
+    <div class="stat-item">
+      <div class="stat-label">BURNOUT</div>
+      <div class="stat-value" style="color:var(--yellow);" id="stat-burnout">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">MKT SIGNALS</div>
+      <div class="stat-value" style="color:var(--teal);" id="stat-signals">—</div>
+    </div>
   </div>
 
   <!-- ── Division Status Cards ── -->
@@ -783,9 +807,8 @@
       <div class="div-row">NEXT: <strong>18:00 daily</strong></div>
       <button class="run-btn" id="run-trading" onclick="runSkill('trading-report','trading')">▶ RUN</button>
       <div class="agent-list">
-        <div class="agent-row"><span class="agent-name">market-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-market-scan">1h</span><div class="toggle on" data-division="trading" data-agent="market-scan"></div></div>
-        <div class="agent-row"><span class="agent-name">backtester</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-backtester">18:00</span><div class="toggle on" data-division="trading" data-agent="backtester"></div></div>
-        <div class="agent-row"><span class="agent-name">trading-report</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-trading-report">18:00</span><div class="toggle on" data-division="trading" data-agent="trading-report"></div></div>
+        <div class="agent-row"><span class="agent-name">market-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-market-scan">2h</span><button class="skill-run-btn" onclick="runSkill('market-scan','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="market-scan"></div></div>
+        <div class="agent-row"><span class="agent-name">trading-report</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-trading-report">18:00</span><button class="skill-run-btn" onclick="runSkill('trading-report','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="trading-report"></div></div>
       </div>
     </div>
 
@@ -800,24 +823,26 @@
       <div class="div-row">NEXT: <strong>every 3h</strong></div>
       <button class="run-btn" id="run-opportunity" onclick="runSkill('job-intake','opportunity')">▶ RUN</button>
       <div class="agent-list">
-        <div class="agent-row"><span class="agent-name">job-intake</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-job-intake">3h</span><div class="toggle on" data-division="opportunity" data-agent="job-intake"></div></div>
-        <div class="agent-row"><span class="agent-name">hard-filter</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-hard-filter">auto</span><div class="toggle on" data-division="opportunity" data-agent="hard-filter"></div></div>
-        <div class="agent-row"><span class="agent-name">funding-finder</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-funding-finder">14:00</span><div class="toggle on" data-division="opportunity" data-agent="funding-finder"></div></div>
+        <div class="agent-row"><span class="agent-name">job-intake</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-job-intake">3h</span><button class="skill-run-btn" onclick="runSkill('job-intake','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="job-intake"></div></div>
+        <div class="agent-row"><span class="agent-name">hard-filter</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-hard-filter">auto</span><button class="skill-run-btn" onclick="runSkill('hard-filter','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="hard-filter"></div></div>
+        <div class="agent-row"><span class="agent-name">funding-finder</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-funding-finder">14:00</span><button class="skill-run-btn" onclick="runSkill('funding-finder','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="funding-finder"></div></div>
       </div>
     </div>
 
-    <!-- Dev Automation -->
+    <!-- Dev Team -->
     <div class="division-card" id="card-dev_automation">
-      <div class="div-name">[ DEV AUTO ]</div>
+      <div class="div-name">[ DEV TEAM ]</div>
       <div style="margin-bottom:8px;"><span class="tag tag-green" id="dev_automation-status">IDLE</span></div>
       <div class="div-row">LAST RUN: <strong id="dev_automation-last">—</strong></div>
       <div class="div-row">NEXT: <strong>every 3h</strong></div>
       <button class="run-btn" id="run-dev_automation" onclick="runSkill('repo-monitor','dev_automation')">▶ RUN</button>
       <div class="agent-list">
-        <div class="agent-row"><span class="agent-name">repo-monitor</span><div class="interval-ctrl" id="interval-ctrl-repo-monitor"><button class="interval-btn" onclick="adjustInterval(-1)">−</button><span id="interval-display-repo-monitor">3</span><span style="font-size:6px;color:var(--subtext)">h</span><button class="interval-btn" onclick="adjustInterval(1)">+</button></div><div class="toggle on" data-division="dev_automation" data-agent="repo-monitor"></div></div>
-        <div class="agent-row"><span class="agent-name">debug-agent</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-debug-agent">EVENT</span><div class="toggle on" data-division="dev_automation" data-agent="debug-agent"></div></div>
-        <div class="agent-row"><span class="agent-name">refactor-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-refactor-scan">wkly</span><div class="toggle on" data-division="dev_automation" data-agent="refactor-scan"></div></div>
-        <div class="agent-row"><span class="agent-name">security-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-security-scan">wkly</span><div class="toggle on" data-division="dev_automation" data-agent="security-scan"></div></div>
+        <div class="agent-row"><span class="agent-name">repo-monitor</span><div class="interval-ctrl" id="interval-ctrl-repo-monitor"><button class="interval-btn" onclick="adjustInterval(-1)">−</button><span id="interval-display-repo-monitor">3</span><span style="font-size:6px;color:var(--subtext)">h</span><button class="interval-btn" onclick="adjustInterval(1)">+</button></div><button class="skill-run-btn" onclick="runSkill('repo-monitor','dev_automation',this)">▶</button><div class="toggle on" data-division="dev_automation" data-agent="repo-monitor"></div></div>
+        <div class="agent-row"><span class="agent-name">debug-agent</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-debug-agent">EVENT</span><span style="font-size:6px;color:var(--overlay);margin:0 3px;">via TG</span><div class="toggle on" data-division="dev_automation" data-agent="debug-agent"></div></div>
+        <div class="agent-row"><span class="agent-name">refactor-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-refactor-scan">Sun</span><button class="skill-run-btn" onclick="runSkill('refactor-scan','dev_automation',this)">▶</button><div class="toggle on" data-division="dev_automation" data-agent="refactor-scan"></div></div>
+        <div class="agent-row"><span class="agent-name">doc-update</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-doc-update">Sun</span><button class="skill-run-btn" onclick="runSkill('doc-update','dev_automation',this)">▶</button><div class="toggle on" data-division="dev_automation" data-agent="doc-update"></div></div>
+        <div class="agent-row"><span class="agent-name">artifact-manager</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-artifact-manager">03:00</span><button class="skill-run-btn" onclick="runSkill('artifact-manager','dev_automation',this)">▶</button><div class="toggle on" data-division="dev_automation" data-agent="artifact-manager"></div></div>
+        <div class="agent-row"><span class="agent-name">dev-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-dev_automation-dev-digest">15:00</span><button class="skill-run-btn" onclick="runSkill('dev-digest','dev_automation',this)">▶</button><div class="toggle on" data-division="dev_automation" data-agent="dev-digest"></div></div>
       </div>
     </div>
 
@@ -829,10 +854,27 @@
       <div class="div-row">NEXT: <strong>18:00 daily</strong></div>
       <button class="run-btn" id="run-personal" onclick="runSkill('health-logger','personal')">▶ RUN</button>
       <div class="agent-list">
-        <div class="agent-row"><span class="agent-name">health-logger</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-health-logger">18:00</span><div class="toggle on" data-division="personal" data-agent="health-logger"></div></div>
-        <div class="agent-row"><span class="agent-name">trade-tracker</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-trade-tracker">manual</span><div class="toggle on" data-division="personal" data-agent="trade-tracker"></div></div>
-        <div class="agent-row"><span class="agent-name">perf-correlation</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-perf-correlation">20:00</span><div class="toggle on" data-division="personal" data-agent="perf-correlation"></div></div>
-        <div class="agent-row"><span class="agent-name">burnout-monitor</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-burnout-monitor">daily</span><div class="toggle on" data-division="personal" data-agent="burnout-monitor"></div></div>
+        <div class="agent-row"><span class="agent-name">health-logger</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-health-logger">18:00</span><span style="font-size:6px;color:var(--overlay);margin:0 3px;">via TG</span><div class="toggle on" data-division="personal" data-agent="health-logger"></div></div>
+        <div class="agent-row"><span class="agent-name">perf-correlation</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-perf-correlation">20:00</span><button class="skill-run-btn" onclick="runSkill('perf-correlation','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="perf-correlation"></div></div>
+        <div class="agent-row"><span class="agent-name">burnout-monitor</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-burnout-monitor">21:00</span><button class="skill-run-btn" onclick="runSkill('burnout-monitor','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="burnout-monitor"></div></div>
+        <div class="agent-row"><span class="agent-name">personal-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-personal-digest">21:30</span><button class="skill-run-btn" onclick="runSkill('personal-digest','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="personal-digest"></div></div>
+      </div>
+    </div>
+
+    <!-- OP-Sec -->
+    <div class="division-card" id="card-op_sec">
+      <div class="div-name">[ OP-SEC ]</div>
+      <div style="margin-bottom:8px;"><span class="tag tag-green" id="op_sec-status">IDLE</span></div>
+      <div class="div-row">LAST RUN: <strong id="op_sec-last">—</strong></div>
+      <div class="div-row">NEXT: <strong>08:00 daily</strong></div>
+      <button class="run-btn" id="run-op_sec" onclick="runSkill('device-posture','op_sec')">▶ RUN</button>
+      <div class="agent-list">
+        <div class="agent-row"><span class="agent-name">device-posture</span><span class="tag tag-green" style="font-size:7px;" id="tag-op_sec-device-posture">08:00</span><button class="skill-run-btn" onclick="runSkill('device-posture','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="device-posture"></div></div>
+        <div class="agent-row"><span class="agent-name">threat-surface</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-threat-surface">19:00</span><button class="skill-run-btn" onclick="runSkill('threat-surface','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="threat-surface"></div></div>
+        <div class="agent-row"><span class="agent-name">security-scan</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-security-scan">Sun</span><button class="skill-run-btn" onclick="runSkill('security-scan','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="security-scan"></div></div>
+        <div class="agent-row"><span class="agent-name">cred-audit</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-cred-audit">Sun</span><button class="skill-run-btn" onclick="runSkill('cred-audit','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="cred-audit"></div></div>
+        <div class="agent-row"><span class="agent-name">privacy-scan</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-privacy-scan">Sun</span><button class="skill-run-btn" onclick="runSkill('privacy-scan','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="privacy-scan"></div></div>
+        <div class="agent-row"><span class="agent-name">breach-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-breach-check">Sun</span><button class="skill-run-btn" onclick="runSkill('breach-check','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="breach-check"></div></div>
       </div>
     </div>
 
@@ -844,13 +886,21 @@
       <div class="section-header">// TASK QUEUE</div>
       <div class="pixel-box">
         <ul class="queue-list" id="task-queue">
-          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;job-intake</span><span class="queue-time">next 3h cycle</span></li>
-          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;repo-monitor</span><span class="queue-time">next 3h cycle</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">SCH</span> &nbsp;artifact-manager</span><span class="queue-time">03:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;market-scan</span><span class="queue-time">every 2h</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;job-intake</span><span class="queue-time">every 3h</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;repo-monitor</span><span class="queue-time">every 3h</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;funding-finder</span><span class="queue-time">14:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;dev-digest</span><span class="queue-time">15:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;health-logger</span><span class="queue-time">18:00</span></li>
-          <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;trading-report</span><span class="queue-time">18:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;trading-report</span><span class="queue-time">18:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;perf-correlation</span><span class="queue-time">20:00</span></li>
-          <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;daily briefing</span><span class="queue-time">21:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;burnout-monitor</span><span class="queue-time">21:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;personal-digest</span><span class="queue-time">21:30</span></li>
+          <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;daily briefing</span><span class="queue-time">22:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;refactor-scan</span><span class="queue-time">Sun 10:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;security-scan</span><span class="queue-time">Sun 11:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;doc-update</span><span class="queue-time">Sun 12:00</span></li>
         </ul>
       </div>
     </div>
@@ -863,7 +913,7 @@
 Waiting for first briefing...
 
 J_Claw will populate this panel
-at 09:00 PM each night.
+at 10:00 PM each night.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━</div>
       <div class="briefing-meta" id="briefing-meta">Last briefing: not yet generated</div>
@@ -1034,15 +1084,19 @@ at 09:00 PM each night.
     }
 
     // ── Run Now ──
-    async function runSkill(skill, division) {
-      const btn = document.getElementById('run-' + division);
-      if (btn) { btn.disabled = true; btn.textContent = 'QUEUED...'; }
+    // skillBtn: the per-skill ▶ button element (passed via onclick="runSkill(...,this)")
+    // If absent, falls back to disabling the division-level RUN button
+    async function runSkill(skill, division, skillBtn) {
+      const divBtn = document.getElementById('run-' + division);
+      if (skillBtn) { skillBtn.disabled = true; skillBtn.textContent = '…'; }
+      else if (divBtn) { divBtn.disabled = true; divBtn.textContent = 'QUEUED...'; }
       const result = await api('POST', '/api/control', { skill });
       if (result && result.ok) {
         addLog(division.toUpperCase().replace('_',' '), `Run queued: ${skill}`, 'yellow');
         setDivisionStatus(division, 'queued');
       } else {
-        if (btn) { btn.disabled = false; btn.textContent = '▶ RUN'; }
+        if (skillBtn) { skillBtn.disabled = false; skillBtn.textContent = '▶'; }
+        else if (divBtn) { divBtn.disabled = false; divBtn.textContent = '▶ RUN'; }
         addLog('SYS', 'Failed to queue: ' + skill, 'red');
       }
     }
@@ -1158,12 +1212,39 @@ at 09:00 PM each night.
       if (el) el.textContent = ts ? new Date(ts).toLocaleTimeString() : '—';
     }
 
-    // ── Division → primary skill map ──
+    // ── Division → primary skill (for RUN button reset) ──
     const DIV_SKILL = {
       trading: 'trading-report',
       opportunity: 'job-intake',
       dev_automation: 'repo-monitor',
-      personal: 'health-logger'
+      personal: 'health-logger',
+      op_sec: 'device-posture'
+    };
+
+    // ── Skill → division (full map for queue status display) ──
+    const SKILL_DIV = {
+      'trading-report':   'trading',
+      'market-scan':      'trading',
+      'job-intake':       'opportunity',
+      'hard-filter':      'opportunity',
+      'funding-finder':   'opportunity',
+      'health-logger':    'personal',
+      'perf-correlation': 'personal',
+      'burnout-monitor':  'personal',
+      'personal-digest':  'personal',
+      'repo-monitor':     'dev_automation',
+      'debug-agent':      'dev_automation',
+      'refactor-scan':    'dev_automation',
+      'doc-update':       'dev_automation',
+      'artifact-manager': 'dev_automation',
+      'dev-digest':       'dev_automation',
+      'device-posture':   'op_sec',
+      'breach-check':     'op_sec',
+      'threat-surface':   'op_sec',
+      'cred-audit':       'op_sec',
+      'privacy-scan':     'op_sec',
+      'security-scan':    'op_sec',
+      'opsec-digest':     'op_sec',
     };
 
     // ── Job Review Panel ──
@@ -1371,7 +1452,7 @@ at 09:00 PM each night.
         const res = await fetch('../state/orchestrator-state.json?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
-          const divs = ['trading', 'opportunity', 'dev_automation', 'personal'];
+          const divs = ['trading', 'opportunity', 'dev_automation', 'personal', 'op_sec'];
           divs.forEach(div => {
             const d = data.divisions[div];
             if (!d) return;
@@ -1399,17 +1480,16 @@ at 09:00 PM each night.
           const ctrl = await res.json();
           (ctrl.queue || []).forEach(entry => {
             if (entry.status !== 'queued' && entry.status !== 'running') return;
-            // Find which division this skill belongs to
-            const div = Object.keys(DIV_SKILL).find(d => DIV_SKILL[d] === entry.skill);
+            const div = SKILL_DIV[entry.skill];
             if (div) {
-              setDivisionStatus(div, entry.status); // 'queued' or 'running'
+              setDivisionStatus(div, entry.status);
               const btn = document.getElementById('run-' + div);
               if (btn) { btn.disabled = true; btn.textContent = entry.status === 'running' ? 'RUNNING...' : 'QUEUED...'; }
             }
           });
           // Reset buttons for divisions with no active queue entries
           ['trading','opportunity','dev_automation','personal'].forEach(div => {
-            const active = (ctrl.queue || []).some(e => DIV_SKILL[div] === e.skill && (e.status === 'queued' || e.status === 'running'));
+            const active = (ctrl.queue || []).some(e => SKILL_DIV[e.skill] === div && (e.status === 'queued' || e.status === 'running'));
             if (!active) {
               const btn = document.getElementById('run-' + div);
               if (btn) { btn.disabled = false; btn.textContent = '▶ RUN'; }
@@ -1510,6 +1590,47 @@ at 09:00 PM each night.
             }
           } else {
             document.getElementById('stat-health').textContent = '—';
+          }
+        }
+      } catch(e) {}
+
+      // Burnout monitor packet
+      try {
+        const res = await fetch('../divisions/personal/packets/burnout-monitor.json?t=' + Date.now());
+        if (res.ok) {
+          const pkt = await res.json();
+          const level = (pkt.metrics && pkt.metrics.level) || (pkt.summary || '').toLowerCase().includes('alert') ? 'ALERT'
+            : (pkt.summary || '').toLowerCase().includes('warn') ? 'WARN' : 'OK';
+          const el = document.getElementById('stat-burnout');
+          el.textContent = level;
+          el.style.color = level === 'ALERT' ? 'var(--red)' : level === 'WARN' ? 'var(--yellow)' : 'var(--green)';
+          if (level !== 'OK' && pkt.escalate) {
+            alerts.push({
+              id: 'burnout-' + level,
+              division: 'PERSONAL',
+              message: `Burnout monitor: ${level} — ${pkt.summary || ''}`,
+              color: level === 'ALERT' ? 'red' : 'yellow',
+              time: now.toTimeString().slice(0,8)
+            });
+          }
+        }
+      } catch(e) {}
+
+      // Market scan packet
+      try {
+        const res = await fetch('../divisions/trading/packets/market-scan.json?t=' + Date.now());
+        if (res.ok) {
+          const pkt = await res.json();
+          const signals = (pkt.metrics && pkt.metrics.signals) || (pkt.metrics && pkt.metrics.high) || 0;
+          document.getElementById('stat-signals').textContent = signals || '0';
+          if (pkt.escalate) {
+            alerts.push({
+              id: 'market-signal-' + signals,
+              division: 'TRADING',
+              message: `Market scan: ${signals} high-priority signal(s) detected`,
+              color: 'teal',
+              time: now.toTimeString().slice(0,8)
+            });
           }
         }
       } catch(e) {}
