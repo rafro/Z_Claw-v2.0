@@ -1,16 +1,19 @@
 ---
 name: health-logger
-description: Prompt Matthew on Telegram at 6PM daily to collect health and lifestyle data. Save structured entries to state/health-log.json for use by the performance correlation agent.
+description: Prompt Matthew on Telegram at 6PM daily to collect health and lifestyle data. Save structured entries to state/health-log.json and hot cache. Compile executive packet for personal division chief.
 schedule: daily 18:00
 division: personal
+runner: division-chief-personal
 ---
 
 ## Trigger
-Runs daily at 18:00 (6PM). Sends prompt to Matthew via Telegram and collects his responses.
+Called by division-chief-personal at 18:00. Sends prompt to Matthew via Telegram and collects responses.
+Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
+Telegram interaction is routed through J_Claw gateway.
 
 ## Steps
 
-1. **Send opening prompt to Telegram**
+1. **Send opening prompt via J_Claw gateway**
    ```
    J_Claw // Daily Health Check-In — {date}
 
@@ -25,7 +28,7 @@ Runs daily at 18:00 (6PM). Sends prompt to Matthew via Telegram and collects his
    ```
 
 2. **Wait for response** (30-minute window)
-   - If no response in 30 minutes: send a single reminder
+   - If no response in 30 minutes: send one reminder via gateway
    - If no response in 2 hours from initial prompt: mark entry as skipped
 
 3. **Parse response**
@@ -41,14 +44,12 @@ Runs daily at 18:00 (6PM). Sends prompt to Matthew via Telegram and collects his
 
 4. **Validate completeness**
    - Required fields: sleep_hours, sleep_quality
-   - If critical fields are missing: ask a targeted follow-up (one message only)
+   - If critical fields missing: ask one targeted follow-up (one message only)
 
-5. **Save entry to state**
-   Write to: `C:\Users\Matty\OpenClaw-Orchestrator\state\health-log.json`
-   - Read the existing file
-   - Append a new entry to the `entries` array
-   - Update the `last_logged` field to current ISO timestamp
-   - Write the full updated JSON back to the file
+5. **Save to state**
+   Write to: `state/health-log.json`
+   - Append new entry to `entries` array
+   - Update `last_logged` field
 
    Entry schema:
    ```json
@@ -67,21 +68,39 @@ Runs daily at 18:00 (6PM). Sends prompt to Matthew via Telegram and collects his
    }
    ```
 
-   DO NOT save a .txt file. DO NOT save to the workspace folder.
-   The only valid output is the JSON file at the path above.
+6. **Save to hot cache**
+   Write entry to `divisions/personal/hot/health-{date}.json`
+   Division chief will index it for perf-correlation access.
 
-6. **Confirm to Matthew**
+7. **Confirm to Matthew via gateway**
    ```
    Logged. See you tomorrow at 6PM.
    ```
 
-## Output
-- Appended entry in `C:\Users\Matty\OpenClaw-Orchestrator\state\health-log.json`
-- Confirmation message via Telegram
-- No other files created — no .txt, no workspace files
+8. **Return results to division chief**
+   Division chief compiles executive packet.
+
+## Executive Packet Contribution
+health-logger contributes to division-chief-personal packet:
+```json
+{
+  "metrics": {
+    "health_logged": true,
+    "sleep_hours": null,
+    "sleep_quality": null,
+    "skipped": false
+  },
+  "summary": "Health logged | Sleep: {h}h / quality {q}/10 | Adderall: {dose} @ {time}",
+  "artifact_refs": [{ "bundle_id": "health-{date}", "location": "hot" }]
+}
+```
+
+Sensitivity: HIGH — health data details are never sent to Telegram in raw form.
+J_Claw shows only summary line (sleep hours, exercise, skip status).
 
 ## Error Handling
-- If Telegram send fails: log error and retry after 5 minutes (max 3 retries)
-- If response is "skip": log entry with `skipped: true`, all fields null
-- If Matthew is unresponsive for 2 hours: log as skipped, note in logs
+- If Telegram send fails: log error, retry after 5 minutes (max 3 retries)
+- If response is "skip": log with `skipped: true`, all fields null
+- If Matthew unresponsive for 2 hours: log as skipped
 - Never send multiple reminders — one follow-up only
+- DO NOT save a .txt file. Only valid output is state/health-log.json and hot cache entry

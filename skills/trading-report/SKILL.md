@@ -1,18 +1,20 @@
 ---
 name: trading-report
-description: Read today's closed trades from Alpaca state files, calculate daily session stats, save to state/trade-log.json, and send a structured performance summary to Matthew via Telegram at 6PM.
+description: Read today's closed trades from Alpaca state files, calculate daily session stats, save to state/trade-log.json, and compile an executive packet for the trading division chief. Run by division-chief-trading at 18:00 daily.
 schedule: daily 18:00
 division: trading
+runner: division-chief-trading
 ---
 
 ## Trigger
-Runs daily at 18:00 (6PM). Also runs on manual invocation from Matthew.
+Called by division-chief-trading at 18:00 daily. Also runs on manual invocation.
+Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
 
 ## Prerequisites
 - Alpaca state files must exist at the paths listed below
 - Credentials: load `ALPACA_API_KEY` and `ALPACA_API_SECRET` from `C:\Users\Matty\OpenClaw-Orchestrator\.env`
-- If BOTH state files are missing: **silently exit — do not send any Telegram message**. The trading system has not been activated yet. This is expected until agent-network is running.
-- If state files exist but are empty or have no trades for today: send "No trades logged today." message as normal
+- If BOTH state files are missing: return `status: partial` packet with note "trading system not yet activated" — do not send Telegram
+- If state files exist but are empty or have no trades for today: return packet noting "no trades logged today"
 
 ## Data Sources
 
@@ -49,14 +51,14 @@ If not found or empty for today, fall back to `virtual_account.json`.
 ## Steps
 
 1. **Load state file**
-   - Read the appropriate state file (live or dry run per above)
-   - Parse the `trade_log` array
+   - Read appropriate state file (live or dry run)
+   - Parse `trade_log` array
    - Filter to records where `timestamp` date matches today (YYYY-MM-DD)
-   - Separate into entry records (`type === "entry"`) and exit records (`type === "exit"`)
+   - Separate into entry records and exit records
 
 2. **Pair trades**
-   Match each exit record to its entry record by `strategy_id` + `symbol` (closest prior entry timestamp).
-   For each matched pair, build a trade record:
+   Match each exit to its entry by `strategy_id` + `symbol` (closest prior entry timestamp).
+   Build trade record:
    ```json
    {
      "symbol": "",
@@ -75,11 +77,11 @@ If not found or empty for today, fall back to `virtual_account.json`.
      "result": "win | loss | breakeven"
    }
    ```
-   - `r_multiple`: use directly from exit record if present; otherwise calculate as `pnl / risk_usd`
+   - `r_multiple`: use from exit record if present; else calculate as `pnl / risk_usd`
    - `result`: win if pnl > 0, loss if pnl < 0, breakeven if pnl === 0
 
 3. **Calculate session stats**
-   - Total trades (paired exits only — do not count open positions)
+   - Total trades (paired exits only — no open positions)
    - Wins, losses, breakevens
    - Win rate: `wins / total * 100`
    - Avg R: mean of all `r_multiple` values
@@ -88,8 +90,7 @@ If not found or empty for today, fall back to `virtual_account.json`.
    - Total PnL: sum of all `pnl` values
 
 4. **Save to state**
-   Read `C:\Users\Matty\OpenClaw-Orchestrator\state\trade-log.json`.
-   Append today's session record:
+   Read `state/trade-log.json`. Append today's session:
    ```json
    {
      "date": "YYYY-MM-DD",
@@ -108,35 +109,40 @@ If not found or empty for today, fall back to `virtual_account.json`.
      }
    }
    ```
-   Update global rolling stats:
-   - `stats.total_trades`: running total
-   - `stats.win_rate`: rolling win rate across all sessions
-   - `stats.avg_r`: rolling average R across all sessions
+   Update rolling stats: total_trades, win_rate, avg_r.
 
-5. **Format Telegram summary**
-   ```
-   J_Claw // Trading Report — {date}
+5. **Save to hot cache**
+   Write today's session bundle to `divisions/trading/hot/trade-session-{date}.json`
+   Division chief will index and eventually archive this.
 
-   Trades: {total} | W/L: {wins}/{losses} | Win Rate: {win_rate}%
-   Avg R: {avg_r} | Total PnL: ${total_pnl}
-   Best: {best_symbol} +{best_r}R | Worst: {worst_symbol} {worst_r}R
+6. **Return results to division chief**
+   Division chief compiles the executive packet and handles Telegram output.
 
-   {list each trade: symbol | side | result | R | PnL}
+## Executive Packet Contribution
+trading-report contributes to division-chief-trading packet:
+```json
+{
+  "metrics": {
+    "total_trades": 0,
+    "win_rate": null,
+    "avg_r": null,
+    "total_pnl": null,
+    "best_r": null,
+    "worst_r": null,
+    "source": "alpaca_paper | dry_run"
+  },
+  "summary": "Trades: {n} | W/L: {w}/{l} | Win Rate: {%} | Avg R: {r} | PnL: ${pnl}",
+  "artifact_refs": [{ "bundle_id": "trade-session-{date}", "location": "hot" }]
+}
+```
 
-   Source: {alpaca_paper | dry_run}
-   ```
-
-6. **Send to Telegram**
-   Send the formatted summary to Matthew.
-   Also share session stats with Personal Optimization division for perf-correlation.
-
-## Output
-- Updated `C:\Users\Matty\OpenClaw-Orchestrator\state\trade-log.json`
-- Telegram summary message at 6PM
+Escalation triggers (set in division chief packet):
+- Win rate < 40% on a day with ≥ 5 trades
+- Single trade loss exceeds 2× expected max risk
 
 ## Error Handling
-- If both state files missing: silently exit — no Telegram message (trading system not yet active)
-- If no trades today: send "No trades logged today." — do not skip the send
-- If trades exist but no exits (all open): send "No closed trades today. {N} positions still open."
-- If Telegram fails: save report to `C:\Users\Matty\OpenClaw-Orchestrator\reports\trade-report-{date}.md` and retry once
-- Never fabricate or estimate trade data — only report what the state files contain
+- Both state files missing: return `status: partial`, note "trading system not yet activated"
+- No trades today: return `status: success`, metrics all zero, summary "No trades logged today"
+- All open positions, no exits: summary "No closed trades today. {N} positions still open"
+- Telegram fallback (handled by J_Claw on packet receipt): save to `reports/trade-report-{date}.md`
+- Never fabricate or estimate trade data

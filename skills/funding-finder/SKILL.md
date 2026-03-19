@@ -1,15 +1,16 @@
 ---
 name: funding-finder
-description: Scan publicly available grant databases, accelerator listings, and ecosystem funding programs for opportunities matching Matthew's focus areas. Run daily at 2PM, send relevant results to Telegram.
+description: Scan publicly available grant databases, accelerator listings, and ecosystem funding programs for opportunities matching Matthew's focus areas. Run daily at 2PM by division-chief-opportunity. Compiles executive packet.
 schedule: daily 14:00
 division: opportunity
+runner: division-chief-opportunity
 ---
 
 ## Trigger
-Runs daily at 14:00 (2PM).
+Called by division-chief-opportunity at 14:00 daily.
+Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
 
 ## Focus Areas
-Scan for funding opportunities in:
 - Software / SaaS products
 - AI tools and automation
 - Fintech and trading platforms
@@ -18,8 +19,6 @@ Scan for funding opportunities in:
 - Canadian startup programs (priority — Matthew is in NB)
 
 ## Sources
-
-Fetch from these free, public sources only. No login required.
 
 | Source | URL | Coverage |
 |---|---|---|
@@ -38,61 +37,57 @@ If a source is unreachable: log the error and continue — never abort the full 
 ## Steps
 
 1. **Pre-flight check**
-   - Read `C:\Users\Matty\OpenClaw-Orchestrator\state\funding-seen.json` if it exists
-   - Build a set of seen funding IDs (use URL as unique ID)
-   - If file missing: create it with `{ "seen": [], "last_run": null }`
+   - Read `state/funding-seen.json` if it exists — build set of seen URLs
+   - If file missing: create with `{ "seen": [], "last_run": null }`
 
 2. **Fetch each source**
-   For each source:
-   - Fetch the page/feed
    - Extract: name, description, amount (if listed), deadline (if listed), eligibility, URL
-   - If fetch fails: log to `C:\Users\Matty\OpenClaw-Orchestrator\logs\funding-finder-errors.log`, continue
+   - If fetch fails: log to `logs/funding-finder-errors.log`, continue
 
 3. **Filter results**
-   Keep only opportunities that match ALL of:
-   - Relevant to Matthew's focus areas (software, AI, fintech, Web3, gaming, DeFi)
+   Keep only opportunities matching ALL:
+   - Relevant to focus areas (software, AI, fintech, Web3, gaming, DeFi)
    - Open / accepting applications (not expired)
    - Not already in funding-seen.json
+   - Not requiring established revenue > $1M
 
-   Reject:
-   - Hardware, manufacturing, agriculture, healthcare, non-tech
-   - Closed or expired programs
-   - Programs requiring established revenue > $1M (Matthew is pre-revenue/freelance)
-
-4. **Score each result**
-   Rate 1–10 on:
+4. **Score each result** (1–10):
    - **Eligibility fit**: Does Matthew qualify? (NB location, solo/small team, tech focus)
    - **Effort required**: How much work to apply? (lower effort = higher score)
    - **Potential value**: Grant size or program value
-
-   Keep only results scoring ≥ 6 overall. Discard the rest silently.
+   Keep only results scoring ≥ 6. Discard the rest silently.
 
 5. **Update state**
-   - Append all seen URLs to `funding-seen.json` (even rejected ones — avoid re-checking)
-   - Update `last_run` to current ISO timestamp
-   - Save file to `C:\Users\Matty\OpenClaw-Orchestrator\state\funding-seen.json`
+   - Append all seen URLs to `funding-seen.json` (even rejected ones)
+   - Update `last_run`
+   - Save to hot cache: `divisions/opportunity/hot/funding-{date}.json`
 
-6. **Send Telegram report** (new results only)
-   If new qualifying results found:
-   ```
-   J_Claw // Funding Finder — {date}
-   {N} new opportunities found
+6. **Return results to division chief**
+   Division chief compiles executive packet and handles Telegram output.
 
-   [{score}/10] {Name}
-   Amount: {amount or "unspecified"}
-   Deadline: {deadline or "rolling"}
-   Fit: {1-line eligibility summary}
-   Link: {url}
-   ```
+## Executive Packet Contribution
+funding-finder contributes to division-chief-opportunity packet:
+```json
+{
+  "metrics": {
+    "funding_opportunities": 0
+  },
+  "summary": "{N} new funding opportunities found | {top_name} — {amount}",
+  "action_items": [
+    {
+      "priority": "medium",
+      "description": "[{score}/10] {Name} | Amount: {amount} | Deadline: {deadline} | {eligibility} | Link: {url}",
+      "requires_matthew": true
+    }
+  ]
+}
+```
 
-   If no new results: send nothing — do not spam with empty reports.
-
-## Output
-- Updated `C:\Users\Matty\OpenClaw-Orchestrator\state\funding-seen.json`
-- Telegram message if new qualifying results found
+If no new results: `action_items` is empty, `funding_opportunities` is 0.
+J_Claw only sends Telegram if there are new results in the packet.
 
 ## Error Handling
-- Per-source failure: log to `logs/funding-finder-errors.log`, continue with remaining sources
-- If ALL sources fail: send Telegram alert "funding-finder: all sources failed at {timestamp}"
-- If funding-seen.json is corrupt: recreate it from scratch with empty seen array
+- Per-source failure: log to `logs/funding-finder-errors.log`, continue
+- If ALL sources fail: set `status: failed` in packet contribution — division chief escalates
+- If `funding-seen.json` corrupt: recreate with empty seen array
 - Never send duplicate opportunities across runs

@@ -1,16 +1,32 @@
 {
   "division": "trading",
   "description": "Trading Intelligence — market scans, backtesting, and daily performance reports",
+  "orchestrator_type": "local_llm",
+  "model": {
+    "path": "models/base/division-20b-moe.gguf",
+    "quantization": "Q4_K_M",
+    "adapter": null,
+    "mmap": true
+  },
+  "artifact_policy": {
+    "ttl_hours": 24,
+    "archive_schedule": "daily 18:00",
+    "max_hot_mb": 256,
+    "rezip_on": "checkpoint"
+  },
+  "packet_output_path": "divisions/trading/packets/",
   "agents": {
     "market-scan": {
       "schedule": "every 1 hour",
       "active_hours": "market_hours",
+      "skill": "market-scan",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "backtester": {
       "schedule": "daily 18:00",
+      "skill": "backtester",
       "enabled": true,
       "last_run": null,
       "status": "idle"

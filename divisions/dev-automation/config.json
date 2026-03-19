@@ -1,6 +1,20 @@
 {
   "division": "dev-automation",
   "description": "Dev Automation — repo monitoring, debugging, refactoring, docs, and security",
+  "orchestrator_type": "local_llm",
+  "model": {
+    "path": "models/base/division-20b-moe.gguf",
+    "quantization": "Q4_K_M",
+    "adapter": null,
+    "mmap": true
+  },
+  "artifact_policy": {
+    "ttl_hours": 48,
+    "archive_schedule": "weekly sunday 23:00",
+    "max_hot_mb": 256,
+    "rezip_on": "checkpoint"
+  },
+  "packet_output_path": "divisions/dev-automation/packets/",
   "agents": {
     "repo-monitor": {
       "schedule": "every 3 hours",

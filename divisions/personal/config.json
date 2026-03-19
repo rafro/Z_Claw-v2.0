@@ -1,6 +1,21 @@
 {
   "division": "personal",
   "description": "Personal Optimization — health logging, trade tracking, performance correlation, burnout monitoring",
+  "orchestrator_type": "local_llm",
+  "model": {
+    "path": "models/base/division-20b-moe.gguf",
+    "quantization": "Q4_K_M",
+    "adapter": null,
+    "mmap": true
+  },
+  "artifact_policy": {
+    "ttl_hours": 336,
+    "archive_schedule": "monthly",
+    "max_hot_mb": 128,
+    "rezip_on": "checkpoint",
+    "sensitivity": "high"
+  },
+  "packet_output_path": "divisions/personal/packets/",
   "agents": {
     "health-logger": {
       "schedule": "daily 18:00",
@@ -18,6 +33,7 @@
     },
     "perf-correlation": {
       "schedule": "daily 20:00",
+      "skill": "perf-correlation",
       "enabled": true,
       "last_run": null,
       "status": "idle"

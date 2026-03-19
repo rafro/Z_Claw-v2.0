@@ -1,12 +1,14 @@
 ---
 name: job-intake
-description: Fetch job listings every 3 hours from free APIs and RSS feeds, normalize to standard schema, deduplicate against previously seen jobs, and pass new listings to hard-filter.
+description: Fetch job listings every 3 hours from free APIs and RSS feeds, normalize to standard schema, deduplicate against previously seen jobs, and pass new listings to hard-filter. Run by the opportunity division orchestrator. Outputs executive packet.
 schedule: every 3 hours
 division: opportunity
+runner: division-chief-opportunity
 ---
 
 ## Trigger
-Runs every 3 hours on schedule. Also runs on manual invocation from Matthew.
+Called by division-chief-opportunity on schedule. Also runs on manual invocation from Matthew.
+Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
 
 ## Sources
 
@@ -83,21 +85,20 @@ Returns JSON. Fields: id, title, company.display_name, location.display_name, sa
 ## Steps
 
 1. **Pre-flight: API budget check**
-   - If you have received any rate limit error in this session: skip Remotive API entirely, use RSS feeds only
-   - If all sources previously failed in this session: notify Matthew once via Telegram and abort — do not retry
-   - Prefer RSS sources at all times — they are zero-cost and have no quotas
-   - Remotive API is a bonus source only, not required
+   - If rate limit error received this session: skip Remotive, use RSS feeds only
+   - If all sources previously failed this session: compile failure packet and return — do not retry
+   - Prefer RSS sources at all times — zero-cost, no quotas
 
-3. **Load seen jobs**
+2. **Load seen jobs**
    - Read `C:\Users\Matty\OpenClaw-Orchestrator\state\jobs-seen.json`
-   - Build a set of seen job IDs using composite key: `source + job_id`
+   - Build seen set using composite key: `source + job_id`
 
-4. **Fetch listings per source**
-   - For each source: fetch using the method above
+3. **Fetch listings per source**
+   - For each source: fetch using method above
    - If a source fetch fails: log the error, continue to next source
    - Never abort the full run due to a single source failure
 
-5. **Normalize each listing** to standard schema:
+4. **Normalize each listing** to standard schema:
    ```json
    {
      "id": "<source>-<job_id>",
@@ -121,27 +122,33 @@ Returns JSON. Fields: id, title, company.display_name, location.display_name, sa
    - Extract pay from salary field or description where possible
    - If location is empty or "worldwide", set `remote: true`
 
-6. **Deduplicate**
-   - Compare each listing against the seen set by composite ID
+5. **Deduplicate**
+   - Compare each listing against seen set by composite ID
    - Skip any job already seen — never re-surface it
    - Only new jobs proceed
 
-7. **Update state**
-   - Read `C:\Users\Matty\OpenClaw-Orchestrator\state\jobs-seen.json`
+6. **Update state**
+   - Read `state/jobs-seen.json`
    - Append new listings to `jobs` array
    - Update `last_run` to current ISO timestamp
    - Increment `total_seen` by count of new listings
-   - Write updated JSON back to the file
+   - Write updated JSON back
 
-8. **Handoff**
-   - Pass new listings array to hard-filter skill
+7. **Pass to hard-filter**
+   - Return new listings array to division-chief-opportunity for hard-filter step
 
 ## Output
-- Updated `C:\Users\Matty\OpenClaw-Orchestrator\state\jobs-seen.json`
-- New listings array passed to hard-filter
+- Updated `state/jobs-seen.json`
+- New listings array → passed to hard-filter within division orchestrator
+
+## Executive Packet Contribution
+job-intake contributes to the division-chief-opportunity packet:
+- `metrics.new_jobs_found` — count of new listings passed to hard-filter
+- `summary` — source status summary (which sources succeeded/failed)
+- `artifact_refs` — reference to hot cache bundle of new job listings
 
 ## Error Handling
-- Per-source failure: log to `C:\Users\Matty\OpenClaw-Orchestrator\logs\job-intake-errors.log`, continue
-- If ALL sources fail: send Telegram alert — "job-intake: all sources failed at {timestamp}"
+- Per-source failure: log to `logs/job-intake-errors.log`, continue
+- If ALL sources fail: return failure status to division chief — it will escalate
 - If state file is missing: create it with empty schema `{ "jobs": [], "last_run": null, "total_seen": 0 }`
 - Never skip deduplication under any circumstances
