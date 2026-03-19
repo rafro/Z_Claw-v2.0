@@ -1,12 +1,11 @@
 {
   "division": "opportunity",
   "description": "Opportunity Discovery — job intake, filtering, and funding discovery",
-  "orchestrator_type": "local_llm",
+  "orchestrator_type": "python_runtime",
   "model": {
-    "path": "models/base/division-20b-moe.gguf",
-    "quantization": "Q4_K_M",
-    "adapter": null,
-    "mmap": true
+    "tier1_host": "http://localhost:11434",
+    "tier1_model": "qwen2.5:7b-instruct-q4_K_M",
+    "notes": "Tier 1 (3060 Ti, CUDA). hard-filter + funding-finder. See llm-routing.md."
   },
   "artifact_policy": {
     "ttl_hours": 72,

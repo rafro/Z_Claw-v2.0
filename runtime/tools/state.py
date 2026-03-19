@@ -18,8 +18,17 @@ def _load(path: Path, default: Any) -> Any:
     if not path.exists():
         log.warning("State file missing, using default: %s", path)
         return default
-    with open(path, encoding="utf-8-sig") as f:
-        return json.load(f)
+    for enc in ("utf-8-sig", "utf-8", "cp1252"):
+        try:
+            with open(path, encoding=enc) as f:
+                return json.load(f)
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+        except json.JSONDecodeError as e:
+            log.error("JSON parse error in %s: %s", path, e)
+            return default
+    log.error("Could not decode %s with any known encoding", path)
+    return default
 
 
 def _save(path: Path, data: Any) -> None:

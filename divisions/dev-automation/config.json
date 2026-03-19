@@ -1,12 +1,12 @@
 {
   "division": "dev-automation",
   "description": "Dev Automation — repo monitoring, debugging, refactoring, docs, and security",
-  "orchestrator_type": "local_llm",
+  "orchestrator_type": "python_runtime",
   "model": {
-    "path": "models/base/division-20b-moe.gguf",
-    "quantization": "Q4_K_M",
-    "adapter": null,
-    "mmap": true
+    "tier2_host": "http://localhost:11434",
+    "tier2_model": "qwen2.5:14b-instruct-q4_K_M",
+    "tier1_fallback_model": "qwen2.5:7b-instruct-q4_K_M",
+    "notes": "Tier 2 preferred (friend's 9070 XT). Falls back to 7B local, then Tier 3 API. See llm-routing.md."
   },
   "artifact_policy": {
     "ttl_hours": 48,

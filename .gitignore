@@ -48,3 +48,12 @@ resumes/
 # OS
 .DS_Store
 Thumbs.db
+runtime/__pycache__/
+**/__pycache__/
+*.pyc
+state/jobs-seen.json
+state/health-log.json
+state/trade-log.json
+state/applications.json
+state/intake-temp.json
+.env
