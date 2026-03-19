@@ -105,18 +105,25 @@ J_Claw does NOT intervene for:
 
 ## Model Policy
 
-| Layer | Model | Purpose |
-|---|---|---|
-| J_Claw | Claude (this model) | Executive decisions, Telegram composition, escalation handling |
-| Division Orchestrators | Local GGUF 20B MoE (llama.cpp + ROCm) | Skill execution, artifact processing, packet compilation |
-| Realm Keeper | Local lightweight (or same division model) | XP/rank accounting, jclaw-stats.json, progression packets |
+Division orchestrators are Python scripts that route each skill to the correct tier.
+There is no single model for all divisions — routing is per-task based on frequency, sensitivity, and complexity.
+
+| Tier | Model | Who uses it | Reason |
+|---|---|---|---|
+| Tier 0 | None (pure Python) | job-intake, trading-report, realm-keeper, artifact-manager, perf-correlation, burnout-monitor | Pure computation — no LLM needed |
+| Tier 1 | Qwen2.5 7B Q4_K_M or Llama 3.1 8B Q4_K_M (Ollama, 3060 Ti, CUDA) | hard-filter, health-logger, funding-finder, market-scan (if LLM) | High frequency or privacy-sensitive; structured JSON output |
+| Tier 2 | Qwen2.5 14B Q4_K_M (Ollama, friend's 9070 XT, ROCm) | repo-monitor, debug-agent, refactor-scan, security-scan, doc-update | Deep reasoning or code analysis; optional upgrade — not a hard dependency |
+| Tier 3 | Gemini 2.0 Flash or Claude Haiku (API) | Tier 2 tasks when friend's machine is offline | Fallback only; weekly tasks keep spend at ~$1–5/month |
+| Tier 4 | Claude (this model) | J_Claw only — daily-briefing, Telegram, escalation, direct Matthew queries | Executive layer; irreplaceable quality for synthesis and judgment |
 
 **Rules:**
 - Claude processes executive packets and Matthew's direct commands only
-- Local models never receive raw external data that could expose credentials
-- Model paths are config-driven — never hardcoded
-- Active models are mmap-loaded — never inflated from compressed archives at runtime
-- ZIP is for cold storage and distribution only
+- health-logger is Tier 1 LOCAL regardless of any other factor — health/medication data never leaves the machine
+- hard-filter is Tier 1 LOCAL — 8× daily frequency makes API cost compound; fixed rubric makes 7B consistent and auditable
+- Model paths are config-driven — never hardcoded in skill scripts
+- Tier 2 tasks must fall back to Tier 3 when the friend's machine is unavailable — the system never hard-depends on it
+- Ollama is the local inference runtime (CUDA on 3060 Ti, ROCm on 9070 XT)
+- ZIP is for cold storage and distribution only — never load compressed model files at runtime
 
 ---
 
