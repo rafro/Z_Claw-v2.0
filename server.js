@@ -392,7 +392,7 @@ function buildContext() {
   try {
     const log = JSON.parse(fs.readFileSync(path.join(STATE_DIR, 'activity-log.json'), 'utf8'));
     lines.push('\n[ RECENT ACTIVITY ]');
-    const entries = (log.entries || []).slice(-10);
+    const entries = (log.entries || []).slice(-5);
     entries.forEach(e => {
       const t = new Date(e.time);
       const hhmm = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
@@ -447,7 +447,8 @@ function buildContext() {
 
 // POST /api/chat  { message }
 function stripSoulForChat(soul) {
-  const sectionsToStrip = ['Memory Checkpointing', 'Git Commit Directives', 'Rank & Progression'];
+  const sectionsToStrip = ['Memory Checkpointing', 'Git Commit Directives',
+    'Rank Reference', 'Communication Style', 'Daily Schedule', 'SOUL.md Sync Requirement'];
   let result = soul.replace(/\r\n/g, '\n');
   for (const section of sectionsToStrip) {
     const re = new RegExp('## ' + section + '[\\s\\S]*?(?=\\n## |$)', 'g');
