@@ -14,4 +14,4 @@ echo    pm2 startup   (run the printed command once)
 echo    pm2 save
 echo.
 start "" "http://localhost:3000/dashboard"
-node C:\Users\Matty\OpenClaw-Orchestrator\server.js
+node C:\Users\Tyler\Desktop\J_Claw_Reborn\server.js

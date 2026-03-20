@@ -39,6 +39,18 @@ reports/
 monitor-output.txt
 monitor-processes.ps1
 
+# Personal division runtime data (health data — never commit)
+divisions/personal/hot/
+divisions/personal/packets/
+
+# Op-Sec runtime data (breach email lists)
+divisions/op-sec/breach_emails.json
+divisions/op-sec/hot/
+
+# Runtime state (generated, not source)
+state/orchestrator-state.json
+state/health-prompt.json
+
 # Personal files
 resumes/
 

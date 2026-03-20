@@ -1,0 +1,23 @@
+{
+  "division": "trading",
+  "generated_at": "2026-03-20T05:02:46.925459+00:00",
+  "skill": "market-scan",
+  "status": "success",
+  "summary": "No significant moves. BTC $70,748 (-0.2%), ETH $2,146 (-2.2%), BNB $644 (-0.9%)",
+  "action_items": [],
+  "metrics": {
+    "signals": 0,
+    "instruments": 4,
+    "high": 0
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

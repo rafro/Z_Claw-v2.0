@@ -45,10 +45,10 @@ If PM2 shows nothing, or you've restarted PM2:
 
 ```powershell
 # Start Mission Control
-pm2 start C:\Users\Matty\OpenClaw-Orchestrator\server.js --name openclaw
+pm2 start C:\Users\Tyler\Desktop\J_Claw_Reborn\server.js --name openclaw
 
-# Start the gateway
-pm2 start C:\Users\Matty\.openclaw\start-gateway.js --name openclaw-gateway
+# Start the J_Claw gateway (OpenClaw WebSocket gateway on port 18789)
+pm2 start C:\Users\Tyler\AppData\Roaming\npm\node_modules\openclaw\openclaw.mjs --name openclaw-gateway -- gateway run
 
 # Save the process list (so they survive reboots)
 pm2 save

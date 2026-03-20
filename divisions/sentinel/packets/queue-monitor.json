@@ -1,0 +1,24 @@
+{
+  "division": "sentinel",
+  "generated_at": "2026-03-20T02:11:56.829009+00:00",
+  "skill": "queue-monitor",
+  "status": "success",
+  "summary": "No task queue found",
+  "action_items": [],
+  "metrics": {
+    "queue_depth": 0,
+    "running_count": 0,
+    "failed_count": 0,
+    "anomaly_count": 0
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "deterministic",
+  "approval_required": false,
+  "approval_status": ""
+}
