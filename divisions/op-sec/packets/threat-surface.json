@@ -1,0 +1,22 @@
+{
+  "division": "op-sec",
+  "generated_at": "2026-03-20T23:23:07.631430+00:00",
+  "skill": "threat-surface",
+  "status": "success",
+  "summary": "The system has multiple unexpected listening ports and a scheduled task that appears to be running as SYSTEM. The high number of svchost.exe processes could indicate potential resource usage issues.",
+  "action_items": [],
+  "metrics": {
+    "anomaly_count": 2,
+    "high_severity": 1
+  },
+  "artifact_refs": [],
+  "escalate": true,
+  "escalation_reason": "1 HIGH severity anomalies detected",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

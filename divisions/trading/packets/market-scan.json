@@ -1,9 +1,9 @@
 {
   "division": "trading",
-  "generated_at": "2026-03-20T05:02:46.925459+00:00",
+  "generated_at": "2026-03-20T20:35:02.788764+00:00",
   "skill": "market-scan",
   "status": "success",
-  "summary": "No significant moves. BTC $70,748 (-0.2%), ETH $2,146 (-2.2%), BNB $644 (-0.9%)",
+  "summary": "No significant moves. BTC $69,833 (-0.8%), ETH $2,125 (-0.8%), BNB $638 (-0.5%)",
   "action_items": [],
   "metrics": {
     "signals": 0,

@@ -47,6 +47,13 @@ divisions/personal/packets/
 divisions/op-sec/breach_emails.json
 divisions/op-sec/hot/
 
+# Trading + Opportunity hot cache — ephemeral runtime data
+divisions/trading/hot/
+divisions/opportunity/hot/
+
+# State directory — any unlisted runtime files
+state/chat-system-prompt.txt
+
 # Runtime state (generated, not source)
 state/orchestrator-state.json
 state/health-prompt.json

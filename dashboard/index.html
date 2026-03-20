@@ -795,6 +795,20 @@
     </div>
   </div>
 
+  <!-- ── Sentinel System Health Bar ── -->
+  <div id="sentinel-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);font-size:7px;flex-wrap:wrap;">
+    <span style="color:var(--subtext);letter-spacing:1px;white-space:nowrap;">SENTINEL //</span>
+    <span style="color:var(--border);">|</span>
+    <span style="color:var(--subtext);">PROVIDERS:</span>
+    <span id="sentinel-provider-count" style="color:var(--text);font-weight:bold;">—</span>
+    <span style="color:var(--border);">|</span>
+    <span style="color:var(--subtext);">QUEUE:</span>
+    <span id="sentinel-queue-depth" style="color:var(--text);font-weight:bold;">—</span>
+    <span style="color:var(--border);">|</span>
+    <div id="sentinel-provider-pills" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+    <button onclick="refreshSentinel()" style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--subtext);font-size:6px;padding:1px 6px;cursor:pointer;font-family:inherit;letter-spacing:1px;">↺ REFRESH</button>
+  </div>
+
   <!-- ── Division Status Cards ── -->
   <div class="section-header">// DIVISION STATUS</div>
   <div class="grid-4">
@@ -808,8 +822,13 @@
       <!-- agent-network cycle state -->
       <div id="agent-network-block" style="margin:6px 0;padding:5px 6px;border:1px solid var(--border);border-radius:2px;display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-size:7px;color:var(--subtext);">AGENT-NETWORK <span style="color:var(--overlay);font-size:6px;">read-only</span></span>
-          <span id="an-stale-badge" style="display:none;" class="tag tag-red" style="font-size:6px;">STALE</span>
+          <span style="font-size:7px;color:var(--subtext);">AGENT-NETWORK</span>
+          <span style="display:flex;align-items:center;gap:3px;">
+            <span id="an-stale-badge" style="display:none;" class="tag tag-red" style="font-size:6px;">STALE</span>
+            <span id="an-run-status" class="tag" style="font-size:6px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">IDLE</span>
+            <button id="an-btn-run" onclick="agentNetworkRun()" style="font-size:6px;padding:1px 4px;background:var(--green);color:var(--base);border:none;border-radius:2px;cursor:pointer;">▶ RUN</button>
+            <button id="an-btn-stop" onclick="agentNetworkStop()" style="font-size:6px;padding:1px 4px;background:var(--red);color:var(--base);border:none;border-radius:2px;cursor:pointer;display:none;">■ STOP</button>
+          </span>
         </div>
         <div class="div-row">CYCLE: <strong id="an-cycle">—</strong> &nbsp;|&nbsp; RISK: <strong id="an-risk">1.0x</strong> &nbsp;|&nbsp; <span id="an-age" style="font-size:7px;color:var(--subtext);">—</span></div>
         <div class="div-row">STRATEGY: <strong id="an-strategy" style="color:var(--teal);font-size:7px;">—</strong></div>
@@ -932,13 +951,16 @@
       <div class="pixel-box">
         <ul class="queue-list" id="task-queue">
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">SCH</span> &nbsp;artifact-manager</span><span class="queue-time">03:00</span></li>
-          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;market-scan</span><span class="queue-time">every 2h</span></li>
+          <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;device-posture</span><span class="queue-time">08:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-teal" style="font-size:7px;">SCH</span> &nbsp;agent-network</span><span class="queue-time">09:05 M-F</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;market-scan</span><span class="queue-time">2h 8a-10p</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;job-intake</span><span class="queue-time">every 3h</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;repo-monitor</span><span class="queue-time">every 3h</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;funding-finder</span><span class="queue-time">14:00</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;dev-digest</span><span class="queue-time">15:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;health-logger</span><span class="queue-time">18:00</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;trading-report</span><span class="queue-time">18:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;threat-surface</span><span class="queue-time">19:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;perf-correlation</span><span class="queue-time">20:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;burnout-monitor</span><span class="queue-time">21:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;personal-digest</span><span class="queue-time">21:30</span></li>
@@ -946,6 +968,9 @@
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;refactor-scan</span><span class="queue-time">Sun 10:00</span></li>
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;security-scan</span><span class="queue-time">Sun 11:00</span></li>
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;doc-update</span><span class="queue-time">Sun 12:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;breach-check</span><span class="queue-time">Sun 13:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;cred-audit</span><span class="queue-time">Sun 14:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">WKL</span> &nbsp;privacy-scan</span><span class="queue-time">Sun 15:00</span></li>
         </ul>
       </div>
     </div>
@@ -1182,7 +1207,52 @@ Hit ⚡ GENERATE NOW to compile immediately.
     }
 
     // ── Agent-network cycle state ──
+    async function agentNetworkRun() {
+      const btn = document.getElementById('an-btn-run');
+      btn.disabled = true; btn.textContent = '...';
+      try {
+        await fetch('/api/trading/cycle/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cycle: 1, asset: 'SPX500', auto: false }) });
+        addLog('TRADING', 'Agent-network cycle started', 'green');
+        setTimeout(loadTradingCycleStatus, 1000);
+      } catch(e) { addLog('TRADING', 'Failed to start cycle: ' + e.message, 'red'); }
+      btn.disabled = false; btn.textContent = '▶ RUN';
+    }
+
+    async function agentNetworkStop() {
+      const btn = document.getElementById('an-btn-stop');
+      btn.disabled = true; btn.textContent = '...';
+      try {
+        await fetch('/api/trading/cycle/stop', { method: 'POST' });
+        addLog('TRADING', 'Agent-network stop requested', 'yellow');
+        setTimeout(loadTradingCycleStatus, 1000);
+      } catch(e) { addLog('TRADING', 'Failed to stop: ' + e.message, 'red'); }
+      btn.disabled = false; btn.textContent = '■ STOP';
+    }
+
+    async function loadTradingCycleStatus() {
+      try {
+        const res = await fetch('/api/trading/cycle/status?t=' + Date.now());
+        if (!res.ok) return;
+        const s = await res.json();
+        if (s.error) return; // agent-network offline
+        const running = s.running === true;
+        const stopping = s.stop_requested === true;
+        const label = stopping ? 'STOPPING' : running ? 'RUNNING' : 'IDLE';
+        const color = stopping ? 'var(--yellow)' : running ? 'var(--green)' : 'var(--subtext)';
+        const el = document.getElementById('an-run-status');
+        if (el) { el.textContent = label; el.style.color = color; }
+        const runBtn  = document.getElementById('an-btn-run');
+        const stopBtn = document.getElementById('an-btn-stop');
+        if (runBtn && stopBtn) {
+          runBtn.style.display  = running ? 'none' : 'inline';
+          stopBtn.style.display = running ? 'inline' : 'none';
+        }
+      } catch(e) {}
+    }
+
     async function loadTradingCycle() {
+      await loadTradingCycleStatus();
       try {
         const res = await fetch('/api/trading/cycle?t=' + Date.now());
         if (!res.ok) return;
@@ -1810,6 +1880,38 @@ Hit ⚡ GENERATE NOW to compile immediately.
       } catch(e) {}
     }
 
+    // ── Sentinel health bar ──────────────────────────────────────────────────
+    async function refreshSentinel() {
+      try {
+        const [phRes, qmRes] = await Promise.all([
+          fetch('/api/sentinel/health?t=' + Date.now()),
+          fetch('/api/queue?t=' + Date.now()),
+        ]);
+        if (phRes.ok) {
+          const ph = await phRes.json();
+          const metrics = ph.metrics || {};
+          const providers = metrics.providers || {};
+          const healthy = metrics.healthy_count ?? '?';
+          const total   = metrics.total_count   ?? '?';
+          document.getElementById('sentinel-provider-count').textContent = `${healthy}/${total}`;
+          document.getElementById('sentinel-provider-count').style.color =
+            healthy === total ? 'var(--green)' : (healthy > 0 ? 'var(--yellow)' : 'var(--red)');
+          const pills = Object.entries(providers).map(([name, info]) => {
+            const ok = info.status === 'available';
+            const short = name.replace('ollama:', '').split(':')[0].split('/').pop();
+            return `<span style="padding:0 4px;border:1px solid ${ok ? 'var(--green)' : 'var(--red)'};color:${ok ? 'var(--green)' : 'var(--red)'};" title="${name}: ${info.status}">${short}</span>`;
+          }).join('');
+          document.getElementById('sentinel-provider-pills').innerHTML = pills;
+        }
+        if (qmRes.ok) {
+          const qm = await qmRes.json();
+          const depth = Array.isArray(qm.queue) ? qm.queue.filter(t => t.status !== 'completed').length : '?';
+          document.getElementById('sentinel-queue-depth').textContent = depth;
+          document.getElementById('sentinel-queue-depth').style.color = depth > 5 ? 'var(--yellow)' : 'var(--green)';
+        }
+      } catch(e) {}
+    }
+
     async function generateBriefing() {
       const btn = document.getElementById('briefing-gen-btn');
       btn.disabled = true;
@@ -1871,6 +1973,10 @@ Hit ⚡ GENERATE NOW to compile immediately.
     // Check health prompt on load and every 5 minutes
     checkHealthPrompt();
     setInterval(checkHealthPrompt, 5 * 60 * 1000);
+
+    // Sentinel health bar — load on startup and refresh every 5 minutes
+    refreshSentinel();
+    setInterval(refreshSentinel, 5 * 60 * 1000);
 
     // ── Rank Card ──
     const ALL_ACHIEVEMENTS = [

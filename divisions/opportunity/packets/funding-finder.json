@@ -1,0 +1,28 @@
+{
+  "division": "opportunity",
+  "generated_at": "2026-03-20T17:01:10.835633+00:00",
+  "skill": "funding-finder",
+  "status": "success",
+  "summary": "No new funding opportunities found this run.",
+  "action_items": [],
+  "metrics": {
+    "funding_opportunities": 0,
+    "sources_failed": 0,
+    "model_available": true
+  },
+  "artifact_refs": [
+    {
+      "bundle_id": "funding-2026-03-20",
+      "location": "hot"
+    }
+  ],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

@@ -347,6 +347,24 @@ function handleGetGrants(res) {
 }
 
 // GET /api/trading/cycle  — returns agent-network cycle state for dashboard
+function proxyZenith(method, zenithPath, body, res) {
+  const payload = body ? JSON.stringify(body) : null;
+  const opts = {
+    hostname: '127.0.0.1', port: 8000, path: zenithPath, method,
+    headers: { 'Content-Type': 'application/json', ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}) }
+  };
+  const req = http.request(opts, (r) => {
+    let data = '';
+    r.on('data', c => data += c);
+    r.on('end', () => {
+      try { jsonOk(res, JSON.parse(data)); } catch(e) { jsonOk(res, { raw: data }); }
+    });
+  });
+  req.on('error', () => jsonOk(res, { error: 'agent-network offline', available: false }));
+  if (payload) req.write(payload);
+  req.end();
+}
+
 function handleGetTradingCycle(res) {
   try {
     const agentNetworkState = 'C:/Users/Tyler/agent-network/state';
@@ -355,8 +373,9 @@ function handleGetTradingCycle(res) {
 
     // Find most recent cycle state file
     let cycleData = null;
+    let files = [];
     try {
-      const files = fs2.readdirSync(agentNetworkState)
+      files = fs2.readdirSync(agentNetworkState)
         .filter(f => f.endsWith('_cycle_state.json'))
         .map(f => ({ f, mtime: fs2.statSync(path2.join(agentNetworkState, f)).mtimeMs }))
         .sort((a, b) => b.mtime - a.mtime);
@@ -921,6 +940,11 @@ const server = http.createServer(async (req, res) => {
       if (method === 'GET' && reqPath === '/api/jobs') { return handleGetJobs(res); }
       if (method === 'GET' && reqPath === '/api/grants') { return handleGetGrants(res); }
       if (method === 'GET' && reqPath === '/api/trading/cycle') { return handleGetTradingCycle(res); }
+      if (method === 'GET' && reqPath === '/api/trading/cycle/status') { return proxyZenith('GET', '/status', null, res); }
+      if (method === 'POST' && reqPath === '/api/trading/cycle/run') {
+        const body = await parseBody(req); return proxyZenith('POST', '/run', body, res);
+      }
+      if (method === 'POST' && reqPath === '/api/trading/cycle/stop') { return proxyZenith('POST', '/stop', null, res); }
       if (method === 'POST' && reqPath.startsWith('/api/applications/') && reqPath.endsWith('/status')) {
         const parts = reqPath.split('/');
         const jobId = decodeURIComponent(parts[3]);
@@ -1390,14 +1414,27 @@ cron.schedule('0 14 * * *', async () => {
 }, { timezone: TZ });
 
 // ── Trading Division ───────────────────────────────────────────────────────
-// Market scan every 2 hours during market hours Mon–Fri (9 AM – 5 PM)
-cron.schedule('0 9,11,13,15,17 * * 1-5', async () => {
+// Market scan every 2 hours, 8am–10pm, all days (crypto is 24/7)
+cron.schedule('0 8,10,12,14,16,18,20,22 * * *', async () => {
   await runSkillViaPython('market-scan', 'TRADING');
 }, { timezone: TZ });
 
 // Trading performance report daily at 6:00 PM
 cron.schedule('0 18 * * *', async () => {
   await runSkillViaPython('trading-report', 'TRADING');
+}, { timezone: TZ });
+
+// Agent-network daily auto-trigger — weekdays 09:05 so cycle never goes stale
+cron.schedule('5 9 * * 1-5', () => {
+  const body = JSON.stringify({ cycle: 1, asset: 'SPX500', auto: true });
+  const req = http.request({
+    hostname: '127.0.0.1', port: 8000, path: '/run', method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+  }, () => {});
+  req.on('error', () => logActivity('TRADING', 'Agent-network auto-trigger failed — Zenith offline?', 'yellow'));
+  req.write(body);
+  req.end();
+  logActivity('TRADING', 'Agent-network daily cycle auto-triggered', 'teal');
 }, { timezone: TZ });
 
 // ── Personal Division ──────────────────────────────────────────────────────
@@ -1450,6 +1487,30 @@ cron.schedule('0 3 * * *', async () => {
   await runSkillViaPython('artifact-manager', 'DEV');
 }, { timezone: TZ });
 
+// ── OP-Sec Division ────────────────────────────────────────────────────────
+// Device posture daily at 8:00 AM (already runs via queue — ensure cron exists)
+cron.schedule('0 8 * * *', async () => {
+  await runSkillViaPython('device-posture', 'OP_SEC');
+}, { timezone: TZ });
+
+// Threat surface scan daily at 7:00 PM
+cron.schedule('0 19 * * *', async () => {
+  await runSkillViaPython('threat-surface', 'OP_SEC');
+}, { timezone: TZ });
+
+// Sunday deep scans — breach-check 13:00, cred-audit 14:00, privacy-scan 15:00
+cron.schedule('0 13 * * 0', async () => {
+  await runSkillViaPython('breach-check', 'OP_SEC');
+}, { timezone: TZ });
+
+cron.schedule('0 14 * * 0', async () => {
+  await runSkillViaPython('cred-audit', 'OP_SEC');
+}, { timezone: TZ });
+
+cron.schedule('0 15 * * 0', async () => {
+  await runSkillViaPython('privacy-scan', 'OP_SEC');
+}, { timezone: TZ });
+
 // ── Briefings ──────────────────────────────────────────────────────────────
 // Morning briefing at 6:00 AM
 cron.schedule('0 6 * * *', () => {
@@ -1493,7 +1554,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('  Server    : http://localhost:' + PORT);
   console.log('  Dashboard : http://localhost:' + PORT + '/dashboard');
   console.log('');
-  console.log('  Scheduler : node-cron active — full SOUL.md schedule (14 crons)');
+  console.log('  Scheduler : node-cron active — full SOUL.md schedule (22 crons)');
   console.log('  Queue     : polling every 2 min (zero-cost when idle)');
   console.log('  Timezone  : America/Halifax');
   console.log('');

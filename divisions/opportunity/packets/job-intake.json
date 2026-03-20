@@ -1,137 +1,16 @@
 {
   "division": "opportunity",
-  "generated_at": "2026-03-20T05:13:17.728393+00:00",
+  "generated_at": "2026-03-20T18:07:16.486401+00:00",
   "skill": "job-intake",
   "status": "success",
-  "summary": "All sourcing platforms are operational, with consistent data from WeWorkRemotely, RemoteOK, and Remotive, and partial data from Adzuna. Notable finds include 222 new job listings, with Tier A jobs standing out: Developer Advocate at Shotstack (score 8.2) and Software Engineer Reliability at OpenAI (score 8.3). No immediate concerns.",
-  "action_items": [
-    {
-      "priority": "high",
-      "description": "[TIER A] Developer Advocate — Shotstack | Remote | $60,000–$120,000 | Fit: 8.2/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-developer-advocate-shotstack-1130818",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER A] Software Engineer Reliability — OpenAI | Remote | $230,000–$490,000 | Fit: 8.3/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-software-engineer-reliability-openai-1130817",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Rare Days: Full-Stack Engineering Lead —  | Remote | Pay unspecified | Fit: 7.0/10 | Resume: Technical | https://weworkremotely.com/remote-jobs/rare-days-full-stack-engineering-lead",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Intro.io: Iveo —  | Remote | Pay unspecified | Fit: 6.8/10 | Resume: Technical | https://weworkremotely.com/remote-jobs/intro-io-iveo",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] SaaS Platform Architect — Legion | Remote | Pay unspecified | Fit: 7.0/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-saas-platform-architect-legion-1130814",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Junior Crypto Analyst & Trader — Begini | Remote | $50,000–$70,000 | Fit: 7.0/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-junior-crypto-analyst-trader-begini-1130809",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] DevOps Database Assistant Vice President — iCapital | Remote | Pay unspecified | Fit: 6.2/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-devops-database-assistant-vice-president-icapital-1130799",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Senior Platform Engineer — Loancrate | Remote | $10,000–$300,000 | Fit: 7.3/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-senior-platform-engineer-loancrate-1130797",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Senior Security Engineer — Loancrate | Remote | $10,000–$300,000 | Fit: 7.3/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-senior-security-engineer-loancrate-1130795",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Senior Software Engineer — Loancrate | Remote | $10,000–$300,000 | Fit: 7.0/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-senior-software-engineer-loancrate-1130794",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Engineering Manager Workload Management — Graphcore | Remote | $350,700–$474,400 | Fit: 7.9/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-engineering-manager-workload-management-graphcore-1130779",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] AI Trainer — Kastle | Remote | $30–$30 | Fit: 7.9/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-ai-trainer-kastle-1130776",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Full Stack Developer — ELECTE S.R.L | Remote | $30,000–$50,000 | Fit: 7.5/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-full-stack-developer-electe-s-r-l-1130760",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Entry Level Crypto Market Specialist — ELEMENTAL TERRA | Remote | $50,000–$70,000 | Fit: 6.2/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-entry-level-crypto-market-specialist-elemental-terra-1130759",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Technical Product Manager — LaunchBrightly | Remote | $40,000–$50,000 | Fit: 6.2/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-technical-product-manager-launchbrightly-1130746",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Senior Backend Engineer — Pavago | Remote | Pay unspecified | Fit: 7.0/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-senior-backend-engineer-pavago-1130738",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Contract Data Architect — The Motley Fool | Remote | Pay unspecified | Fit: 7.0/10 | Resume: Technical | https://remoteOK.com/remote-jobs/remote-contract-data-architect-the-motley-fool-1130730",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Senior DevOps Engineer — Marketerx | USA | $130k - $150k | Fit: 7.0/10 | Resume: Technical | https://remotive.com/remote-jobs/devops/senior-devops-engineer-2070150",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Tech Lead Full-Stack Rails Engineer — Mitre Media | USA, Canada, USA timezones | $170k - $200k | Fit: 7.5/10 | Resume: Technical | https://remotive.com/remote-jobs/software-development/tech-lead-full-stack-rails-engineer-2069746",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Tech Lead Databricks Data Engineer — Mitre Media | USA, Canada, USA timezones | $160k - $180k | Fit: 7.5/10 | Resume: Technical | https://remotive.com/remote-jobs/software-development/tech-lead-databricks-data-engineer-2069747",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Full-Stack Developer — ELECTE S.R.L. | Worldwide | $33,6k–$50,4k | Fit: 7.5/10 | Resume: Technical | https://remotive.com/remote-jobs/software-development/full-stack-developer-2088652",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Shopify Engineer — Nebulab | Worldwide | €30k -  €60k | Fit: 7.5/10 | Resume: Technical | https://remotive.com/remote-jobs/software-development/shopify-engineer-2088643",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] Red Team Specialist (Offensive Security) — Lumitekno Kreasi Global | Worldwide | $65K - $80K | Fit: 7.3/10 | Resume: Technical | https://remotive.com/remote-jobs/devops/red-team-specialist-offensive-security-2088637",
-      "requires_matthew": true
-    },
-    {
-      "priority": "high",
-      "description": "[TIER B] AI-Native Cloud Infrastructure Generalist (m/f/d) — shopware AG | Europe, Germany | Pay unspecified | Fit: 7.0/10 | Resume: Technical | https://remotive.com/remote-jobs/ai-ml/ai-native-cloud-infrastructure-generalist-m-f-d-2088634",
-      "requires_matthew": true
-    }
-  ],
+  "summary": "The job intake run from sources including WeWorkRemotely, RemoteOK, and Remotive shows all are \"ok,\" while Adzuna has partial data. Notable is the presence of one new opportunity in category D, which requires attention.",
+  "action_items": [],
   "metrics": {
-    "new_jobs_found": 222,
-    "tier_a": 2,
-    "tier_b": 22,
-    "tier_c": 16,
-    "tier_d": 182,
+    "new_jobs_found": 1,
+    "tier_a": 0,
+    "tier_b": 0,
+    "tier_c": 0,
+    "tier_d": 1,
     "source_status": {
       "WeWorkRemotely": "ok",
       "RemoteOK": "ok",
@@ -146,8 +25,8 @@
       "location": "hot"
     }
   ],
-  "escalate": true,
-  "escalation_reason": "2 Tier A jobs found requiring Matthew's review.",
+  "escalate": false,
+  "escalation_reason": "",
   "task_id": "",
   "confidence": null,
   "urgency": "normal",

@@ -1,13 +1,14 @@
 {
-  "division": "op-sec",
-  "generated_at": "2026-03-20T22:13:54.577633+00:00",
-  "skill": "device-posture",
+  "division": "dev-automation",
+  "generated_at": "2026-03-20T06:00:01.077392+00:00",
+  "skill": "artifact-manager",
   "status": "success",
-  "summary": "Device posture: OK — all security checks passed",
+  "summary": "Artifact cleanup: 0 files archived, 0 cold files purged.",
   "action_items": [],
   "metrics": {
-    "severity": "ok",
-    "issues": 0
+    "archived": 0,
+    "purged": 0,
+    "errors": 0
   },
   "artifact_refs": [],
   "escalate": false,

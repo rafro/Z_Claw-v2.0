@@ -166,21 +166,40 @@ Provider selection is: get the first available provider in the routing chain for
 - Job intake every 3 hours — filter, score, tier
 - Escalate Tier A jobs immediately; include Tier B in next briefing
 - Funding finder daily at 02:00 PM
+- Tier report runs after each intake cycle (not in SOUL.md originally)
 - Resume routing is automatic — never ask Tyler which to use:
   - **Technical resume** → software dev, AI, blockchain, DeFi, fintech, trading, technical analyst
   - **General resume** → telecom sales, customer support, call centers, non-technical
 - NEVER prepare or send applications without Tyler's explicit approval
+- Live job sources: We Work Remotely (RSS), Remote OK, Remotive, Adzuna (3 queries: Web3, high-comp dev, telecom/support)
+- Dead/blocked sources (do not attempt): Web3.career (500/404), CryptoJobsList (403), Remote.co (timeout)
+- Adzuna: use `/us/` endpoint only — `/ca/` returns 0 results (Canada not indexed)
+- Hard-filter scoring: weighted 5-axis (resume compat ×0.25, compensation ×0.25, interview probability ×0.20, career leverage ×0.20, app complexity ×0.10)
 
 ### Division 3 — Dev Automation
 - Repo monitor every 3 hours — TODOs, stale branches, architectural flags
 - Debug agent activates on error log submission
-- Refactor scan, security scan, doc update all run weekly on Sunday (10:00, 11:00, 12:00)
-- Dev digest synthesizes repo + security + refactor packets daily at 03:00 PM → Mission Control
-- Escalate HIGH-priority repo or security flags immediately
+- Refactor scan: weekly **Monday**
+- Doc update: weekly **Wednesday**
+- Security scan: moved to **OP-SEC division** (Sunday 11:00)
+- Artifact manager: daily **03:00 AM** — hot → cold → purge cleanup
+- Dev digest synthesizes repo packets daily at 03:00 PM → Mission Control
+- Escalate HIGH-priority repo flags immediately
 - **Dev Pipeline** (`dev pipeline`): generate → review → test → summarize → finalize → approval gate
   - Always gates on Tyler's approval before output is final
   - Provider: Ollama coder-7B → Gemini → never Claude by default
   - Artifacts written to `divisions/dev/hot/`
+
+### Division 6 — OP-SEC
+- Device posture check daily at **08:00 AM** (Tier 0 — pure Python, no LLM)
+- Threat surface scan daily at **07:00 PM** — unexpected listening ports, scheduled tasks, process anomalies
+- Breach check weekly **Sunday 01:00 PM** — checks emails via HaveIBeenPwned (requires HIBP_API_KEY + `divisions/op-sec/breach_emails.json`)
+- Credential audit weekly **Sunday 02:00 PM** — local only, no API fallback
+- Privacy scan weekly **Sunday 03:00 PM** — local only, no API fallback
+- Security scan weekly **Sunday 11:00 AM** — static analysis of codebase
+- OP-Sec digest weekly **Sunday 04:00 PM** — synthesizes all above into one packet
+- Escalate immediately on HIGH severity: unexpected ports, SYSTEM-level scheduled tasks, breach matches
+- Privacy-sensitive agents (cred-audit, privacy-scan, health-logger) are LOCAL ONLY — never Gemini, never Claude
 
 ### Division 5 — Sentinel
 - Provider health checks (deterministic — no LLM needed)
@@ -190,9 +209,10 @@ Provider selection is: get the first available provider in the routing chain for
 - Runs on demand and on boot; no fixed schedule needed
 
 ### Division 4 — Personal Optimization
-- Health logger prompt at 06:00 PM daily
-- Performance correlation at 08:00 PM daily (health vs trading)
-- Burnout monitor daily at 09:00 PM
+- Health logger prompt at 06:00 PM daily (Llama 3.1 8B — LOCAL ONLY, privacy)
+- Trade tracker: runs after each manual trading session (links to trading-report skill)
+- Performance correlation at 08:00 PM daily (health vs trading, Qwen2.5 7B)
+- Burnout monitor daily at **09:00 AM**
 - Personal digest synthesizes health + perf + burnout at 09:30 PM → packet for 10:00 PM briefing
 - Surface only meaningful patterns — no generic advice
 
@@ -230,19 +250,25 @@ Health check-in is a dashboard widget in the Personal division card (active at 1
 |---|---|---|
 | 03:00 AM | Dev Automation | Artifact cache cleanup (hot → cold → purge) |
 | 06:00 AM | J_Claw | Morning briefing → Mission Control + Discord ping |
-| Every 2h (market hours) | Trading division | Market data scan |
+| 08:00 AM | OP-SEC | Device posture check |
+| 09:00 AM | Personal division | Burnout monitor check |
+| Every 1h (market hours) | Trading division | Market data scan |
 | Every 3h | Opportunity division | Job intake + filter + score + tier |
 | 02:00 PM | Opportunity division | Funding finder scan |
-| 03:00 PM | Dev Automation | Dev digest synthesis (repo + security + refactor) → Mission Control |
+| 03:00 PM | Dev Automation | Dev digest synthesis (repo packets) → Mission Control |
 | 06:00 PM | Personal division | Health log prompt → dashboard widget |
-| 06:00 PM | Trading division | Trading performance report |
+| 06:00 PM | Trading division | Backtester + trading performance report |
+| 07:00 PM | OP-SEC | Threat surface scan |
 | 08:00 PM | Personal division | Performance correlation (health vs trading) |
-| 09:00 PM | Personal division | Burnout monitor check |
 | 09:30 PM | Personal division | Personal digest synthesis (health + perf + burnout) |
 | 10:00 PM | J_Claw | Full daily executive briefing → Mission Control + Discord ping |
-| Sunday 10:00 AM | Dev Automation | Refactor scan |
-| Sunday 11:00 AM | Dev Automation | Security scan |
-| Sunday 12:00 PM | Dev Automation | Architecture doc update |
+| Monday | Dev Automation | Refactor scan |
+| Wednesday | Dev Automation | Architecture doc update |
+| Sunday 11:00 AM | OP-SEC | Security scan (codebase static analysis) |
+| Sunday 01:00 PM | OP-SEC | Breach check (HaveIBeenPwned) |
+| Sunday 02:00 PM | OP-SEC | Credential audit |
+| Sunday 03:00 PM | OP-SEC | Privacy scan |
+| Sunday 04:00 PM | OP-SEC | OP-Sec digest |
 
 ---
 
