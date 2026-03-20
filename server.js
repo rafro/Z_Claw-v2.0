@@ -481,7 +481,7 @@ function handleCommand(cmd) {
     const af = readState('approval-queue.json') || { approvals: [] };
     const a = (af.approvals || []).find(x => x.id === approvalId && x.status === 'pending');
     if (!a) return { type: 'command', command: '/approve', error: 'approval not found' };
-    a.status = 'approved'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'matthew';
+    a.status = 'approved'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'tyler';
     writeState('approval-queue.json', af);
     logActivity('SYS', `Chat command: approved ${approvalId}`, 'green');
     return { type: 'command', command: '/approve', data: { approved: approvalId } };
@@ -492,7 +492,7 @@ function handleCommand(cmd) {
     const af = readState('approval-queue.json') || { approvals: [] };
     const a = (af.approvals || []).find(x => x.id === approvalId && x.status === 'pending');
     if (!a) return { type: 'command', command: '/reject', error: 'approval not found' };
-    a.status = 'rejected'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'matthew';
+    a.status = 'rejected'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'tyler';
     writeState('approval-queue.json', af);
     return { type: 'command', command: '/reject', data: { rejected: approvalId } };
   }
@@ -528,7 +528,7 @@ function handleCommand(cmd) {
   return { type: 'command', command, error: `Unknown command: ${command}. Try /status /approvals /logs /sentinel /divisions /tasks` };
 }
 
-function handleChat(body, res) {
+async function handleChat(body, res) {
   const message = (body.message || '').trim();
   if (!message) return jsonError(res, 400, 'message required');
 
@@ -563,9 +563,9 @@ function handleChat(body, res) {
 
   let conversationText = '';
   history.forEach(m => {
-    conversationText += (m.role === 'user' ? 'Matthew: ' : 'J_Claw: ') + m.content + '\n\n';
+    conversationText += (m.role === 'user' ? 'Tyler: ' : 'J_Claw: ') + m.content + '\n\n';
   });
-  conversationText += 'Matthew: ' + message;
+  conversationText += 'Tyler: ' + message;
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -573,6 +573,75 @@ function handleChat(body, res) {
     'Access-Control-Allow-Origin': '*',
     'Connection': 'keep-alive',
   });
+
+  // ── Try Ollama first (local, free, fast) ──────────────────────────────────
+  const ollamaHost = process.env.OLLAMA_HOST || 'http://localhost:11434';
+  const chatModel  = process.env.MODEL_7B || 'qwen2.5:7b-instruct-q4_K_M';
+  const ollamaMessages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: message },
+  ];
+
+  let ollamaSucceeded = false;
+  try {
+    await new Promise((resolve, reject) => {
+      const ollamaUrl = new url.URL(ollamaHost + '/api/chat');
+      const lib = ollamaUrl.protocol === 'https:' ? https : http;
+      const body = JSON.stringify({ model: chatModel, messages: ollamaMessages, stream: true });
+      const req = lib.request({
+        hostname: ollamaUrl.hostname, port: ollamaUrl.port || (ollamaUrl.protocol === 'https:' ? 443 : 80),
+        path: ollamaUrl.pathname, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      }, (ollamaRes) => {
+        if (ollamaRes.statusCode !== 200) { reject(new Error(`Ollama HTTP ${ollamaRes.statusCode}`)); return; }
+        ollamaSucceeded = true;
+        let fullOllamaResponse = '';
+        let buf = '';
+        ollamaRes.on('data', chunk => {
+          buf += chunk.toString();
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const evt = JSON.parse(line);
+              const text = evt.message && evt.message.content;
+              if (text) {
+                fullOllamaResponse += text;
+                const delta = { type: 'content_block_delta', delta: { type: 'text_delta', text } };
+                res.write(`data: ${JSON.stringify(delta)}\n\n`);
+              }
+            } catch(e) {}
+          }
+        });
+        ollamaRes.on('end', () => {
+          if (fullOllamaResponse) {
+            try {
+              const hist2 = readState('chat-history.json') || { messages: [], last_updated: null };
+              hist2.messages.push({ role: 'user', content: message });
+              hist2.messages.push({ role: 'assistant', content: fullOllamaResponse });
+              if (hist2.messages.length > 100) hist2.messages = hist2.messages.slice(-100);
+              hist2.last_updated = new Date().toISOString();
+              writeState('chat-history.json', hist2);
+            } catch(e) {}
+          }
+          resolve();
+        });
+        ollamaRes.on('error', reject);
+      });
+      req.on('error', reject);
+      req.setTimeout(60000, () => { req.destroy(); reject(new Error('Ollama timeout')); });
+      req.write(body);
+      req.end();
+    });
+  } catch(ollamaErr) {
+    logActivity('SYS', `Ollama chat failed, falling back to Claude CLI: ${ollamaErr.message}`, 'yellow');
+  }
+
+  if (ollamaSucceeded) { res.end(); return; }
+
+  // ── Fallback: Claude CLI ──────────────────────────────────────────────────
 
   // Sanitize to ASCII-safe — SOUL.md may contain Unicode that breaks CP1252 stdin on Windows
   const sanitize = s => s.replace(/[^\x00-\x7F]/g, c => {
