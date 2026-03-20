@@ -148,12 +148,15 @@ def run(division: str, task: str, args: list) -> dict:
     # ── Sentinel (provider + system health) ───────────────────────────────────
     elif division == "sentinel":
         from runtime.orchestrators.sentinel import (
-            run_provider_health, run_queue_monitor, run_sentinel_digest
+            run_provider_health, run_queue_monitor,
+            run_agent_network_monitor, run_sentinel_digest
         )
         if task == "provider-health":
             return run_provider_health()
         if task == "queue-monitor":
             return run_queue_monitor()
+        if task == "agent-network-monitor":
+            return run_agent_network_monitor()
         if task == "sentinel-digest":
             return run_sentinel_digest()
         raise ValueError(f"Unknown task for sentinel: {task}")

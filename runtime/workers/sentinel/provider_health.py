@@ -70,14 +70,21 @@ class ProviderHealthWorker:
                     "last_checked": datetime.now(timezone.utc).isoformat(),
                 }
 
-        # ── Claude (API key check only) ───────────────────────────────────
-        results["claude"] = {
-            "status": "available" if os.getenv("ANTHROPIC_API_KEY", "").strip() else "unavailable",
+        # ── Groq (primary external — key check only) ─────────────────────
+        results["groq"] = {
+            "status": "available" if os.getenv("GROQ_API_KEY", "").strip() else "unavailable",
             "note": "API key presence only — not pinged",
             "last_checked": datetime.now(timezone.utc).isoformat(),
         }
 
-        # ── Gemini (API key check only) ───────────────────────────────────
+        # ── DeepSeek (backup external — key check only) ───────────────────
+        results["deepseek"] = {
+            "status": "available" if os.getenv("DEEPSEEK_API_KEY", "").strip() else "unavailable",
+            "note": "API key presence only — not pinged",
+            "last_checked": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # ── Gemini (last-resort fallback — key check only) ────────────────
         results["gemini"] = {
             "status": "available" if os.getenv("GEMINI_API_KEY", "").strip() else "unavailable",
             "note": "API key presence only — not pinged",

@@ -370,16 +370,39 @@ function handleGetTradingCycle(res) {
     const strat = cycleData.active_strategy || {};
     const recentTrades = (cycleData.trade_log || []).slice(-10).reverse();
     const weekly = (cycleData.weekly_reviews || []).slice(-3);
+    const lastWeekly = weekly[weekly.length - 1] || {};
+
+    // Staleness check
+    const statFile = path2.join(agentNetworkState, files[0].f);
+    const mtimeMs  = fs2.statSync(statFile).mtimeMs;
+    const hoursSince = (Date.now() - mtimeMs) / 3_600_000;
+    const stale = hoursSince > 6;
+
+    // Today's trades
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayTrades = (cycleData.trade_log || []).filter(t => {
+      if (!t.timestamp) return false;
+      return new Date(t.timestamp).toISOString().slice(0, 10) === todayStr;
+    });
 
     jsonOk(res, {
       available: true,
       cycle_number:     cycleData.cycle_number,
       risk_multiplier:  cycleData.risk_multiplier,
+      stale,
+      hours_since_update: Math.round(hoursSince * 10) / 10,
+      last_modified: new Date(mtimeMs).toISOString(),
       active_strategy: {
         name:      strat.strategy_name || 'None',
         sharpe:    strat.sharpe,
         win_rate:  strat.win_rate ? Math.round(strat.win_rate * 100) : null,
         avg_r:     strat.avg_r,
+      },
+      agents: {
+        strategy_builder: { role: 'Generates 100 strategies/cycle',      last_output: `Cycle ${cycleData.cycle_number}` },
+        backtester:       { role: 'Evaluates & selects top 3 strategies', last_output: strat.strategy_name || '—' },
+        trader:           { role: 'Executes trades with risk controls',   last_output: `${todayTrades.length} trade(s) today` },
+        trading_coach:    { role: 'Reviews performance, adjusts risk',    last_output: lastWeekly.health_tier ? `Health: ${lastWeekly.health_tier}` : 'No review yet' },
       },
       recent_trades: recentTrades.map(t => ({
         symbol:     t.symbol,
