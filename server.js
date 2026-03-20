@@ -140,7 +140,7 @@ const SKILL_XP = {
   'funding-finder':   { division: 'opportunity',    amount: 5  },
 };
 
-const PYTHON_EXE = 'C:/Users/Matty/AppData/Local/Programs/Python/Python312/python.exe';
+const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
 
 // Maps skill name → divState (orchestrator-state.json key) + division + task (run_division.py args)
 // divState uses underscore (legacy state file key); division uses hyphen (run_division.py arg)
@@ -457,9 +457,98 @@ function stripSoulForChat(soul) {
   return result.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// ── Operator command parser (no LLM needed) ──
+function handleCommand(cmd) {
+  const parts = cmd.trim().split(/\s+/);
+  const command = parts[0].toLowerCase();
+
+  if (command === '/status') {
+    const os = readState('orchestrator-state.json') || { divisions: {} };
+    const qf = readState('task-queue.json') || { tasks: [] };
+    const queued = (qf.tasks || []).filter(t => t.status === 'queued').length;
+    const running = (qf.tasks || []).filter(t => t.status === 'running').length;
+    return { type: 'command', command: '/status', data: { divisions: os.divisions, task_queue: { queued, running } } };
+  }
+
+  if (command === '/approvals') {
+    const af = readState('approval-queue.json') || { approvals: [] };
+    const pending = (af.approvals || []).filter(a => a.status === 'pending');
+    return { type: 'command', command: '/approvals', data: { pending, count: pending.length } };
+  }
+
+  if (command === '/approve' && parts[1]) {
+    const approvalId = parts[1];
+    const af = readState('approval-queue.json') || { approvals: [] };
+    const a = (af.approvals || []).find(x => x.id === approvalId && x.status === 'pending');
+    if (!a) return { type: 'command', command: '/approve', error: 'approval not found' };
+    a.status = 'approved'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'matthew';
+    writeState('approval-queue.json', af);
+    logActivity('SYS', `Chat command: approved ${approvalId}`, 'green');
+    return { type: 'command', command: '/approve', data: { approved: approvalId } };
+  }
+
+  if (command === '/reject' && parts[1]) {
+    const approvalId = parts[1];
+    const af = readState('approval-queue.json') || { approvals: [] };
+    const a = (af.approvals || []).find(x => x.id === approvalId && x.status === 'pending');
+    if (!a) return { type: 'command', command: '/reject', error: 'approval not found' };
+    a.status = 'rejected'; a.resolved_at = new Date().toISOString(); a.resolved_by = 'matthew';
+    writeState('approval-queue.json', af);
+    return { type: 'command', command: '/reject', data: { rejected: approvalId } };
+  }
+
+  if (command === '/logs') {
+    try {
+      const auditFile = path.join(ROOT, 'logs', 'audit.jsonl');
+      if (!fs.existsSync(auditFile)) return { type: 'command', command: '/logs', data: { entries: [] } };
+      const lines = fs.readFileSync(auditFile, 'utf8').trim().split('\n').filter(Boolean);
+      const entries = lines.slice(-20).map(l => { try { return JSON.parse(l); } catch { return null; }}).filter(Boolean);
+      return { type: 'command', command: '/logs', data: { entries } };
+    } catch(e) { return { type: 'command', command: '/logs', error: e.message }; }
+  }
+
+  if (command === '/sentinel') {
+    try {
+      const sp = path.join(ROOT, 'divisions', 'sentinel', 'packets', 'provider-health.json');
+      if (fs.existsSync(sp)) return { type: 'command', command: '/sentinel', data: JSON.parse(fs.readFileSync(sp, 'utf8')) };
+    } catch(e) {}
+    return { type: 'command', command: '/sentinel', data: { message: 'No sentinel data — run: sentinel provider-health' } };
+  }
+
+  if (command === '/divisions') {
+    const os = readState('orchestrator-state.json') || { divisions: {} };
+    return { type: 'command', command: '/divisions', data: os.divisions || {} };
+  }
+
+  if (command === '/tasks') {
+    const qf = readState('task-queue.json') || { tasks: [] };
+    return { type: 'command', command: '/tasks', data: { tasks: (qf.tasks || []).slice(-20) } };
+  }
+
+  return { type: 'command', command, error: `Unknown command: ${command}. Try /status /approvals /logs /sentinel /divisions /tasks` };
+}
+
 function handleChat(body, res) {
   const message = (body.message || '').trim();
   if (!message) return jsonError(res, 400, 'message required');
+
+  // ── Command handling (deterministic, no LLM) ──
+  if (message.startsWith('/')) {
+    const result = handleCommand(message);
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
+      'Connection': 'keep-alive',
+    });
+    const text = result.error
+      ? `Command error: ${result.error}`
+      : `\`\`\`json\n${JSON.stringify(result.data, null, 2)}\n\`\`\``;
+    const delta = { type: 'content_block_delta', delta: { type: 'text_delta', text } };
+    res.write(`data: ${JSON.stringify(delta)}\n\n`);
+    res.end();
+    return;
+  }
 
   let soul = '';
   try { soul = fs.readFileSync(path.join(ROOT, 'SOUL.md'), 'utf8'); } catch(e) {}
@@ -485,24 +574,53 @@ function handleChat(body, res) {
     'Connection': 'keep-alive',
   });
 
-  const claude = spawn('claude', [
+  // Sanitize to ASCII-safe — SOUL.md may contain Unicode that breaks CP1252 stdin on Windows
+  const sanitize = s => s.replace(/[^\x00-\x7F]/g, c => {
+    const map = { '\u2190':'<-','\u2192':'->','\u2014':'--','\u2013':'-','\u2018':"'",'\u2019':"'",'\u201c':'"','\u201d':'"','\u2022':'*','\u2026':'...' };
+    return map[c] || '';
+  });
+  const safePrompt = sanitize(systemPrompt);
+  const safeConversation = sanitize(conversationText);
+
+  const model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
+  const claudeCli = 'C:\\Users\\Tyler\\AppData\\Roaming\\npm\\node_modules\\@anthropic-ai\\claude-code\\cli.js';
+
+  // Strip ANTHROPIC_API_KEY from child env — the OAuth token confuses the CLI;
+  // let it use its own ~/.claude/ session instead.
+  const childEnv = { ...process.env };
+  delete childEnv.ANTHROPIC_API_KEY;
+  childEnv.PATH = (childEnv.PATH || '') + ';C:\\Users\\Tyler\\AppData\\Roaming\\npm';
+
+  const claudeArgs = [
+    claudeCli,
     '--print',
-    '--system-prompt', systemPrompt,
-    '--model', 'claude-sonnet-4-6',
+    '--system-prompt', safePrompt,
+    '--model', model,
     '--output-format', 'stream-json',
-    '--include-partial-messages',
     '--verbose',
-    '--no-session-persistence',
-  ], { windowsHide: true });
+  ];
+
+  const debugLog = path.join(ROOT, 'logs', 'chat-debug.log');
+  const debugEntry = `\n[${new Date().toISOString()}] spawn start\n`;
+  try { fs.appendFileSync(debugLog, debugEntry); } catch(e) {}
+
+  const claude = spawn(process.execPath, claudeArgs, {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    windowsHide: true,
+    env: childEnv,
+  });
 
   let fullResponse = '';
   let stdoutBuf = '';
+  let stderrBuf = '';
 
-  claude.stdin.write(conversationText);
+  claude.stdin.write(safeConversation, 'utf8');
   claude.stdin.end();
 
   claude.stdout.on('data', chunk => {
-    stdoutBuf += chunk.toString();
+    const s = chunk.toString();
+    stdoutBuf += s;
+    try { fs.appendFileSync(debugLog, `[stdout] ${s}`); } catch(e) {}
     const lines = stdoutBuf.split('\n');
     stdoutBuf = lines.pop();
     for (const line of lines) {
@@ -510,11 +628,22 @@ function handleChat(body, res) {
       if (!trimmed) continue;
       try {
         const evt = JSON.parse(trimmed);
+        // streaming delta format
         if (evt.type === 'stream_event' && evt.event) {
           const e = evt.event;
           if (e.type === 'content_block_delta' && e.delta && e.delta.type === 'text_delta' && e.delta.text) {
+            fullResponse += e.delta.text;
             const delta = { type: 'content_block_delta', delta: { type: 'text_delta', text: e.delta.text } };
             res.write(`data: ${JSON.stringify(delta)}\n\n`);
+          }
+        }
+        // verbose format — full assistant message in one object
+        if (evt.type === 'assistant' && evt.message && evt.message.content) {
+          for (const block of evt.message.content) {
+            if (block.type === 'text' && block.text) {
+              const delta = { type: 'content_block_delta', delta: { type: 'text_delta', text: block.text } };
+              res.write(`data: ${JSON.stringify(delta)}\n\n`);
+            }
           }
         }
         if (evt.type === 'result' && evt.result) fullResponse = evt.result;
@@ -522,9 +651,14 @@ function handleChat(body, res) {
     }
   });
 
-  claude.stderr.on('data', () => {});
+  claude.stderr.on('data', chunk => {
+    const s = chunk.toString();
+    stderrBuf += s;
+    try { fs.appendFileSync(debugLog, `[stderr] ${s}`); } catch(e) {}
+  });
 
   claude.on('close', code => {
+    try { fs.appendFileSync(debugLog, `[close] exit=${code} fullResponse=${fullResponse.length}b stderr=${stderrBuf.slice(0,300)}\n`); } catch(e) {}
     if (fullResponse) {
       try {
         const hist2 = readState('chat-history.json') || { messages: [], last_updated: null };
@@ -536,14 +670,19 @@ function handleChat(body, res) {
       } catch(e) {}
     }
     if (code !== 0 && !fullResponse) {
-      const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: 'ERROR — J_Claw did not respond (exit ' + code + ')' } };
+      const errDetail = stderrBuf.slice(0, 300) || `exit ${code}`;
+      const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: `ERROR — J_Claw: ${errDetail}` } };
+      res.write(`data: ${JSON.stringify(errEvt)}\n\n`);
+    } else if (!fullResponse) {
+      const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: 'ERROR — J_Claw returned no output (exit 0). Check logs/chat-debug.log' } };
       res.write(`data: ${JSON.stringify(errEvt)}\n\n`);
     }
     res.end();
   });
 
   claude.on('error', err => {
-    const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: 'ERROR — ' + err.message } };
+    try { fs.appendFileSync(debugLog, `[error] ${err.message}\n`); } catch(e) {}
+    const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: 'ERROR — spawn: ' + err.message } };
     res.write(`data: ${JSON.stringify(errEvt)}\n\n`);
     res.end();
   });
@@ -646,12 +785,131 @@ const server = http.createServer(async (req, res) => {
       if (method === 'POST' && reqPath === '/api/chat/clear') {
         return handleChatClear(res);
       }
+      // ── Mission Control: Task Queue ──────────────────────────────────────
+      if (method === 'GET' && reqPath === '/api/tasks') {
+        try {
+          const qf = path.join(STATE_DIR, 'task-queue.json');
+          const data = fs.existsSync(qf) ? JSON.parse(fs.readFileSync(qf, 'utf8')) : { tasks: [] };
+          const status = new url.URL('http://x' + req.url).searchParams.get('status');
+          let tasks = data.tasks || [];
+          if (status) tasks = tasks.filter(t => t.status === status);
+          return jsonOk(res, { tasks: tasks.slice(-100) });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      if (method === 'GET' && reqPath.startsWith('/api/tasks/')) {
+        const taskId = reqPath.split('/')[3];
+        try {
+          const qf = path.join(STATE_DIR, 'task-queue.json');
+          const data = fs.existsSync(qf) ? JSON.parse(fs.readFileSync(qf, 'utf8')) : { tasks: [] };
+          const task = (data.tasks || []).find(t => t.id === taskId);
+          if (!task) return jsonError(res, 404, 'task not found');
+          return jsonOk(res, task);
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      if (method === 'POST' && reqPath === '/api/tasks') {
+        const body = await parseBody(req);
+        if (!body.type || !body.division) return jsonError(res, 400, 'type and division required');
+        const task = {
+          id: simpleId(),
+          type: body.type,
+          division: body.division,
+          payload: body.payload || {},
+          status: 'queued',
+          submitted_at: new Date().toISOString(),
+        };
+        try {
+          const qf = path.join(STATE_DIR, 'task-queue.json');
+          const data = fs.existsSync(qf) ? JSON.parse(fs.readFileSync(qf, 'utf8')) : { tasks: [] };
+          data.tasks.push(task);
+          fs.writeFileSync(qf, JSON.stringify(data, null, 2));
+          logActivity('SYS', `Task submitted: ${body.type} / ${body.division}`, 'blue');
+          return jsonOk(res, { ok: true, task_id: task.id });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      // ── Mission Control: Approvals ────────────────────────────────────────
+      if (method === 'GET' && reqPath === '/api/approvals') {
+        try {
+          const af = path.join(STATE_DIR, 'approval-queue.json');
+          const data = fs.existsSync(af) ? JSON.parse(fs.readFileSync(af, 'utf8')) : { approvals: [] };
+          const pending = (data.approvals || []).filter(a => a.status === 'pending');
+          return jsonOk(res, { approvals: pending });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      if (method === 'POST' && reqPath.match(/^\/api\/approvals\/[^/]+$/)) {
+        const approvalId = reqPath.split('/')[3];
+        const body = await parseBody(req);
+        const decision = body.decision;
+        if (!['approve', 'reject', 'escalate'].includes(decision)) {
+          return jsonError(res, 400, 'decision must be approve|reject|escalate');
+        }
+        try {
+          const af = path.join(STATE_DIR, 'approval-queue.json');
+          if (!fs.existsSync(af)) return jsonError(res, 404, 'approval-queue not found');
+          const data = JSON.parse(fs.readFileSync(af, 'utf8'));
+          const statusMap = { approve: 'approved', reject: 'rejected', escalate: 'escalated' };
+          const a = (data.approvals || []).find(x => x.id === approvalId && x.status === 'pending');
+          if (!a) return jsonError(res, 404, 'approval not found or already resolved');
+          a.status = statusMap[decision];
+          a.resolved_at = new Date().toISOString();
+          a.resolved_by = 'matthew';
+          fs.writeFileSync(af, JSON.stringify(data, null, 2));
+          logActivity('SYS', `Approval ${approvalId}: ${decision}`, 'green');
+          return jsonOk(res, { ok: true, approval_id: approvalId, status: a.status });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      // ── Sentinel Health ───────────────────────────────────────────────────
+      if (method === 'GET' && reqPath === '/api/sentinel/health') {
+        try {
+          const sentinelPkt = path.join(__dirname, 'divisions', 'sentinel', 'packets', 'provider-health.json');
+          if (fs.existsSync(sentinelPkt)) {
+            return jsonOk(res, JSON.parse(fs.readFileSync(sentinelPkt, 'utf8')));
+          }
+          return jsonOk(res, { status: 'no_data', message: 'Run sentinel provider-health first' });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      // ── Audit Log ─────────────────────────────────────────────────────────
+      if (method === 'GET' && reqPath === '/api/logs/audit') {
+        try {
+          const auditFile = path.join(__dirname, 'logs', 'audit.jsonl');
+          if (!fs.existsSync(auditFile)) return jsonOk(res, { entries: [] });
+          const lines = fs.readFileSync(auditFile, 'utf8').trim().split('\n').filter(Boolean);
+          const entries = lines.slice(-100).map(l => { try { return JSON.parse(l); } catch { return null; }}).filter(Boolean);
+          return jsonOk(res, { entries });
+        } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      if (method === 'GET' && reqPath === '/api/briefing') {
+        const briefing = readState('briefing.json');
+        return jsonOk(res, briefing || { content: null, last_generated: null });
+      }
+      if (method === 'POST' && reqPath === '/api/briefing/generate') {
+        compileBriefing('manual');
+        return jsonOk(res, { ok: true });
+      }
       if (method === 'POST' && reqPath === '/api/briefing') {
         const body = await parseBody(req);
         const content = body.content || '';
         if (!content) return jsonError(res, 400, 'content required');
-        writeState('briefing.json', { content, last_generated: new Date().toISOString() });
+        writeState('briefing.json', { content, type: body.type || 'manual', last_generated: new Date().toISOString() });
         return jsonOk(res, { ok: true });
+      }
+      // Health check-in: POST /api/health-checkin { reply: "..." }
+      if (method === 'GET' && reqPath === '/api/health-prompt') {
+        const prompt = readState('health-prompt.json');
+        return jsonOk(res, prompt || { active: false });
+      }
+      if (method === 'POST' && reqPath === '/api/health-checkin') {
+        const body = await parseBody(req);
+        const reply = (body.reply || '').trim();
+        if (!reply) return jsonError(res, 400, 'reply required');
+        // Dismiss the prompt
+        writeState('health-prompt.json', { active: false, last_submitted: new Date().toISOString() });
+        // Run health-logger with reply text as extra arg
+        logActivity('PERSONAL', 'Health check-in received — running health-logger...', 'purple');
+        runSkillViaPython('health-logger', 'PERSONAL', [reply]).then(ok => {
+          if (ok) logActivity('PERSONAL', 'Health log saved successfully', 'green');
+          else logActivity('PERSONAL', 'Health-logger failed — check logs', 'red');
+        });
+        return jsonOk(res, { ok: true, message: 'Health log queued' });
       }
       return jsonError(res, 404, 'unknown endpoint');
     } catch (e) {
@@ -667,7 +925,7 @@ const server = http.createServer(async (req, res) => {
 // ─────────────────────────────────────────────
 // Spawns run_division.py directly — no SKILL.md, no Claude subprocess.
 // XP is granted by the Python skill itself via runtime/tools/xp.py — no double-grant here.
-function runSkillViaPython(skillName, logDiv) {
+function runSkillViaPython(skillName, logDiv, extraArgs = []) {
   return new Promise(resolve => {
     const mapping = SKILL_TASK_MAP[skillName];
     if (!mapping) {
@@ -678,7 +936,7 @@ function runSkillViaPython(skillName, logDiv) {
     updateDivisionState(mapping.divState, 'running');
 
     const runDivisionPath = path.join(ROOT, 'run_division.py');
-    const proc = spawn(PYTHON_EXE, [runDivisionPath, mapping.division, mapping.task], {
+    const proc = spawn(PYTHON_EXE, [runDivisionPath, mapping.division, mapping.task, ...extraArgs], {
       env: { ...process.env },
       windowsHide: true,
       cwd: ROOT,
@@ -798,11 +1056,26 @@ async function runJobIntakeNative() {
   seen.total_seen = (seen.total_seen || 0) + newJobs.length;
   writeState('jobs-seen.json', seen);
 
+  // ── Write new jobs to applications.json for dashboard display ──
+  if (newJobs.length > 0) {
+    const apps = readState('applications.json') || { pipeline: [], stats: { pending_review: 0, applied: 0, interviews: 0, rejected: 0 } };
+    if (!apps.pipeline) apps.pipeline = [];
+    if (!apps.stats) apps.stats = { pending_review: 0, applied: 0, interviews: 0, rejected: 0 };
+    for (const job of newJobs) {
+      apps.pipeline.push({ ...job, status: 'pending_review', score: null, added_at: new Date().toISOString() });
+    }
+    // Keep pipeline from growing unbounded — cap at 500 most recent
+    if (apps.pipeline.length > 500) apps.pipeline = apps.pipeline.slice(-500);
+    apps.stats.pending_review = apps.pipeline.filter(j => j.status === 'pending_review').length;
+    apps.stats.applied        = apps.pipeline.filter(j => j.status === 'applied').length;
+    apps.stats.interviews     = apps.pipeline.filter(j => j.status === 'interview').length;
+    apps.stats.rejected       = apps.pipeline.filter(j => j.status === 'rejected' || j.status === 'skipped').length;
+    writeState('applications.json', apps);
+  }
+
   logActivity('OPPS', `job-intake complete — ${newJobs.length} new jobs found (${seen.total_seen} total seen)`, 'blue');
   updateDivisionState('opportunity', 'idle');
   grantDivisionXP('opportunity', 10);
-
-  // hard-filter scoring is handled by the Python pipeline when triggered via control queue
 }
 
 // ─────────────────────────────────────────────
@@ -881,31 +1154,154 @@ async function processControlQueue() {
 setInterval(processControlQueue, 2 * 60 * 1000);
 
 // ─────────────────────────────────────────────
-// ── SCHEDULER NOTE ──
+// ── FULL DIVISION SCHEDULE ──
 // ─────────────────────────────────────────────
-// All skill scheduling (job-intake, repo-monitor, health-logger, trading-report,
-// funding-finder, daily-briefing, morning-briefing) is handled by OpenClaw's
-// native cron system at ~/.openclaw/cron/jobs.json — those run with full
-// Telegram access and SOUL.md context via the OpenClaw gateway.
-//
-// server.js handles only:
-//   1. The control queue processor (Run Now buttons from Mission Control)
-//   2. The native job-intake fetch on a 6h schedule (zero token cost)
-//
-// Do NOT add skill crons here — they would double-fire alongside OpenClaw's
-// own crons and run without Telegram tools.
+// All division tasks run here on their SOUL.md schedule.
+// Mission Control is the primary interface — Discord webhook fires on escalations.
+// Health check-in is handled via the dashboard widget (no Telegram needed).
 
 const TZ = 'America/Halifax';
 
-// job-intake native fetch — every 6h. Zero token cost.
-// OpenClaw's own job-intake cron runs every 3h via Claude (with Telegram).
-// This server.js run handles the fetch+dedup only; hard-filter is skipped
-// here since OpenClaw's cron already runs hard-filter with Telegram delivery.
-cron.schedule('7 */6 * * *', async () => {
-  await runJobIntakeNative();
+// ── Briefing compiler ──────────────────────────────────────────────────────
+function compileBriefing(type) {
+  try {
+    const divs = ['opportunity', 'trading', 'personal', 'dev-automation', 'op-sec', 'sentinel'];
+    const sections = [];
+    const escalations = [];
+
+    for (const div of divs) {
+      const packetDir = path.join(ROOT, 'divisions', div, 'packets');
+      if (!fs.existsSync(packetDir)) continue;
+      const files = fs.readdirSync(packetDir).filter(f => f.endsWith('.json'));
+      for (const f of files) {
+        try {
+          const pkt = JSON.parse(fs.readFileSync(path.join(packetDir, f), 'utf8'));
+          if (pkt.escalate && pkt.escalation_reason) escalations.push(`[${div.toUpperCase()}] ${pkt.escalation_reason}`);
+          if (pkt.summary) sections.push(`**${div.toUpperCase()} / ${pkt.skill}** (${pkt.status})\n${pkt.summary}`);
+        } catch(e) {}
+      }
+    }
+
+    const timestamp = new Date().toISOString();
+    const header = type === 'morning'
+      ? `# Morning Briefing — ${new Date().toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`
+      : `# Daily Executive Briefing — ${new Date().toLocaleDateString('en-CA')}`;
+
+    const escalationBlock = escalations.length
+      ? `\n## ⚡ Escalations\n${escalations.map(e => `- ${e}`).join('\n')}\n`
+      : '\n## Escalations\nNone.\n';
+
+    const content = [header, escalationBlock, '## Division Summary', ...sections].join('\n\n');
+
+    writeState('briefing.json', { content, type, last_generated: timestamp });
+    logActivity('SYS', `${type} briefing compiled (${sections.length} division reports)`, 'blue');
+
+    // Discord ping so Matthew knows it's ready
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    if (webhookUrl) {
+      const msg = type === 'morning'
+        ? `**J_Claw Morning Briefing** is ready — open Mission Control to review.`
+        : `**J_Claw Daily Briefing** is ready — ${escalations.length} escalation(s). Open Mission Control.`;
+      const body = JSON.stringify({ content: msg });
+      const parsed = new url.URL(webhookUrl);
+      const lib = parsed.protocol === 'https:' ? https : http;
+      const req = lib.request({ hostname: parsed.hostname, path: parsed.pathname + parsed.search,
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'J_Claw/1.0', 'Content-Length': Buffer.byteLength(body) }
+      }, () => {});
+      req.on('error', () => {});
+      req.write(body);
+      req.end();
+    }
+  } catch(e) {
+    logActivity('SYS', `briefing compile failed: ${e.message}`, 'red');
+  }
+}
+
+// ── Opportunity Division ───────────────────────────────────────────────────
+// Job intake + hard-filter every 3 hours
+cron.schedule('7 */3 * * *', async () => {
+  logActivity('OPPS', 'Scheduled job-intake starting...', 'blue');
+  await runSkillViaPython('job-intake', 'OPPS');
 }, { timezone: TZ });
 
-// ── Live context file — refreshed every 5 minutes for Telegram J_Claw ──
+// Funding finder daily at 2:00 PM
+cron.schedule('0 14 * * *', async () => {
+  await runSkillViaPython('funding-finder', 'OPPS');
+}, { timezone: TZ });
+
+// ── Trading Division ───────────────────────────────────────────────────────
+// Market scan every 2 hours during market hours Mon–Fri (9 AM – 5 PM)
+cron.schedule('0 9,11,13,15,17 * * 1-5', async () => {
+  await runSkillViaPython('market-scan', 'TRADING');
+}, { timezone: TZ });
+
+// Trading performance report daily at 6:00 PM
+cron.schedule('0 18 * * *', async () => {
+  await runSkillViaPython('trading-report', 'TRADING');
+}, { timezone: TZ });
+
+// ── Personal Division ──────────────────────────────────────────────────────
+// Health check-in prompt at 6:00 PM — write active prompt to state for dashboard widget
+cron.schedule('0 18 * * *', () => {
+  writeState('health-prompt.json', {
+    active: true,
+    prompted_at: new Date().toISOString(),
+    message: "How are you feeling today? (sleep, energy, mood, any aches — whatever's relevant)",
+  });
+  logActivity('PERSONAL', 'Health check-in prompt active', 'purple');
+}, { timezone: TZ });
+
+// Performance correlation daily at 8:00 PM
+cron.schedule('0 20 * * *', async () => {
+  await runSkillViaPython('perf-correlation', 'PERSONAL');
+}, { timezone: TZ });
+
+// Burnout monitor daily at 9:00 PM
+cron.schedule('0 21 * * *', async () => {
+  await runSkillViaPython('burnout-monitor', 'PERSONAL');
+}, { timezone: TZ });
+
+// Personal digest daily at 9:30 PM
+cron.schedule('30 21 * * *', async () => {
+  await runSkillViaPython('personal-digest', 'PERSONAL');
+}, { timezone: TZ });
+
+// ── Dev Automation Division ────────────────────────────────────────────────
+// Dev digest daily at 3:00 PM
+cron.schedule('0 15 * * *', async () => {
+  await runSkillViaPython('dev-digest', 'DEV');
+}, { timezone: TZ });
+
+// Sunday scans
+cron.schedule('0 10 * * 0', async () => {
+  await runSkillViaPython('refactor-scan', 'DEV');
+}, { timezone: TZ });
+
+cron.schedule('0 11 * * 0', async () => {
+  await runSkillViaPython('security-scan', 'DEV');
+}, { timezone: TZ });
+
+cron.schedule('0 12 * * 0', async () => {
+  await runSkillViaPython('doc-update', 'DEV');
+}, { timezone: TZ });
+
+// Artifact cleanup daily at 3:00 AM
+cron.schedule('0 3 * * *', async () => {
+  await runSkillViaPython('artifact-manager', 'DEV');
+}, { timezone: TZ });
+
+// ── Briefings ──────────────────────────────────────────────────────────────
+// Morning briefing at 6:00 AM
+cron.schedule('0 6 * * *', () => {
+  compileBriefing('morning');
+}, { timezone: TZ });
+
+// Full daily executive briefing at 10:00 PM
+cron.schedule('0 22 * * *', () => {
+  compileBriefing('daily');
+}, { timezone: TZ });
+
+// ── Live context file — refreshed every 5 minutes ──────────────────────────
 function writeLiveContext() {
   try {
     const context = buildContext();
@@ -918,6 +1314,16 @@ writeLiveContext();
 setInterval(writeLiveContext, 5 * 60 * 1000);
 
 // ── Startup ──
+// On startup, reset any queue items stuck as "running" (from a crashed/restarted server)
+try {
+  const ctrl = readState('control.json');
+  if (ctrl && ctrl.queue) {
+    let fixed = 0;
+    ctrl.queue.forEach(e => { if (e.status === 'running') { e.status = 'queued'; fixed++; } });
+    if (fixed > 0) { writeState('control.json', ctrl); console.log(`  [SYS] Reset ${fixed} stuck queue item(s) to queued`); }
+  }
+} catch(e) {}
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('  ==========================================');
@@ -927,8 +1333,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('  Server    : http://localhost:' + PORT);
   console.log('  Dashboard : http://localhost:' + PORT + '/dashboard');
   console.log('');
-  console.log('  Scheduler : node-cron active (1 schedule — job-intake every 6h)');
+  console.log('  Scheduler : node-cron active — full SOUL.md schedule (14 crons)');
   console.log('  Queue     : polling every 2 min (zero-cost when idle)');
+  console.log('  Timezone  : America/Halifax');
   console.log('');
   console.log('  For persistence across reboots:');
   console.log('    npm i -g pm2 && pm2 start server.js --name openclaw');

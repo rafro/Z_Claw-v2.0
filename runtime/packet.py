@@ -24,6 +24,14 @@ def build(
     artifact_refs: list = None,
     escalate: bool = False,
     escalation_reason: str = "",
+    # Mission Control fields
+    task_id: str = "",
+    confidence: float = None,  # 0.0–1.0
+    urgency: str = "normal",   # "low" | "normal" | "high" | "critical"
+    recommended_action: str = "",
+    provider_used: str = "",   # "ollama:model" | "gemini" | "claude" | "deterministic"
+    approval_required: bool = False,
+    approval_status: str = "",
 ) -> dict:
     return {
         "division":          division,
@@ -36,16 +44,39 @@ def build(
         "artifact_refs":     artifact_refs or [],
         "escalate":          escalate,
         "escalation_reason": escalation_reason,
+        # Mission Control fields
+        "task_id":           task_id,
+        "confidence":        confidence,
+        "urgency":           urgency,
+        "recommended_action": recommended_action,
+        "provider_used":     provider_used,
+        "approval_required": approval_required,
+        "approval_status":   approval_status,
     }
 
 
 def write(pkt: dict) -> Path:
-    """Write packet to divisions/{division}/packets/{skill}.json"""
+    """Write packet to divisions/{division}/packets/{skill}.json.
+    If escalate=True, also sends a Discord DM to Tyler.
+    """
     out = packet_path(pkt["division"], pkt["skill"])
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(pkt, f, indent=2, ensure_ascii=False)
     log.info("Packet written: %s", out)
+
+    if pkt.get("escalate") and pkt.get("escalation_reason"):
+        try:
+            from runtime.tools.discord_notify import notify_escalation
+            notify_escalation(
+                division=pkt["division"],
+                skill=pkt["skill"],
+                reason=pkt["escalation_reason"],
+                action_items=pkt.get("action_items"),
+            )
+        except Exception as e:
+            log.warning("Discord notification failed (non-fatal): %s", e)
+
     return out
 
 

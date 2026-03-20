@@ -18,6 +18,10 @@ Usage:
   python run_division.py dev-automation doc-update
   python run_division.py dev-automation artifact-manager
   python run_division.py dev-automation dev-digest
+  python run_division.py dev pipeline '<json_spec>'
+  python run_division.py sentinel provider-health
+  python run_division.py sentinel queue-monitor
+  python run_division.py sentinel sentinel-digest
   python run_division.py realm-keeper grant-skill <skill_name>
   python run_division.py realm-keeper grant-base <amount> [reason]
 """
@@ -126,6 +130,33 @@ def run(division: str, task: str, args: list) -> dict:
         if task == "dev-digest":
             return run_dev_digest()
         raise ValueError(f"Unknown task for dev-automation: {task}")
+
+    # ── Dev Pipeline (new — supplements dev-automation) ───────────────────────
+    elif division == "dev":
+        from runtime.orchestrators.dev import run_dev_pipeline
+        if task == "pipeline":
+            import json as _json
+            spec_str = args[0] if args else "{}"
+            try:
+                spec = _json.loads(spec_str)
+            except _json.JSONDecodeError:
+                # Treat bare string as description
+                spec = {"description": spec_str}
+            return run_dev_pipeline(spec)
+        raise ValueError(f"Unknown task for dev: {task}")
+
+    # ── Sentinel (provider + system health) ───────────────────────────────────
+    elif division == "sentinel":
+        from runtime.orchestrators.sentinel import (
+            run_provider_health, run_queue_monitor, run_sentinel_digest
+        )
+        if task == "provider-health":
+            return run_provider_health()
+        if task == "queue-monitor":
+            return run_queue_monitor()
+        if task == "sentinel-digest":
+            return run_sentinel_digest()
+        raise ValueError(f"Unknown task for sentinel: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────
     elif division == "realm-keeper":

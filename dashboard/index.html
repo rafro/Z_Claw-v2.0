@@ -854,10 +854,20 @@
       <div class="div-row">NEXT: <strong>18:00 daily</strong></div>
       <button class="run-btn" id="run-personal" onclick="runSkill('health-logger','personal')">▶ RUN</button>
       <div class="agent-list">
-        <div class="agent-row"><span class="agent-name">health-logger</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-health-logger">18:00</span><span style="font-size:6px;color:var(--overlay);margin:0 3px;">via TG</span><div class="toggle on" data-division="personal" data-agent="health-logger"></div></div>
+        <div class="agent-row"><span class="agent-name">health-logger</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-health-logger">18:00</span><div class="toggle on" data-division="personal" data-agent="health-logger"></div></div>
         <div class="agent-row"><span class="agent-name">perf-correlation</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-perf-correlation">20:00</span><button class="skill-run-btn" onclick="runSkill('perf-correlation','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="perf-correlation"></div></div>
         <div class="agent-row"><span class="agent-name">burnout-monitor</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-burnout-monitor">21:00</span><button class="skill-run-btn" onclick="runSkill('burnout-monitor','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="burnout-monitor"></div></div>
         <div class="agent-row"><span class="agent-name">personal-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-personal-digest">21:30</span><button class="skill-run-btn" onclick="runSkill('personal-digest','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="personal-digest"></div></div>
+      </div>
+      <!-- Health check-in widget — shown when prompt is active -->
+      <div id="health-checkin-widget" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--purple);border-radius:4px;background:rgba(198,160,246,0.06);">
+        <div style="font-size:9px;color:var(--purple);letter-spacing:1px;margin-bottom:6px;">⚕ HEALTH CHECK-IN</div>
+        <div id="health-checkin-prompt" style="font-size:10px;color:var(--text);margin-bottom:8px;"></div>
+        <textarea id="health-checkin-input" rows="3" placeholder="How are you feeling today..." style="width:100%;background:var(--surface);color:var(--text);border:1px solid var(--overlay);border-radius:3px;padding:5px;font-size:10px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button onclick="submitHealthCheckin()" style="flex:1;background:var(--purple);color:var(--base);border:none;border-radius:3px;padding:5px;font-size:9px;cursor:pointer;letter-spacing:1px;">SUBMIT</button>
+          <button onclick="dismissHealthCheckin()" style="background:var(--surface);color:var(--overlay);border:1px solid var(--overlay);border-radius:3px;padding:5px 8px;font-size:9px;cursor:pointer;">SKIP</button>
+        </div>
       </div>
     </div>
 
@@ -906,7 +916,10 @@
     </div>
 
     <div>
-      <div class="section-header">// DAILY BRIEFING</div>
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>// DAILY BRIEFING</span>
+        <button id="briefing-gen-btn" onclick="generateBriefing()" style="background:var(--blue);color:var(--base);border:none;border-radius:3px;padding:3px 10px;font-size:8px;letter-spacing:1px;cursor:pointer;font-family:inherit;">⚡ GENERATE NOW</button>
+      </div>
       <div class="briefing-box" id="briefing-text">J_Claw // Briefing
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -914,6 +927,7 @@ Waiting for first briefing...
 
 J_Claw will populate this panel
 at 10:00 PM each night.
+Hit ⚡ GENERATE NOW to compile immediately.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━</div>
       <div class="briefing-meta" id="briefing-meta">Last briefing: not yet generated</div>
@@ -1692,18 +1706,81 @@ at 10:00 PM each night.
     // ── Briefing ──
     async function loadBriefing() {
       try {
-        const res = await fetch('../state/briefing.json?t=' + Date.now());
+        const res = await fetch('/api/briefing?t=' + Date.now());
         if (!res.ok) return;
         const data = await res.json();
         if (data.content) {
           document.getElementById('briefing-text').textContent = data.content;
+          const typeLabel = data.type ? data.type.toUpperCase() + ' ' : '';
           document.getElementById('briefing-meta').textContent =
-            'Last briefing: ' + (data.last_generated
+            `Last ${typeLabel}briefing: ` + (data.last_generated
               ? new Date(data.last_generated).toLocaleString()
               : 'not yet generated');
         }
       } catch(e) {}
     }
+
+    async function generateBriefing() {
+      const btn = document.getElementById('briefing-gen-btn');
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const res = await fetch('/api/briefing/generate', { method: 'POST' });
+        if (res.ok) {
+          await loadBriefing();
+          addLog('SYS', 'Briefing compiled on demand', 'blue');
+        }
+      } catch(e) {}
+      btn.disabled = false;
+      btn.textContent = '⚡ GENERATE NOW';
+    }
+
+    // ── Health Check-in Widget ──
+    async function checkHealthPrompt() {
+      try {
+        const res = await fetch('/api/health-prompt?t=' + Date.now());
+        if (!res.ok) return;
+        const data = await res.json();
+        const widget = document.getElementById('health-checkin-widget');
+        if (data.active) {
+          document.getElementById('health-checkin-prompt').textContent = data.message || "How are you feeling today?";
+          widget.style.display = 'block';
+        } else {
+          widget.style.display = 'none';
+        }
+      } catch(e) {}
+    }
+
+    async function submitHealthCheckin() {
+      const input = document.getElementById('health-checkin-input');
+      const reply = input.value.trim();
+      if (!reply) return;
+      try {
+        const res = await fetch('/api/health-checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reply }),
+        });
+        if (res.ok) {
+          document.getElementById('health-checkin-widget').style.display = 'none';
+          input.value = '';
+          addLog('PERSONAL', 'Health check-in submitted', 'purple');
+        }
+      } catch(e) {}
+    }
+
+    function dismissHealthCheckin() {
+      document.getElementById('health-checkin-widget').style.display = 'none';
+      fetch('/api/health-checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply: 'skipped' }),
+      }).catch(() => {});
+    }
+
+    // Check health prompt on load and every 5 minutes
+    checkHealthPrompt();
+    setInterval(checkHealthPrompt, 5 * 60 * 1000);
 
     // ── Rank Card ──
     const ALL_ACHIEVEMENTS = [
@@ -1797,6 +1874,9 @@ at 10:00 PM each night.
       else if (window._activeReviewTab === 'applied') loadAppliedHistory();
       else loadJobReview();
     }, 30000);
+
+    // Initial load
+    loadState(); loadActivityLog(); loadBriefing(); loadRankCard();
 
     // ── Chat ──
     let chatSending = false;

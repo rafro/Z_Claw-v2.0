@@ -79,7 +79,7 @@ def add_to_pipeline(state: dict, jobs: list) -> dict:
     new = [j for j in jobs if j["id"] not in existing_ids]
     state["pipeline"].extend(new)
     state["stats"]["pending_review"] = sum(
-        1 for j in state["pipeline"] if j.get("tier") in ("A", "B", "C")
+        1 for j in state["pipeline"] if j.get("status") == "pending_review"
     )
     return state
 

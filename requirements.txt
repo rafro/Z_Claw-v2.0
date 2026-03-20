@@ -1,0 +1,13 @@
+# OpenClaw Python runtime dependencies
+anthropic>=0.84.0
+ollama>=0.6.0
+pydantic>=2.12.0
+pydantic-settings>=2.13.0
+python-dotenv>=1.2.0
+requests>=2.32.0
+
+# Optional — only needed if Gemini provider is used
+# google-generativeai>=0.8.0
+
+# Dev / testing
+pytest>=9.0.0

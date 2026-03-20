@@ -6,15 +6,14 @@ compiles executive packets, and escalates Tier A jobs.
 
 import logging
 
-from runtime.config import SKILL_MODELS
-from runtime.ollama_client import chat, is_available
+from providers.router import ProviderRouter
+from providers.base import ProviderError
 from runtime.skills import job_intake, hard_filter, funding_finder
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
+from runtime.tools.state import load_applications, save_applications, add_to_pipeline
 
 log = logging.getLogger(__name__)
-
-MODEL = SKILL_MODELS["hard-filter"]   # same model runs the orchestrator reasoning
 
 
 # ── Orchestrator reasoning ────────────────────────────────────────────────────
@@ -22,20 +21,24 @@ MODEL = SKILL_MODELS["hard-filter"]   # same model runs the orchestrator reasoni
 def _interpret_results(intake_result: dict, filter_result: dict) -> str:
     """
     Ask the LLM to produce a one-paragraph summary of what happened this run.
-    This is where the orchestrator adds value — not just reporting counts,
-    but noticing patterns, flagging quality of sources, etc.
+    Uses ProviderRouter — ollama:7b primary, gemini fallback. Never Claude.
     """
-    if not is_available(MODEL):
-        # Fallback summary without LLM
-        c = filter_result.get("counts", {})
-        src = intake_result.get("source_status", {})
-        ok_sources = [k for k, v in src.items() if v == "ok"]
+    c = filter_result.get("counts", {})
+    src = intake_result.get("source_status", {})
+    ok_sources = [k for k, v in src.items() if v == "ok"]
+
+    # Deterministic fallback summary
+    def _fallback() -> str:
         return (
             f"{intake_result['counts']['new']} new listings from "
             f"{', '.join(ok_sources) or 'no sources'}. "
             f"Tier A: {c.get('tier_a',0)}, Tier B: {c.get('tier_b',0)}, "
             f"Tier C: {c.get('tier_c',0)}."
         )
+
+    provider = ProviderRouter().get_provider("hard-filter")
+    if provider is None or provider.provider_id == "deterministic":
+        return _fallback()
 
     tier_a_preview = ""
     if filter_result.get("tier_a"):
@@ -69,11 +72,16 @@ def _interpret_results(intake_result: dict, filter_result: dict) -> str:
         },
         {"role": "user", "content": context},
     ]
-    result = chat(MODEL, messages, temperature=0.2, max_tokens=150)
-    lines = result.strip().splitlines()
-    if lines and lines[0].rstrip().endswith(":"):
-        result = "\n".join(lines[1:]).lstrip()
-    return result
+
+    try:
+        result = provider.chat(messages, temperature=0.2, max_tokens=150)
+        lines = result.strip().splitlines()
+        if lines and lines[0].rstrip().endswith(":"):
+            result = "\n".join(lines[1:]).lstrip()
+        return result
+    except ProviderError as e:
+        log.warning("Opportunity orchestrator LLM failed (%s): %s — using fallback", provider.provider_id, e)
+        return _fallback()
 
 
 # ── Main run ──────────────────────────────────────────────────────────────────
@@ -102,6 +110,14 @@ def run_job_intake() -> dict:
         )
         packet.write(pkt)
         return pkt
+
+    # Step 1b: Stage new jobs as pending_review before scoring so dashboard shows them
+    if intake["new_jobs"]:
+        apps = load_applications()
+        staged = [dict(j, status="pending_review", score=None, tier=None) for j in intake["new_jobs"]]
+        apps = add_to_pipeline(apps, staged)
+        save_applications(apps)
+        log.info("Staged %d new jobs to applications.json", len(intake["new_jobs"]))
 
     # Step 2: Score + tier (LLM)
     filtered = hard_filter.run(intake["new_jobs"])
@@ -136,6 +152,7 @@ def run_job_intake() -> dict:
         status = "success"
 
     counts = filtered.get("counts", {})
+    provider_used = filtered.get("provider_used", "ollama" if filtered.get("model_available") else "deterministic")
     pkt = packet.build(
         division="opportunity",
         skill="job-intake",
@@ -154,6 +171,7 @@ def run_job_intake() -> dict:
         artifact_refs=[{"bundle_id": "job-intake-latest", "location": "hot"}],
         escalate=escalate,
         escalation_reason=escalation_reason,
+        provider_used=provider_used,
     )
 
     packet.write(pkt)
