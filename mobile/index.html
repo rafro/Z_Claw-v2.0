@@ -2485,6 +2485,12 @@ async function sendChat() {
         if (!line.startsWith('data: ')) continue;
         try {
           const evt = JSON.parse(line.slice(6));
+          if (evt.type === 'thinking' && evt.tool && !responseStarted) {
+            const labels = { Read:'Reading files…', Edit:'Editing file…', Write:'Writing file…', Glob:'Exploring codebase…', Grep:'Searching code…', Bash:'Running command…' };
+            const label = labels[evt.tool] || (evt.tool + '…');
+            const bubble = document.querySelector('.chat-thinking-text');
+            if (bubble) bubble.textContent = label;
+          }
           if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta' && evt.delta.text) {
             fullText += evt.delta.text;
             if (!responseStarted) {

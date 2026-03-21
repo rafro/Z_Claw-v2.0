@@ -920,7 +920,7 @@ function handleChatClear(res) {
   jsonOk(res, { ok: true });
 }
 
-// ── Mobile Chat: J_Claw mode (Ollama only — no Claude fallback) ───────────────
+// ── Mobile Chat: J_Claw mode (Ollama → Groq fallback) ────────────────────────
 async function handleMobileChatJClaw(body, res) {
   const message = (body.message || '').trim();
   if (!message) return jsonError(res, 400, 'message required');
@@ -1000,8 +1000,79 @@ async function handleMobileChatJClaw(body, res) {
       req.end();
     });
   } catch(e) {
-    const errEvt = { type: 'content_block_delta', delta: { type: 'text_delta', text: `J_Claw (local AI) is offline: ${e.message}` } };
-    res.write(`data: ${JSON.stringify(errEvt)}\n\n`);
+    // ── Fallback: Ollama failed → try Groq (Llama 3.3 70B) ──────────────────
+    const groqKey   = process.env.GROQ_API_KEY;
+    const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+    if (!groqKey) {
+      res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { type: 'text_delta', text: `J_Claw (local AI) is offline: ${e.message}` } })}\n\n`);
+    } else {
+      // Banner so user knows we fell back
+      res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { type: 'text_delta', text: `⚡ *Local AI offline — using cloud AI (Groq)*\n\n` } })}\n\n`);
+
+      try {
+        await new Promise((resolve, reject) => {
+          const groqBody = JSON.stringify({
+            model: groqModel,
+            messages: ollamaMessages.map(m => ({ role: m.role, content: m.content })),
+            stream: true,
+            max_tokens: 2048,
+          });
+          const req = https.request({
+            hostname: 'api.groq.com',
+            port: 443,
+            path: '/openai/v1/chat/completions',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${groqKey}`,
+              'Content-Length': Buffer.byteLength(groqBody),
+            },
+          }, (groqRes) => {
+            if (groqRes.statusCode !== 200) { reject(new Error(`Groq HTTP ${groqRes.statusCode}`)); return; }
+            let fullGroqResponse = '';
+            let buf = '';
+            groqRes.on('data', chunk => {
+              buf += chunk.toString();
+              const lines = buf.split('\n');
+              buf = lines.pop();
+              for (const line of lines) {
+                const trimmed = line.replace(/^data: /, '').trim();
+                if (!trimmed || trimmed === '[DONE]') continue;
+                try {
+                  const evt = JSON.parse(trimmed);
+                  const text = evt.choices && evt.choices[0] && evt.choices[0].delta && evt.choices[0].delta.content;
+                  if (text) {
+                    fullGroqResponse += text;
+                    res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { type: 'text_delta', text } })}\n\n`);
+                  }
+                } catch(pe) {}
+              }
+            });
+            groqRes.on('end', () => {
+              if (fullGroqResponse) {
+                try {
+                  const hist2 = readState('chat-history.json') || { messages: [], last_updated: null };
+                  hist2.messages.push({ role: 'user', content: message });
+                  hist2.messages.push({ role: 'assistant', content: fullGroqResponse });
+                  if (hist2.messages.length > 100) hist2.messages = hist2.messages.slice(-100);
+                  hist2.last_updated = new Date().toISOString();
+                  writeState('chat-history.json', hist2);
+                } catch(he) {}
+              }
+              resolve();
+            });
+            groqRes.on('error', reject);
+          });
+          req.on('error', reject);
+          req.setTimeout(60000, () => { req.destroy(); reject(new Error('Groq timeout')); });
+          req.write(groqBody);
+          req.end();
+        });
+      } catch(groqErr) {
+        res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { type: 'text_delta', text: `\n\n❌ Both local AI and cloud fallback failed: ${groqErr.message}` } })}\n\n`);
+      }
+    }
   }
   res.end();
 }
@@ -1093,7 +1164,13 @@ async function handleMobileChatCoding(body, res) {
             if (block.type === 'text' && block.text) {
               res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { type: 'text_delta', text: block.text } })}\n\n`);
             }
+            if (block.type === 'tool_use' && block.name) {
+              res.write(`data: ${JSON.stringify({ type: 'thinking', tool: block.name, input: block.input })}\n\n`);
+            }
           }
+        }
+        if (evt.type === 'system' && evt.subtype === 'task_progress' && evt.last_tool_name) {
+          res.write(`data: ${JSON.stringify({ type: 'thinking', tool: evt.last_tool_name })}\n\n`);
         }
         if (evt.type === 'result' && evt.result) fullResponse = evt.result;
       } catch(e) {}
