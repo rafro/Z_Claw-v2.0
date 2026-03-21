@@ -1,19 +1,17 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-21T01:46:02.529713+00:00",
+  "generated_at": "2026-03-21T16:00:23.301539+00:00",
   "skill": "doc-update",
-  "status": "success",
-  "summary": "Architecture doc generated (2240 chars).",
+  "status": "failed",
+  "summary": "Doc update failed: llama runner process has terminated: exit status 2 (status code: 500)",
   "action_items": [],
   "metrics": {
-    "docs_updated": [
-      "divisions\\dev-automation\\hot\\architecture-doc-2026-03-20.md"
-    ],
-    "model_used": "qwen2.5:7b-instruct-q4_K_M"
+    "docs_updated": [],
+    "model_used": "qwen2.5-coder:14b-instruct-q4_K_M"
   },
   "artifact_refs": [
     {
-      "bundle_id": "architecture-doc-2026-03-20",
+      "bundle_id": "architecture-doc-2026-03-21",
       "location": "hot"
     }
   ],

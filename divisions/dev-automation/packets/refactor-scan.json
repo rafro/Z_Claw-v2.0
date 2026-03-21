@@ -1,38 +1,38 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-21T15:02:50.402351+00:00",
+  "generated_at": "2026-03-21T16:02:48.506520+00:00",
   "skill": "refactor-scan",
   "status": "success",
-  "summary": "Several files contain large functions and could benefit from refactoring to improve readability, maintainability, and testability.",
+  "summary": "Several files contain large functions and duplicate logic, which can be refactored to improve maintainability and readability.",
   "action_items": [
     {
       "priority": "high",
-      "description": "[high] runtime\\tools\\virtual_account.py: The `run_virtual_account` function is 142 lines long, which is quite large and difficult to manage. — Consider breaking down the `run_virtual_account` function into smaller, more focused functions.",
+      "description": "[high] runtime\\tools\\virtual_account.py: The `run_virtual_account` function is 152 lines long, which is quite large for a single function. — Consider breaking down the `run_virtual_account` function into smaller, more focused functions.",
       "requires_matthew": false
     },
     {
       "priority": "high",
-      "description": "[high] runtime\\skills\\market_scan.py: The `run` function in `market_scan.py` is 81 lines long, which could be simplified by breaking it into smaller functions. — Refactor the `run` function to include only high-level logic and delegate specific tasks to smaller functions.",
+      "description": "[high] runtime\\skills\\market_scan.py: The `run` function in `market_scan.py` is 81 lines long. — Refactor the `run` function into smaller functions to improve readability and maintainability.",
       "requires_matthew": false
     },
     {
       "priority": "high",
-      "description": "[high] runtime\\orchestrators\\dev_automation.py: The `run_repo_monitor` function is 63 lines long, indicating potential complexity and difficulty in maintenance. — Refactor the `run_repo_monitor` function to reduce its size by breaking it into smaller functions.",
+      "description": "[high] runtime\\orchestrators\\dev_automation.py: The `run_repo_monitor` function is 63 lines long. — Break down the `run_repo_monitor` function into smaller, more focused functions.",
       "requires_matthew": false
     },
     {
       "priority": "high",
-      "description": "[high] runtime\\tools\\jobs.py: The `fetch_adzuna` function is 68 lines long, which could be simplified and broken down into smaller functions. — Refactor the `fetch_adzuna` function to include only high-level logic and delegate specific tasks to smaller functions.",
+      "description": "[high] runtime\\tools\\jobs.py: The `fetch_adzuna` function is 68 lines long. — Refactor the `fetch_adzuna` function into smaller, more focused functions.",
       "requires_matthew": false
     },
     {
       "priority": "high",
-      "description": "[high] runtime\\skills\\hard_filter.py: The `run` function in `hard_filter.py` is 88 lines long, which could be simplified by breaking it into smaller functions. — Refactor the `run` function to include only high-level logic and delegate specific tasks to smaller functions.",
+      "description": "[high] runtime\\skills\\repo_monitor.py: The `_llm_analyze` function is 65 lines long. — Break down the `_llm_analyze` function into smaller, more focused functions.",
       "requires_matthew": false
     },
     {
       "priority": "high",
-      "description": "[high] runtime\\skills\\repo_monitor.py: The `run` function in `repo_monitor.py` is 62 lines long, which could be simplified by breaking it into smaller functions. — Refactor the `run` function to include only high-level logic and delegate specific tasks to smaller functions.",
+      "description": "[high] runtime\\skills\\mobile_audit_review.py: The `run` function in `mobile_audit_review.py` is 134 lines long. — Refactor the `run` function into smaller, more focused functions.",
       "requires_matthew": false
     }
   ],
