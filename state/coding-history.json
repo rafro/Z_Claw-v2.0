@@ -383,7 +383,15 @@
     {
       "role": "assistant",
       "content": "Memory already had it logged from earlier today. Nothing to update."
+    },
+    {
+      "role": "user",
+      "content": "“PS C:\\WINDOWS\\system32> git pull origin master\nfatal: not a git repository (or any of the parent directories): .git\nPS C:\\WINDOWS\\system32> git push origin master\nfatal: not a git repository (or any of the parent directories): .git\nPS C:\\WINDOWS\\system32>\nPS C:\\WINDOWS\\system32> cd C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn\ncd : Cannot find path 'C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn' because it does not exist.\nAt line:1 char:1\n+ cd C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn:String) [Set-Location], ItemNotFou\n   ndException\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand\n\nPS C:\\WINDOWS\\system32> git pull origin master\nfatal: not a git repository (or any of the parent directories): .git\nPS C:\\WINDOWS\\system32> cd C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn\ncd : Cannot find path 'C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn' because it does not exist.\nAt line:1 char:1\n+ cd C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : ObjectNotFound: (C:\\Users\\Tyler\\Desktop\\J-Claw-Reborn:String) [Set-Location], ItemNotFou\n   ndException\n    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SetLocationCommand\n\nPS C:\\WINDOWS\\system32>”"
+    },
+    {
+      "role": "assistant",
+      "content": "The actual folder name is **`J_Claw_Reborn`** (underscores, not hyphens). Tell Tyler to run:\n\n```powershell\ncd C:\\Users\\Tyler\\Desktop\\J_Claw_Reborn\ngit pull origin master\ngit push origin master\n```"
     }
   ],
-  "last_updated": "2026-03-21T15:05:48.802Z"
+  "last_updated": "2026-03-21T15:09:19.546Z"
 }
