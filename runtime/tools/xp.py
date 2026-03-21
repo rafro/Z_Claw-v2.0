@@ -25,6 +25,7 @@ SKILL_XP = {
     "trading-report":       ("trading",        15),
     "market-scan":          ("trading",         5),
     "backtester":           ("trading",         5),
+    "virtual-trader":       ("trading",         8),
     # ── Dev Automation ────────────────────────────────────────────────────────
     "repo-monitor":         ("dev_automation", 10),
     "refactor-scan":        ("dev_automation",  5),
@@ -33,6 +34,7 @@ SKILL_XP = {
     "debug-agent":          ("dev_automation",  8),
     "artifact-manager":     ("dev_automation",  3),
     "dev-digest":           ("dev_automation",  5),
+    "dev-pipeline":         ("dev_automation", 10),
     # ── Personal ──────────────────────────────────────────────────────────────
     "health-logger":        ("personal",       15),
     "perf-correlation":     ("personal",       10),
@@ -46,6 +48,7 @@ SKILL_XP = {
     "privacy-scan":         ("op_sec",          5),
     "opsec-digest":         ("op_sec",          5),
     "mobile-audit-review":  ("op_sec",          5),
+    "sentinel-health":      ("op_sec",          5),
     # daily-briefing grants no XP (synthesis only)
 }
 

@@ -2289,6 +2289,54 @@ function handleMobileBattlesToday(res) {
   }
 }
 
+function handleMobileBattlesWeek(res) {
+  try {
+    const fs2 = require('fs');
+    const histPath = path.join(STATE_DIR, 'xp-history.jsonl');
+    const DIV_NAMES = { trading: 'Trading', dev_automation: 'Dev', op_sec: 'Op-Sec', opportunity: 'Opportunity', personal: 'Personal' };
+    const cutoffDate = new Date(); cutoffDate.setDate(cutoffDate.getDate() - 6);
+    const cutoffStr  = cutoffDate.toISOString().slice(0, 10);
+
+    let totalXp = 0, totalBattles = 0;
+    const byDiv  = {};
+    const byDay  = {};
+
+    try {
+      const lines = fs2.readFileSync(histPath, 'utf8').split('\n').filter(Boolean);
+      for (const line of lines) {
+        try {
+          const e = JSON.parse(line);
+          if (!e || e.event !== 'skill_complete' || !e.ts) continue;
+          const day = e.ts.slice(0, 10);
+          if (day < cutoffStr) continue;
+          const xp  = e.xp || 0;
+          const div = e.div || 'unknown';
+          totalXp      += xp;
+          totalBattles += 1;
+          if (!byDiv[div]) byDiv[div] = { xp: 0, count: 0, name: DIV_NAMES[div] || div };
+          byDiv[div].xp    += xp;
+          byDiv[div].count += 1;
+          if (!byDay[day]) byDay[day] = { xp: 0, count: 0 };
+          byDay[day].xp    += xp;
+          byDay[day].count += 1;
+        } catch(e) {}
+      }
+    } catch(e) {}
+
+    // Build last 7 days in order
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      days.push({ date: key, xp: (byDay[key] || {}).xp || 0, count: (byDay[key] || {}).count || 0 });
+    }
+
+    jsonOk(res, { total_xp: totalXp, total_battles: totalBattles, by_division: byDiv, by_day: days });
+  } catch(e) {
+    jsonOk(res, { total_xp: 0, total_battles: 0, by_division: {}, by_day: [] });
+  }
+}
+
 function handleMobileTrading(res) {
   // Reuse the existing desktop trading handler — same data, mobile just
   // reads fewer fields. The handler already returns structured JSON.
@@ -2633,6 +2681,9 @@ const server = http.createServer(async (req, res) => {
       }
       if (method === 'GET' && reqPath === '/mobile/api/battles/today') {
         return handleMobileBattlesToday(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/battles/week') {
+        return handleMobileBattlesWeek(res);
       }
 
       // ── PIN: server-side PIN storage (works over plain HTTP, no crypto.subtle needed) ──
