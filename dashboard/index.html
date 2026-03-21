@@ -565,64 +565,116 @@
     .skill-run-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
     .skill-run-btn:disabled { color: var(--overlay); border-color: var(--overlay); cursor: not-allowed; }
 
-    /* ── Job Review Panel ── */
-    #job-review-panel { display: none; margin-bottom: 12px; }
-    #job-review-panel.active { display: block; }
+    /* ── Reports Panel ── */
+    #reports-panel { margin-bottom: 12px; }
 
-    #job-review-list {
+    .reports-div-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .report-div-tab {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      padding: 3px 8px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      cursor: pointer;
+    }
+    .report-div-tab.active-tab { border-color: var(--purple); color: var(--purple); }
+    .report-div-tab:hover:not(.active-tab) { border-color: var(--text); color: var(--text); }
+
+    .reports-agent-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-bottom: 6px;
+    }
+
+    .report-agent-tab {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 5px;
+      padding: 2px 6px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      cursor: pointer;
+    }
+    .report-agent-tab.active-tab { border-color: var(--teal); color: var(--teal); }
+    .report-agent-tab:hover:not(.active-tab) { border-color: var(--text); color: var(--text); }
+
+    #report-content {
       max-height: 420px;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--purple) var(--overlay);
     }
-    #job-review-list::-webkit-scrollbar { width: 6px; }
-    #job-review-list::-webkit-scrollbar-track { background: var(--overlay); }
-    #job-review-list::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 0; }
+    #report-content::-webkit-scrollbar { width: 6px; }
+    #report-content::-webkit-scrollbar-track { background: var(--overlay); }
+    #report-content::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 0; }
 
-    .job-review-header {
-      font-size: 6px;
-      color: var(--subtext);
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--overlay);
+    .report-header {
       display: flex;
       justify-content: space-between;
-    }
-
-    .job-row {
-      display: grid;
-      grid-template-columns: 40px 1fr auto auto auto;
       align-items: center;
-      gap: 8px;
+      padding: 6px 8px;
       border-bottom: 1px solid var(--overlay);
-      padding: 8px;
-      font-size: 7px;
-    }
-    .job-row:last-child { border-bottom: none; }
-    .job-row:hover { background: rgba(137,180,250,0.04); }
-    .job-title { color: var(--text); font-size: 7px; line-height: 1.6; }
-    .job-meta  { color: var(--subtext); font-size: 6px; margin-top: 2px; }
-
-    .action-btn {
-      padding: 3px 7px;
-      border: 2px solid;
-      background: none;
-      font-family: 'Press Start 2P', monospace;
       font-size: 6px;
-      cursor: pointer;
-      box-shadow: 2px 2px 0 #000;
-      white-space: nowrap;
+      color: var(--subtext);
     }
-    .btn-apply   { border-color: var(--green);  color: var(--green);  }
-    .btn-skip    { border-color: var(--red);    color: var(--red);    }
-    .btn-archive { border-color: var(--subtext);color: var(--subtext);}
-    .btn-apply:hover   { background: var(--green);  color: var(--bg); }
-    .btn-skip:hover    { background: var(--red);    color: var(--bg); }
-    .btn-archive:hover { background: var(--subtext);color: var(--bg); }
 
-    /* ── Review Tabs ── */
-    .review-tab { font-family:'Press Start 2P',monospace; font-size:6px; padding:3px 8px; background:none; border:1px solid var(--border); color:var(--subtext); cursor:pointer; }
-    .review-tab.active-tab { border-color:var(--teal); color:var(--teal); }
-    .review-tab:hover:not(.active-tab) { border-color:var(--text); color:var(--text); }
+    .report-summary {
+      padding: 10px 12px;
+      font-size: 7px;
+      line-height: 2;
+      color: var(--text);
+      border-bottom: 1px solid var(--overlay);
+    }
+
+    .report-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      border-bottom: 1px solid var(--overlay);
+    }
+
+    .report-metric {
+      padding: 6px 12px;
+      border-right: 1px solid var(--overlay);
+      min-width: 100px;
+    }
+    .report-metric:last-child { border-right: none; }
+    .report-metric-key   { font-size: 5px; color: var(--subtext); margin-bottom: 3px; }
+    .report-metric-value { font-size: 7px; color: var(--teal); }
+
+    .report-actions {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--overlay);
+    }
+    .report-action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 4px 0;
+      font-size: 6px;
+      line-height: 1.8;
+      border-bottom: 1px dotted var(--overlay);
+      color: var(--text);
+    }
+    .report-action-item:last-child { border-bottom: none; }
+
+    .report-escalation {
+      padding: 8px 12px;
+      font-size: 6px;
+      color: var(--red);
+      border-bottom: 1px solid var(--overlay);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     /* ── Chat ── */
     #chat-messages .chat-bubble {
@@ -738,19 +790,6 @@
     <div class="pixel-box" id="alerts-list"></div>
   </div>
 
-  <!-- ── Job / Grant Review Panel ── -->
-  <div id="job-review-panel">
-    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
-      <span id="review-panel-title">// JOBS PENDING REVIEW</span>
-      <div style="display:flex;gap:4px;">
-        <button id="tab-jobs"    class="review-tab active-tab" onclick="switchReviewTab('jobs')">JOBS</button>
-        <button id="tab-grants"  class="review-tab"            onclick="switchReviewTab('grants')">GRANTS</button>
-        <button id="tab-applied" class="review-tab"            onclick="switchReviewTab('applied')">APPLIED</button>
-      </div>
-    </div>
-    <div class="pixel-box" id="job-review-list"></div>
-  </div>
-
   <!-- ── Stats Bar ── -->
   <div class="stats-bar">
     <div class="stat-item">
@@ -792,6 +831,14 @@
     <div class="stat-item">
       <div class="stat-label">MKT SIGNALS</div>
       <div class="stat-value" style="color:var(--teal);" id="stat-signals">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">OPSEC FLAGS</div>
+      <div class="stat-value" style="color:var(--red);" id="stat-opsec">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">REPO FLAGS</div>
+      <div class="stat-value" style="color:var(--yellow);" id="stat-repo">—</div>
     </div>
   </div>
 
@@ -939,9 +986,20 @@
         <div class="agent-row"><span class="agent-name">cred-audit</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-cred-audit">Sun</span><button class="skill-run-btn" onclick="runSkill('cred-audit','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="cred-audit"></div></div>
         <div class="agent-row"><span class="agent-name">privacy-scan</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-privacy-scan">Sun</span><button class="skill-run-btn" onclick="runSkill('privacy-scan','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="privacy-scan"></div></div>
         <div class="agent-row"><span class="agent-name">breach-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-breach-check">Sun</span><button class="skill-run-btn" onclick="runSkill('breach-check','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="breach-check"></div></div>
+        <div class="agent-row"><span class="agent-name">opsec-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-opsec-digest">08:30</span><button class="skill-run-btn" onclick="runSkill('opsec-digest','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="opsec-digest"></div></div>
       </div>
     </div>
 
+  </div>
+
+  <!-- ── Reports Panel ── -->
+  <div id="reports-panel">
+    <div class="section-header">// DIVISION REPORTS</div>
+    <div class="reports-div-tabs" id="reports-div-tabs"></div>
+    <div class="reports-agent-tabs" id="reports-agent-tabs"></div>
+    <div class="pixel-box" id="report-content">
+      <div style="padding:20px;text-align:center;color:var(--subtext);font-size:7px;">Loading reports...</div>
+    </div>
   </div>
 
   <!-- ── Task Queue + Briefing ── -->
@@ -1309,7 +1367,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
     // ── Manual refresh ──
     function manualRefresh() {
-      loadState(); loadActivityLog(); loadBriefing(); loadJobReview(); loadRankCard(); loadTradingCycle();
+      loadState(); loadActivityLog(); loadBriefing(); loadReports(); loadRankCard(); loadTradingCycle();
       addLog('SYS', 'Manual refresh triggered', 'purple');
     }
 
@@ -1422,198 +1480,169 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'opsec-digest':     'op_sec',
     };
 
-    // ── Job Review Panel ──
-    async function loadJobReview() {
-      if (window._activeReviewTab !== 'jobs') return; // don't overwrite other tabs
-      try {
-        const res = await fetch('/api/jobs?t=' + Date.now());
-        if (!res.ok) return;
-        const data = await res.json();
-        const pending = (data.pending || []);
-        const panel = document.getElementById('job-review-panel');
-        const list  = document.getElementById('job-review-list');
+    // ── Reports Panel ──
+    const REPORT_DIVISIONS = {
+      'trading':        { label: 'TRADING',   agents: ['market-scan', 'trading-report'] },
+      'opportunity':    { label: 'OPPS',      agents: ['job-intake', 'funding-finder'] },
+      'dev-automation': { label: 'DEV',       agents: ['repo-monitor', 'refactor-scan', 'doc-update', 'artifact-manager', 'dev-digest'] },
+      'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest'] },
+      'op-sec':         { label: 'OP-SEC',    agents: ['device-posture', 'threat-surface', 'breach-check', 'cred-audit', 'privacy-scan', 'security-scan', 'opsec-digest'] },
+      'sentinel':       { label: 'SENTINEL',  agents: ['provider-health', 'queue-monitor'] },
+    };
 
-        if (pending.length === 0) { panel.classList.remove('active'); return; }
-        panel.classList.add('active');
+    window._reportData    = {};
+    window._activeDivision = 'trading';
+    window._activeAgent    = 'market-scan';
 
-        // Store job data for onclick access (avoids encoding issues)
-        window._pendingJobs = {};
-        pending.forEach(j => { window._pendingJobs[j.id] = j; });
+    function buildReportTabs() {
+      const divTabs   = document.getElementById('reports-div-tabs');
+      const agentTabs = document.getElementById('reports-agent-tabs');
+      divTabs.innerHTML = '';
 
-        list.innerHTML = `<div class="job-review-header"><span>${pending.length} JOBS PENDING REVIEW — SCROLL TO SEE ALL</span><span>↓ SCROLL</span></div>`;
-        pending.forEach(job => {
-          const pay = job.pay_min
-            ? (job.pay_type === 'hourly' ? `$${job.pay_min}–${job.pay_max}/hr` : `$${Math.round(job.pay_min/1000)}k`)
-            : 'pay TBD';
-          const resumeType = job.resume || 'technical';
-          const resumeLabel = resumeType === 'general' ? 'GEN' : 'TECH';
-          const resumeColor = resumeType === 'general' ? 'blue' : 'teal';
-          const tierColor = job.tier === 'A' ? 'green' : job.tier === 'B' ? 'yellow' : 'blue';
-          const safeId = job.id.replace(/'/g, "\\'");
-          const row = document.createElement('div');
-          row.className = 'job-row';
-          row.dataset.jobId = job.id;
-          row.innerHTML = `
-            <span class="tag tag-${tierColor}" style="text-align:center;">${job.tier || '?'}<br><span style="font-size:5px">${job.composite_score ? job.composite_score.toFixed(1) : '—'}</span></span>
-            <div>
-              <div class="job-title">${job.title}</div>
-              <div class="job-meta">
-                ${job.company} &nbsp;·&nbsp; ${pay}
-                &nbsp;<span class="tag tag-${resumeColor}" style="font-size:5px;padding:1px 4px;">${resumeLabel}</span>
-              </div>
-            </div>
-            <button class="action-btn btn-apply"   onclick="actionJob('${safeId}','applied',this)">✓ APPLY</button>
-            <button class="action-btn btn-skip"    onclick="actionJob('${safeId}','skipped',this)">✗ SKIP</button>
-            <button class="action-btn btn-archive" onclick="actionJob('${safeId}','archived',this)">— ARCH</button>
-          `;
-          list.appendChild(row);
+      Object.entries(REPORT_DIVISIONS).forEach(([div, cfg]) => {
+        const btn = document.createElement('button');
+        btn.className = 'report-div-tab' + (div === window._activeDivision ? ' active-tab' : '');
+        btn.textContent = cfg.label;
+        btn.onclick = () => switchReportDivision(div);
+        divTabs.appendChild(btn);
+      });
+
+      buildAgentTabs();
+    }
+
+    function buildAgentTabs() {
+      const agentTabs = document.getElementById('reports-agent-tabs');
+      agentTabs.innerHTML = '';
+      const agents = REPORT_DIVISIONS[window._activeDivision]?.agents || [];
+      agents.forEach(agent => {
+        const btn = document.createElement('button');
+        btn.className = 'report-agent-tab' + (agent === window._activeAgent ? ' active-tab' : '');
+        btn.textContent = agent.toUpperCase();
+        btn.onclick = () => switchReportAgent(agent);
+        agentTabs.appendChild(btn);
+      });
+    }
+
+    function switchReportDivision(div) {
+      window._activeDivision = div;
+      window._activeAgent    = REPORT_DIVISIONS[div]?.agents[0] || '';
+      buildReportTabs();
+      renderReport();
+    }
+
+    function switchReportAgent(agent) {
+      window._activeAgent = agent;
+      buildAgentTabs();
+      renderReport();
+    }
+
+    function renderReport() {
+      const content = document.getElementById('report-content');
+      const div     = window._activeDivision;
+      const agent   = window._activeAgent;
+      const pkt     = window._reportData?.[div]?.[agent];
+
+      if (!pkt) {
+        content.innerHTML = `<div style="padding:20px;text-align:center;color:var(--subtext);font-size:7px;">No packet found for ${agent}.<br>Run the agent to generate a report.</div>`;
+        return;
+      }
+
+      const statusColor = pkt.status === 'success' ? 'green' : pkt.status === 'partial' ? 'yellow' : 'red';
+      const ts = pkt.generated_at ? new Date(pkt.generated_at).toLocaleString('en-CA', { hour12: false }) : '—';
+
+      let html = '';
+
+      // Header
+      html += `<div class="report-header">
+        <span><span class="tag tag-${statusColor}" style="font-size:6px;">${(pkt.status || 'unknown').toUpperCase()}</span> &nbsp; ${pkt.skill || agent}</span>
+        <span>${ts}</span>
+      </div>`;
+
+      // Escalation banner
+      if (pkt.escalate) {
+        html += `<div class="report-escalation">⚠ ESCALATED &nbsp;—&nbsp; ${pkt.escalation_reason || 'See action items'}</div>`;
+      }
+
+      // Summary
+      if (pkt.summary) {
+        html += `<div class="report-summary">${pkt.summary}</div>`;
+      }
+
+      // Metrics — split flat scalars from nested objects
+      const metrics = pkt.metrics || {};
+      const flatEntries   = Object.entries(metrics).filter(([,v]) =>
+        v !== null && v !== '' && v !== undefined && typeof v !== 'object'
+      );
+      const nestedEntries = Object.entries(metrics).filter(([,v]) =>
+        v !== null && v !== undefined && typeof v === 'object' && !Array.isArray(v)
+      );
+
+      if (flatEntries.length > 0) {
+        html += `<div class="report-metrics">`;
+        flatEntries.forEach(([k, v]) => {
+          const display = typeof v === 'boolean' ? (v ? 'YES' : 'NO') :
+                          typeof v === 'number'  ? (Number.isInteger(v) ? v : v.toFixed(3)) : String(v);
+          html += `<div class="report-metric">
+            <div class="report-metric-key">${k.replace(/_/g,' ').toUpperCase()}</div>
+            <div class="report-metric-value">${display}</div>
+          </div>`;
         });
-      } catch(e) {}
-    }
+        html += `</div>`;
+      }
 
-    // ── Review tab toggle ──
-    window._activeReviewTab = 'jobs';
-
-    function switchReviewTab(tab) {
-      window._activeReviewTab = tab;
-      document.getElementById('tab-jobs').classList.toggle('active-tab', tab === 'jobs');
-      document.getElementById('tab-grants').classList.toggle('active-tab', tab === 'grants');
-      document.getElementById('tab-applied').classList.toggle('active-tab', tab === 'applied');
-      document.getElementById('review-panel-title').textContent =
-        tab === 'jobs' ? '// JOBS PENDING REVIEW' :
-        tab === 'grants' ? '// GRANTS PENDING REVIEW' : '// APPLIED JOBS';
-      if (tab === 'jobs') loadJobReview();
-      else if (tab === 'grants') loadGrantReview();
-      else loadAppliedHistory();
-    }
-
-    async function loadAppliedHistory() {
-      try {
-        const res = await fetch('/api/jobs?t=' + Date.now());
-        if (!res.ok) return;
-        const data = await res.json();
-        const panel = document.getElementById('job-review-panel');
-        const list  = document.getElementById('job-review-list');
-        panel.classList.add('active');
-
-        const applied = (data.applied || [])
-          .sort((a, b) => new Date(b.actioned_at || 0) - new Date(a.actioned_at || 0));
-
-        if (applied.length === 0) {
-          list.innerHTML = '<div style="padding:14px;font-size:8px;color:var(--subtext);text-align:center;">No applications yet.</div>';
-          return;
-        }
-
-        list.innerHTML = `<div class="job-review-header"><span>${applied.length} APPLICATIONS</span><span>↓ SCROLL</span></div>`;
-        applied.forEach(job => {
-          const pay = job.pay_min
-            ? (job.pay_type === 'hourly' ? `$${job.pay_min}–${job.pay_max}/hr` : `$${Math.round(job.pay_min/1000)}k`)
-            : 'pay TBD';
-          const date = job.actioned_at ? new Date(job.actioned_at).toLocaleDateString('en-CA') : '—';
-          const statusColor = job.status === 'interview' ? 'teal' : job.status === 'rejected' ? 'red' : 'green';
-          const resumeLabel = (job.resume || 'technical') === 'general' ? 'GEN' : 'TECH';
-          const row = document.createElement('div');
-          row.className = 'job-row';
-          row.innerHTML = `
-            <span class="tag tag-${statusColor}" style="text-align:center;min-width:52px;">${job.status.toUpperCase()}</span>
-            <div style="flex:1;min-width:0;">
-              <div class="job-title">${job.url ? `<a href="${job.url}" target="_blank" style="color:inherit;text-decoration:none;">${job.title}</a>` : job.title}</div>
-              <div class="job-meta">${job.company} &nbsp;·&nbsp; ${pay} &nbsp;·&nbsp; ${date} &nbsp;<span class="tag tag-blue" style="font-size:5px;padding:1px 4px;">${resumeLabel}</span></div>
-            </div>
-            <div style="display:flex;gap:4px;">
-              <button class="action-btn btn-apply" onclick="updateApplied('${job.id.replace(/'/g,"\\'")}','interview',this)" ${job.status==='interview'?'disabled':''}>↑ INTERVIEW</button>
-              <button class="action-btn btn-archive" onclick="updateApplied('${job.id.replace(/'/g,"\\'")}','rejected',this)" ${job.status==='rejected'?'disabled':''}>✗ REJECTED</button>
-            </div>
-          `;
-          list.appendChild(row);
+      // Nested metric objects (e.g. providers, source_status)
+      nestedEntries.forEach(([k, obj]) => {
+        html += `<div style="padding:6px 12px;border-bottom:1px solid var(--overlay);">`;
+        html += `<div style="font-size:5px;color:var(--subtext);margin-bottom:5px;letter-spacing:1px;">${k.replace(/_/g,' ').toUpperCase()}</div>`;
+        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+        Object.entries(obj).forEach(([subk, subv]) => {
+          const val = typeof subv === 'object' && subv !== null
+            ? (subv.status || Object.values(subv).find(x => typeof x === 'string') || '—')
+            : String(subv ?? '—');
+          const col = (val === 'ok' || val === 'available')   ? 'var(--green)'  :
+                      (val === 'partial' || val === 'degraded')? 'var(--yellow)' :
+                      (val === 'unavailable' || val === 'error')? 'var(--red)'   : 'var(--text)';
+          const shortKey = subk.replace(/^ollama:/, '').split(':')[0];
+          html += `<span style="font-size:5px;padding:2px 6px;border:1px solid ${col};color:${col};" title="${subk}">${shortKey}: ${val}</span>`;
         });
-      } catch(e) {}
-    }
+        html += `</div></div>`;
+      });
 
-    async function updateApplied(id, status, btn) {
-      btn.disabled = true;
-      const result = await api('POST', `/api/applications/${encodeURIComponent(id)}/status`, { status });
-      if (result && result.ok) {
-        loadAppliedHistory();
-      } else {
-        btn.disabled = false;
-      }
-    }
-
-    async function loadGrantReview() {
-      try {
-        const res = await fetch('/api/grants?t=' + Date.now());
-        if (!res.ok) return;
-        const data = await res.json();
-        const pending = (data.pending || []);
-        const panel   = document.getElementById('job-review-panel');
-        const list    = document.getElementById('job-review-list');
-
-        panel.classList.add('active');
-
-        if (pending.length === 0) {
-          list.innerHTML = '<div style="padding:14px;font-size:8px;color:var(--subtext);text-align:center;">No grants pending review.</div>';
-          return;
-        }
-
-        list.innerHTML = `<div class="job-review-header"><span>${pending.length} GRANTS PENDING REVIEW</span><span>↓ SCROLL</span></div>`;
-        pending.forEach(grant => {
-          const safeId = grant.id.replace(/'/g, "\\'");
-          const row = document.createElement('div');
-          row.className = 'job-row';
-          row.innerHTML = `
-            <span class="tag tag-teal" style="text-align:center;min-width:28px;">${grant.score ? grant.score.toFixed(1) : '?'}</span>
-            <div style="flex:1;min-width:0;">
-              <div class="job-title">${grant.name}</div>
-              <div class="job-meta">${grant.source} &nbsp;·&nbsp; ${grant.amount}</div>
-              <div class="job-meta">Deadline: ${grant.deadline}</div>
-              <div class="job-meta" style="font-size:6px;color:var(--subtext);margin-top:2px;">${grant.fit}</div>
-            </div>
-            <button class="action-btn btn-apply"   onclick="window.open('${grant.url}','_blank')">↗ OPEN</button>
-            <button class="action-btn btn-archive" onclick="archiveGrant('${safeId}',this)">— ARCH</button>
-          `;
-          list.appendChild(row);
+      // Action items
+      const actions = pkt.action_items || [];
+      if (actions.length > 0) {
+        html += `<div class="report-actions">`;
+        html += `<div style="font-size:6px;color:var(--subtext);margin-bottom:6px;">ACTION ITEMS (${actions.length})</div>`;
+        actions.forEach(a => {
+          const prioColor = a.priority === 'high' ? 'red' : a.priority === 'medium' ? 'yellow' : 'blue';
+          html += `<div class="report-action-item">
+            <span class="tag tag-${prioColor}" style="font-size:5px;flex-shrink:0;">${(a.priority || 'low').toUpperCase()}</span>
+            <span>${a.description || a}</span>
+          </div>`;
         });
+        html += `</div>`;
+      }
+
+      // Provider + urgency footer
+      const footer = [];
+      if (pkt.provider_used) footer.push(`PROVIDER: ${pkt.provider_used}`);
+      if (pkt.urgency && pkt.urgency !== 'normal') footer.push(`URGENCY: ${pkt.urgency.toUpperCase()}`);
+      if (pkt.recommended_action) footer.push(`REC: ${pkt.recommended_action}`);
+      if (footer.length > 0) {
+        html += `<div style="padding:6px 12px;font-size:5px;color:var(--subtext);border-top:1px solid var(--overlay);">${footer.join(' &nbsp;·&nbsp; ')}</div>`;
+      }
+
+      content.innerHTML = html;
+    }
+
+    async function loadReports() {
+      try {
+        const res = await fetch('/api/packets?t=' + Date.now());
+        if (!res.ok) return;
+        window._reportData = await res.json();
+        buildReportTabs();
+        renderReport();
       } catch(e) {}
-    }
-
-    async function archiveGrant(id, btn) {
-      btn.disabled = true;
-      const result = await api('POST', `/api/grants/${encodeURIComponent(id)}/status`, { status: 'archived' });
-      if (result && result.ok) {
-        addLog('OPPS', `Grant archived: ${id}`, 'yellow');
-        loadGrantReview();
-      } else {
-        btn.disabled = false;
-      }
-    }
-
-    async function actionJob(id, status, btn) {
-      btn.disabled = true;
-
-      if (status === 'applied') {
-        const job = window._pendingJobs && window._pendingJobs[id];
-        const jobUrl = job && job.url;
-        const resumeType = (job && job.resume) || 'technical';
-
-        // Open job URL in new tab
-        if (jobUrl) {
-          window.open(jobUrl, '_blank');
-        }
-
-        addLog('OPPS', `Applied: ${job ? job.title : id} [${resumeType}]`, 'green');
-      }
-
-      const result = await api('POST', `/api/applications/${encodeURIComponent(id)}/status`, { status });
-      if (result && result.ok) {
-        if (status !== 'applied') {
-          addLog('OPPS', `Job ${status}: ${id}`, 'yellow');
-        }
-        loadJobReview();
-        loadState();
-      } else {
-        btn.disabled = false;
-      }
     }
 
     // ── Load state files ──
@@ -1662,7 +1691,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
             }
           });
           // Reset buttons for divisions with no active queue entries
-          ['trading','opportunity','dev_automation','personal'].forEach(div => {
+          ['trading','opportunity','dev_automation','personal','op_sec'].forEach(div => {
             const active = (ctrl.queue || []).some(e => SKILL_DIV[e.skill] === div && (e.status === 'queued' || e.status === 'running'));
             if (!active) {
               const btn = document.getElementById('run-' + div);
@@ -1809,6 +1838,30 @@ Hit ⚡ GENERATE NOW to compile immediately.
         }
       } catch(e) {}
 
+      // OP-SEC threat-surface flags
+      try {
+        const res = await fetch('../divisions/op-sec/packets/threat-surface.json?t=' + Date.now());
+        if (res.ok) {
+          const pkt = await res.json();
+          const high = (pkt.metrics && pkt.metrics.high) || 0;
+          const el = document.getElementById('stat-opsec');
+          el.textContent = high;
+          el.style.color = high > 0 ? 'var(--red)' : 'var(--green)';
+        }
+      } catch(e) {}
+
+      // Dev repo flags
+      try {
+        const res = await fetch('../divisions/dev-automation/packets/dev-digest.json?t=' + Date.now());
+        if (res.ok) {
+          const pkt = await res.json();
+          const high = (pkt.metrics && pkt.metrics.total_high) || 0;
+          const el = document.getElementById('stat-repo');
+          el.textContent = high;
+          el.style.color = high > 0 ? 'var(--yellow)' : 'var(--green)';
+        }
+      } catch(e) {}
+
       updateAlerts(alerts);
       document.getElementById('last-refresh-label').textContent =
         'LAST SYNC: ' + now.toTimeString().slice(0,8);
@@ -1826,7 +1879,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
         loadState();
         loadActivityLog();
         loadBriefing();
-        loadJobReview();
+        loadReports();
         loadRankCard();
       }, 1800);
     }, 300);
@@ -2006,7 +2059,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
           `XP: ${s.base_xp} / ${s.xp_to_next_level}  (${s.total_xp_earned} total)`;
         document.getElementById('xp-bar-fill').style.width = pct + '%';
 
-        ['trading','opportunity','dev_automation','personal'].forEach(div => {
+        ['trading','opportunity','dev_automation','personal','op_sec'].forEach(div => {
           const data = s.divisions[div];
           if (!data) return;
           const badge = document.getElementById('badge-' + div);
@@ -2066,13 +2119,11 @@ Hit ⚡ GENERATE NOW to compile immediately.
     // Refresh every 30 seconds
     setInterval(() => {
       loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadTradingCycle();
-      if (window._activeReviewTab === 'grants') loadGrantReview();
-      else if (window._activeReviewTab === 'applied') loadAppliedHistory();
-      else loadJobReview();
+      loadReports();
     }, 30000);
 
     // Initial load
-    loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadJobReview(); loadTradingCycle();
+    loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadReports(); loadTradingCycle();
 
     // ── Chat ──
     let chatSending = false;

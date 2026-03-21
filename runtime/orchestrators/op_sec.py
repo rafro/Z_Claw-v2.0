@@ -52,14 +52,20 @@ def _synthesize_posture(pkts: list) -> str:
 def run_device_posture() -> dict:
     log.info("=== OP-Sec Division: device-posture run ===")
     result = device_posture.run()
+    issues = result.get("issues", [])
+    action_items = [
+        packet.action_item(issue, priority="high", requires_matthew=True)
+        for issue in issues
+    ]
     pkt = packet.build(
         division="op-sec",
         skill="device-posture",
         status=result["status"],
         summary=result["summary"],
+        action_items=action_items,
         escalate=result["escalate"],
-        escalation_reason="; ".join(result["issues"]) if result.get("issues") else "",
-        metrics={"severity": result.get("severity", "ok"), "issues": len(result.get("issues", []))},
+        escalation_reason="; ".join(issues) if issues else "",
+        metrics={"severity": result.get("severity", "ok"), "issues": len(issues)},
     )
     packet.write(pkt)
     grant_skill_xp("device-posture")
@@ -93,12 +99,22 @@ def run_breach_check() -> dict:
 
 def run_threat_surface() -> dict:
     log.info("=== OP-Sec Division: threat-surface run ===")
-    result = threat_surface.run()
+    result    = threat_surface.run()
+    anomalies = result.get("anomalies", [])
+    action_items = [
+        packet.action_item(
+            f"[{a.get('severity','?')}] {a.get('type','?').upper()}: {a.get('detail','')} — {a.get('recommendation','')}",
+            priority="high" if a.get("severity") == "HIGH" else "normal",
+            requires_matthew=a.get("severity") == "HIGH",
+        )
+        for a in anomalies[:8]
+    ]
     pkt = packet.build(
         division="op-sec",
         skill="threat-surface",
         status=result["status"],
         summary=result["summary"],
+        action_items=action_items,
         escalate=result.get("escalate", False),
         escalation_reason=(
             f"{result.get('high_severity', 0)} HIGH severity anomalies detected"
@@ -120,11 +136,20 @@ def run_cred_audit() -> dict:
     result     = cred_audit.run()
     findings   = result.get("findings", [])
     high_count = sum(1 for f in findings if f.get("severity") == "HIGH")
+    action_items = [
+        packet.action_item(
+            f"[{f.get('severity','?')}] {f.get('file','?')}: {f.get('detail', f.get('pattern',''))}",
+            priority="high" if f.get("severity") == "HIGH" else "normal",
+            requires_matthew=f.get("severity") == "HIGH",
+        )
+        for f in findings[:8]
+    ]
     pkt = packet.build(
         division="op-sec",
         skill="cred-audit",
         status=result["status"],
         summary=result["summary"],
+        action_items=action_items,
         escalate=result.get("escalate", False),
         escalation_reason=f"{high_count} HIGH severity credential exposures" if result.get("escalate") else "",
         metrics={"findings": len(findings), "high": high_count},
@@ -140,11 +165,20 @@ def run_privacy_scan() -> dict:
     result     = privacy_scan.run()
     findings   = result.get("findings", [])
     high_count = sum(1 for f in findings if f.get("severity") == "HIGH")
+    action_items = [
+        packet.action_item(
+            f"[{f.get('severity','?')}] {f.get('file','?')}: {f.get('detail', f.get('type',''))}",
+            priority="high" if f.get("severity") == "HIGH" else "normal",
+            requires_matthew=f.get("severity") == "HIGH",
+        )
+        for f in findings[:8]
+    ]
     pkt = packet.build(
         division="op-sec",
         skill="privacy-scan",
         status=result["status"],
         summary=result["summary"],
+        action_items=action_items,
         escalate=result.get("escalate", False),
         escalation_reason=f"{high_count} HIGH severity PII exposures" if result.get("escalate") else "",
         metrics={"findings": len(findings), "high": high_count},
@@ -160,11 +194,21 @@ def run_security_scan() -> dict:
     result     = security_scan.run()
     findings   = result.get("findings", [])
     high_count = sum(1 for f in findings if f.get("severity") == "HIGH")
+    action_items = [
+        packet.action_item(
+            f"[{f.get('severity','?')}] {f.get('file','?')}:{f.get('line','?')} — "
+            f"{f.get('type','?')}: {f.get('detail','')}",
+            priority="high" if f.get("severity") == "HIGH" else "normal",
+            requires_matthew=f.get("severity") == "HIGH",
+        )
+        for f in findings[:8]
+    ]
     pkt = packet.build(
         division="op-sec",
         skill="security-scan",
         status=result["status"],
         summary=result["summary"],
+        action_items=action_items,
         escalate=result.get("escalate", False),
         escalation_reason=result.get("escalation_reason", ""),
         metrics={"findings": len(findings), "high": high_count},
