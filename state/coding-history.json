@@ -143,7 +143,15 @@
     {
       "role": "assistant",
       "content": "Here's where things stand:\n\n**Pending (needs Tyler to restart PM2):**\n- Groq fallback for mobile J_Claw is coded and ready -- just needs `pm2 restart openclaw` to go live\n\n**Ready to build when you say go:**\n- Biometric fingerprint auth (Tailscale HTTPS unlocks this)\n- Any reverted sessions from the 4am timeouts that need to be redone\n\n**Ongoing issue:**\n- Ollama HTTP 500s happening -- likely VRAM pressure when Zenith Discord bot + mobile chat compete\n\nAnything specific you want to tackle?"
+    },
+    {
+      "role": "user",
+      "content": "Where are we at?"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's the full picture:\n\n## Done ✅\n- Groq fallback coded into mobile J_Claw (auto-switches when Ollama 500s)\n\n## Waiting On Tyler 🖥️\n- `pm2 restart openclaw` -- activates the Groq fallback\n\n## Ready to Build 🔧\n1. **Biometric auth** -- Tailscale HTTPS is live, so fingerprint login is unblocked\n2. **Reverted sessions** -- need git log to see exactly what was lost at 4am\n\n## Ongoing Issue ⚠️\n- Ollama keeps 500ing -- VRAM pressure between Zenith bot + other models competing\n\n---\n\nWhat do you want to tackle next?"
     }
   ],
-  "last_updated": "2026-03-21T07:30:47.313Z"
+  "last_updated": "2026-03-21T07:32:28.987Z"
 }

@@ -590,17 +590,37 @@ function buildContext() {
   } catch(e) { lines.push('\n[ HEALTH ] — no data'); }
 
   try {
-    const trades = JSON.parse(fs.readFileSync(path.join(STATE_DIR, 'trade-log.json'), 'utf8'));
-    const sessions = trades.sessions || trades.entries || [];
     lines.push('\n[ TRADING ]');
-    if (sessions.length > 0) {
-      const last = sessions[sessions.length - 1];
-      lines.push(`  last session: ${last.date || last.time || 'unknown'}`);
-      if (last.pnl !== undefined) lines.push(`  P&L: ${last.pnl}`);
-      if (last.trades)            lines.push(`  trades: ${last.trades}`);
-    } else {
-      lines.push('  no sessions logged yet');
-    }
+    // Market scan packet
+    try {
+      const ms = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'trading', 'packets', 'market-scan.json'), 'utf8'));
+      if (ms.summary) lines.push(`  market: ${ms.summary}`);
+      if (ms.metrics) {
+        const { signals, high } = ms.metrics;
+        if (signals != null) lines.push(`  signals: ${signals} | high priority: ${high || 0}`);
+      }
+    } catch(e) {}
+    // Trading report packet
+    try {
+      const tr = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'trading', 'packets', 'trading-report.json'), 'utf8'));
+      if (tr.metrics) {
+        const m = tr.metrics;
+        if (m.active_strategy) lines.push(`  strategy: ${m.active_strategy}`);
+        if (m.cycle_number != null) lines.push(`  cycle: ${m.cycle_number} | win_rate: ${m.strategy_win_rate_pct != null ? m.strategy_win_rate_pct + '%' : 'n/a'} | sharpe: ${m.strategy_sharpe || 'n/a'}`);
+        if (m.total_trades > 0) lines.push(`  trades today: ${m.total_trades} | wins: ${m.wins} | losses: ${m.losses} | P&L: ${m.total_pnl || 'n/a'}`);
+        else lines.push(`  trades today: none`);
+      }
+    } catch(e) {}
+    // Fallback to trade-log.json if it exists
+    try {
+      const trades = JSON.parse(fs.readFileSync(path.join(STATE_DIR, 'trade-log.json'), 'utf8'));
+      const sessions = trades.sessions || trades.entries || [];
+      if (sessions.length > 0) {
+        const last = sessions[sessions.length - 1];
+        lines.push(`  last session: ${last.date || last.time || 'unknown'}`);
+        if (last.pnl !== undefined) lines.push(`  session P&L: ${last.pnl}`);
+      }
+    } catch(e) {}
   } catch(e) { lines.push('\n[ TRADING ] — no data'); }
 
   return lines.join('\n');
@@ -716,7 +736,7 @@ async function handleChat(body, res) {
   soul = stripSoulForChat(soul);
 
   const context = buildContext();
-  const systemPrompt = soul + '\n\n---\n\n' + context;
+  const systemPrompt = soul + '\n\nIMPORTANT — User Context: There are two users of J_Claw. Tyler is the partner and owner of this local environment — he is the primary operator on the PC desktop and the user you are speaking with now. Matthew is the creator of J_Claw and accesses the system from mobile. Both have full trust in the system.\n\n---\n\n' + context;
 
   const hist = readState('chat-history.json') || { messages: [], last_updated: null };
   let history = (hist.messages || []).slice(-20);
@@ -933,7 +953,7 @@ async function handleMobileChatJClaw(body, res) {
   try { soul = fs.readFileSync(path.join(ROOT, 'SOUL.md'), 'utf8'); } catch(e) {}
   soul = stripSoulForChat(soul);
   const context = buildContext();
-  const systemPrompt = soul + '\n\nIMPORTANT: You are speaking with Matthew — the creator of J_Claw, accessing from mobile. Tyler is Matthew\'s partner who uses the desktop.\n\n---\n\n' + context;
+  const systemPrompt = soul + '\n\nIMPORTANT — User Context: There are two users of J_Claw. Matthew is the creator of J_Claw and the user you are speaking with now — he is accessing from mobile. Tyler is Matthew\'s partner and the owner of this local environment; Tyler operates J_Claw from the PC desktop. Both have full trust in the system.\n\n---\n\n' + context;
 
   const hist = readState('chat-history.json') || { messages: [], last_updated: null };
   let history = (hist.messages || []).slice(-20);
@@ -1087,7 +1107,7 @@ async function handleMobileChatCoding(body, res) {
   if (!message) return jsonError(res, 400, 'message required');
 
   const context = buildContext();
-  const systemPrompt = `You are Claude, an AI coding assistant helping Matthew manage and improve J_Claw — a personal AI orchestration system running on Windows 11. Matthew is the creator of J_Claw and is accessing from mobile. Tyler is Matthew's partner who uses the desktop. You have full context about the system below. Help with code changes, debugging, planning, and answering questions. You CAN make real file edits using your Edit, Write, Read, Glob, and Grep tools. Be direct and concise.\n\n${context}`;
+  const systemPrompt = `You are Claude, an AI coding assistant helping manage and improve J_Claw — a personal AI orchestration system running on Windows 11. There are two users: Matthew is the creator of J_Claw and the user you are speaking with now, accessing from mobile. Tyler is Matthew's partner and the owner of this local environment; Tyler operates J_Claw from the PC desktop. Both have full trust in the system. You have full context about the system below. Help with code changes, debugging, planning, and answering questions. You CAN make real file edits using your Edit, Write, Read, Glob, and Grep tools. Be direct and concise.\n\n${context}`;
 
   const hist = readState('coding-history.json') || { messages: [], last_updated: null };
   let history = (hist.messages || []).slice(-20);
