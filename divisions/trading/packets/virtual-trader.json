@@ -1,0 +1,24 @@
+{
+  "division": "trading",
+  "generated_at": "2026-03-21T14:37:51.811932+00:00",
+  "skill": "virtual-trader",
+  "status": "success",
+  "summary": "Opened: GOLD | Balance: $10,000.00 (Total: $+0.00)",
+  "action_items": [],
+  "metrics": {
+    "trades_made": 1,
+    "open_positions": 1,
+    "account_balance": 10000.0,
+    "strategy_id": "strat_112_05"
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}
