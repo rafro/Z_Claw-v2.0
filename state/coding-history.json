@@ -2,14 +2,6 @@
   "messages": [
     {
       "role": "user",
-      "content": "Any updates?"
-    },
-    {
-      "role": "assistant",
-      "content": "No change since last update. Still waiting on one thing:\n\n## Still Pending Tyler\n\n**`pm2 restart openclaw`** -- activates both:\n1. Groq fallback (so Ollama 500s don't break mobile chat)\n2. Trading division fix (so AI in chat can actually see trade data)\n\n## Everything Else\n\n- Biometric auth: ready to build (Tailscale HTTPS is live)\n- Divisions: all running normally per status panel\n- Ollama: still intermittently 500ing\n\nHas Tyler had a chance to restart PM2 yet?"
-    },
-    {
-      "role": "user",
       "content": "It’s done!"
     },
     {
@@ -399,7 +391,15 @@
     {
       "role": "assistant",
       "content": "**Alert acknowledgement is fully implemented.** Here's what's actually in the code:\n\n---\n\n## How Alert ACK Works on Mobile\n\n**Frontend (`mobile/index.html`)**\n- Each alert card has an **ACK button** (grey, bottom-right of card)\n- Tapping it calls `ackAlert(id, division)` which opens a **confirmation sheet**: *\"Acknowledge the [division] alert?\"*\n- After confirming, it goes through `requireBiometricThenAct` -- **biometric/PIN gated**\n- Posts `ack_alert` action to the backend with `target_id` and `division`\n\n**Backend (`server.js`)**\n- `'ack_alert'` is in the allowlist (line 1505)\n- Routes to `mobileAckAlert(alertId, division)` (line 1638)\n- Logs `[MOBILE] Alert ack'd: [id]` to the activity feed in yellow\n- Broadcasts an alert update to all connected dashboards\n\n**One caveat in the backend comment (line 1639):**\n> *\"Alerts are ephemeral (derived from packets). Log the ack; dashboard suppresses ack'd alerts via the dismissedAlerts client-side set.\"*\n\nThis means the ACK is **client-side suppression** -- the alert disappears on your mobile session but reappears if you reload the page, since there's no persistent server-side dismissed state. The only permanent record is the activity log entry.\n\n**Want me to make ACK persist server-side so it survives page reloads?**"
+    },
+    {
+      "role": "user",
+      "content": "What all shows in “alerts” for Mission Control mobile?"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's exactly what shows in the **Alerts tab**, confirmed from the actual code:\n\n---\n\n## Alerts Tab -- Two Sections\n\n### 1. Active Alerts\n- **All active system alerts** from all divisions\n- Each card shows:\n  - **Severity pill** -- 🔴 HIGH (pulses red), 🟡 MEDIUM (yellow), 🔵 LOW (blue)\n  - **Division tag** (grey pill -- e.g. \"op_sec\", \"trading\")\n  - **Alert message** or escalation reason\n  - **Relative timestamp** (e.g. \"2m ago\") + skill that triggered it\n  - **ACK button** (biometric gated)\n- If no alerts: shows ✓ \"No active alerts\" empty state\n\n### 2. Pending Approvals (below a divider)\n- **Coding session approvals** waiting for your review\n- Each card shows:\n  - **Title** -- approval type/skill name\n  - **Risk pill** -- HIGH (red), MEDIUM (yellow), LOW (green)\n  - **Reason/escalation reason**\n  - **Division** label (if set)\n  - **Reject** (red) and **Approve** (green) buttons -- both biometric gated\n- Yellow warning banner at top: *\"⚠ Face ID or PIN required for each action\"*\n- If none pending: shows ✓ \"No pending approvals\" empty state\n\n---\n\n## Badge Count\nThe **⚠ badge** on the Alerts tab = `alerts.length + approvals.length` combined. So if you have 2 alerts + 1 approval, badge shows **3**.\n\n---\n\n## Also on Home Tab\nThe first 3 alerts are previewed inline on the Home tab (without ACK buttons). If more than 3, it shows a \"see Alerts tab\" link."
     }
   ],
-  "last_updated": "2026-03-21T16:44:14.715Z"
+  "last_updated": "2026-03-21T16:51:04.482Z"
 }
