@@ -1,13 +1,44 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-21T17:02:58.134841+00:00",
+  "generated_at": "2026-03-21T18:03:03.750103+00:00",
   "skill": "refactor-scan",
-  "status": "failed",
-  "summary": "Refactor scan failed: Expecting ',' delimiter: line 52 column 6 (char 3141)",
-  "action_items": [],
+  "status": "success",
+  "summary": "Several files contain large functions and could benefit from refactoring to improve readability, maintainability, and testability.",
+  "action_items": [
+    {
+      "priority": "high",
+      "description": "[high] runtime\\tools\\virtual_account.py: The `run_virtual_account` function is 152 lines long, which is quite large and difficult to manage. — Consider breaking down the `run_virtual_account` function into smaller, more focused functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\skills\\market_scan.py: The `run` function in `market_scan.py` is 81 lines long and could be simplified by extracting logic into smaller functions. — Refactor the `run` function to include smaller, more manageable functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\orchestrators\\dev_automation.py: The `run_repo_monitor` function is 63 lines long and could be broken down into smaller, more focused functions. — Refactor the `run_repo_monitor` function to include smaller, more manageable functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\tools\\jobs.py: The `fetch_adzuna` function is 68 lines long and could be simplified by extracting logic into smaller functions. — Refactor the `fetch_adzuna` function to include smaller, more manageable functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\skills\\hard_filter.py: The `run` function in `hard_filter.py` is 88 lines long and could be broken down into smaller, more focused functions. — Refactor the `run` function to include smaller, more manageable functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\skills\\repo_monitor.py: The `run` function in `repo_monitor.py` is 62 lines long and could be simplified by extracting logic into smaller functions. — Refactor the `run` function to include smaller, more manageable functions.",
+      "requires_matthew": false
+    }
+  ],
   "metrics": {
-    "findings": 0,
-    "high": 0,
+    "findings": 8,
+    "high": 8,
     "files_scanned": 15,
     "model_used": "qwen2.5-coder:7b-instruct-q4_K_M"
   },

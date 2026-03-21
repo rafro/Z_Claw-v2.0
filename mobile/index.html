@@ -281,6 +281,26 @@
     .oos-box .ov { font-size: 14px; font-weight: 700; }
     .oos-box .ol { font-size: 9px; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
 
+    /* ── Account value card ── */
+    .acct-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .acct-box { background: var(--overlay); border-radius: 8px; padding: 10px 12px; }
+    .acct-box .av { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .acct-box .al { font-size: 9px; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+    .acct-box.wide { grid-column: 1 / -1; }
+
+    /* ── Return projections ── */
+    .proj-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .proj-box { flex-shrink: 0; background: var(--overlay); border-radius: 8px; padding: 8px 12px; text-align: center; min-width: 56px; }
+    .proj-box .pv { font-size: 13px; font-weight: 700; }
+    .proj-box .pl { font-size: 9px; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+    /* ── Coach review ── */
+    .health-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+    .health-good     { background: rgba(166,227,161,0.15); color: var(--green); }
+    .health-watch    { background: rgba(249,226,175,0.15); color: var(--yellow); }
+    .health-critical { background: rgba(243,139,168,0.15); color: var(--red); }
+    .health-neutral  { background: var(--overlay); color: var(--subtext); }
+
     /* ── Source pills ── */
     .src-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 
@@ -309,6 +329,32 @@
     .xp-divs { display: flex; gap: 6px; flex-wrap: wrap; }
     .xp-div-badge { background: var(--overlay); border-radius: 8px; padding: 5px 8px; font-size: 10px; color: var(--subtext); }
     .xp-div-badge span { color: var(--text); font-weight: 600; }
+
+    /* ── J_Claw gamified tab ── */
+    .jclaw-hero { background: linear-gradient(160deg, #1a0a2e 0%, #0d0d1a 100%); border: 1px solid #3b1f6e; border-radius: 14px; padding: 20px 16px 16px; margin-bottom: 12px; text-align: center; }
+    .jclaw-title { font-size: 26px; font-weight: 900; letter-spacing: 0.15em; color: #a78bfa; text-shadow: 0 0 18px #7c3aed88; margin-bottom: 4px; }
+    .jclaw-prestige { font-size: 10px; color: var(--yellow); letter-spacing: 0.06em; margin-bottom: 6px; }
+    .jclaw-rank { font-size: 13px; font-weight: 700; color: #e0d7ff; margin-bottom: 2px; }
+    .jclaw-level { font-size: 10px; color: var(--subtext); letter-spacing: 0.1em; margin-bottom: 10px; }
+    .jclaw-xp-label { font-size: 10px; color: var(--subtext); margin-top: 4px; }
+    .jclaw-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .jclaw-stat-box { background: var(--overlay); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; text-align: center; }
+    .jclaw-stat-val { font-size: 16px; font-weight: 700; color: var(--purple); }
+    .jclaw-stat-lbl { font-size: 8px; color: var(--subtext); margin-top: 3px; letter-spacing: 0.05em; }
+    .jclaw-section-title { font-size: 10px; color: var(--subtext); letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+    .jclaw-div-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .jclaw-div-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 10px; text-align: center; }
+    .jclaw-div-card.jclaw-div-inactive { opacity: 0.45; }
+    .jclaw-div-icon { font-size: 20px; margin-bottom: 4px; }
+    .jclaw-div-label { font-size: 9px; color: var(--subtext); letter-spacing: 0.06em; margin-bottom: 4px; }
+    .jclaw-div-rank { font-size: 11px; font-weight: 600; color: var(--purple); margin-bottom: 2px; }
+    .jclaw-div-xp { font-size: 10px; color: var(--subtext); }
+    .jclaw-ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .jclaw-ach-badge { background: var(--overlay); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; opacity: 0.4; }
+    .jclaw-ach-badge.jclaw-ach-earned { background: #1a0a2e; border-color: #7c3aed; opacity: 1; }
+    .jclaw-ach-icon { font-size: 18px; margin-bottom: 4px; }
+    .jclaw-ach-name { font-size: 10px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .jclaw-ach-desc { font-size: 9px; color: var(--subtext); line-height: 1.3; }
 
     /* ── Flag rows ── */
     .flag-row { display: flex; gap: 8px; }
@@ -837,8 +883,8 @@
   </button>
   <button class="tab-btn" onclick="switchTab('stats')" id="tab-stats">
     <div class="tab-wrap">
-      <span class="tab-icon">⭐</span>
-      <span>Stats</span>
+      <span class="tab-icon">⚔</span>
+      <span>J_Claw</span>
     </div>
   </button>
 </nav>
@@ -1101,20 +1147,21 @@ function _connectGamifStream() {
       try {
         const evt = JSON.parse(e.data);
         if (!evt || evt.type !== 'gamif') return;
+        const _onGamifTab = _currentTab === 'home' || _currentTab === 'stats';
         if (['skill_complete','xp_grant','init'].includes(evt.event)) {
-          if (_currentTab === 'home') refreshCurrent();
+          if (_onGamifTab) refreshCurrent();
         } else if (evt.event === 'rank_up') {
           const label = evt.division ? `⚔ ${evt.division.toUpperCase()} RANK UP` : '⚔ RANK UP';
           showRankUpBanner(`${label}\n${evt.new_rank}`); _playChime();
-          if (_currentTab === 'home') refreshCurrent();
+          if (_onGamifTab) refreshCurrent();
         } else if (evt.event === 'achievement_unlock') {
           showRankUpBanner(`🏆 ${evt.achievement.replace(/_/g,' ').toUpperCase()}`); _playChime();
-          if (_currentTab === 'home') refreshCurrent();
+          if (_onGamifTab) refreshCurrent();
         } else if (evt.event === 'streak_milestone') {
           showToast(`🔥 ${evt.division} streak: ${evt.streak} days!`);
         } else if (evt.event === 'prestige') {
           showRankUpBanner(`⭐ PRESTIGE ${evt.prestige}\n+${Math.round((evt.multiplier-1)*100)}% PERMANENT XP`);
-          _playChime(); if (_currentTab === 'home') refreshCurrent();
+          _playChime(); if (_onGamifTab) refreshCurrent();
         }
       } catch(err) {}
     };
@@ -1220,43 +1267,124 @@ async function loadStatsTab() {
   const el = document.getElementById('stats-content');
   if (!el) return;
   try {
-    const d = await api('/mobile/api/stats/summary');
-    const divLabels = { opportunity:'OPPS', trading:'TRADE', dev_automation:'DEV', personal:'PERS', op_sec:'OPSEC' };
-    const streakRows = Object.entries(d.longest_streaks || {})
-      .map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:var(--subtext)">${divLabels[k]||k}</span><span style="color:var(--yellow)">🔥 ${v}d</span></div>`)
-      .join('');
-    const prestige = d.prestige || 0;
+    const [s, d] = await Promise.all([
+      api('/mobile/api/stats'),
+      api('/mobile/api/stats/summary')
+    ]);
 
-    el.innerHTML = `
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title">REALM STATS</div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-            <div style="background:var(--overlay);border:1px solid var(--border);padding:10px;text-align:center;">
-              <div style="font-size:9px;color:var(--subtext);margin-bottom:4px;">TOTAL XP EARNED</div>
-              <div style="font-size:16px;color:var(--purple);">${d.total_xp_earned || 0}</div>
-            </div>
-            <div style="background:var(--overlay);border:1px solid var(--border);padding:10px;text-align:center;">
-              <div style="font-size:9px;color:var(--subtext);margin-bottom:4px;">XP / DAY (7D)</div>
-              <div style="font-size:16px;color:var(--green);">${d.xp_per_day_7d || 0}</div>
-            </div>
-            <div style="background:var(--overlay);border:1px solid var(--border);padding:10px;text-align:center;">
-              <div style="font-size:9px;color:var(--subtext);margin-bottom:4px;">ACHIEVEMENTS</div>
-              <div style="font-size:16px;color:var(--yellow);">${d.achievements_earned}/${d.achievements_total}</div>
-            </div>
-            <div style="background:var(--overlay);border:1px solid var(--border);padding:10px;text-align:center;">
-              <div style="font-size:9px;color:var(--subtext);margin-bottom:4px;">PRESTIGE</div>
-              <div style="font-size:16px;color:var(--yellow);">${prestige > 0 ? '⭐'.repeat(prestige) : '—'}</div>
-            </div>
-          </div>
-          ${d.prestige_multiplier > 1.0 ? `<div style="font-size:10px;color:var(--green);margin-bottom:10px;text-align:center;">PRESTIGE BONUS: ×${d.prestige_multiplier} XP</div>` : ''}
-          <div style="font-size:10px;color:var(--subtext);margin-bottom:6px;letter-spacing:0.05em;">LONGEST STREAKS</div>
-          ${streakRows || '<div style="color:var(--subtext);font-size:10px;">No streaks yet</div>'}
+    const ALL_ACHIEVEMENTS = [
+      { id: 'rulers_blessing', icon: '👑', name: "Ruler's Blessing", desc: 'First reward from Matthew' },
+      { id: 'first_hunt',      icon: '🏹', name: 'First Hunt',        desc: 'First job opportunity found' },
+      { id: 'market_watcher',  icon: '📈', name: 'Market Watcher',    desc: 'First trading report sent' },
+      { id: 'code_warden',     icon: '🛡', name: 'Code Warden',       desc: 'First repo-monitor run' },
+      { id: 'healthy_habits',  icon: '🔥', name: 'Loyal Flame',       desc: '7-day health log streak' },
+      { id: 'division_master', icon: '⚔',  name: 'Division Master',   desc: 'Any division reaches Master' },
+      { id: 'realm_commander', icon: '🌟', name: 'Realm Commander',   desc: 'Reach Level 10' },
+      { id: 'eternal',         icon: '♾',  name: 'Eternal',           desc: 'Reach Level 50' },
+    ];
+    const DIV_CONFIG = [
+      { key: 'op_sec',         icon: '🛡', label: 'Op-Sec'   },
+      { key: 'dev_automation', icon: '💻', label: 'Dev'      },
+      { key: 'trading',        icon: '📈', label: 'Trading'  },
+      { key: 'opportunity',    icon: '🏹', label: 'Opps'     },
+      { key: 'personal',       icon: '🌿', label: 'Personal' },
+    ];
+
+    const earned   = new Set((s.achievements || []).map(a => typeof a === 'string' ? a : a.id));
+    const prestige = s.prestige || 0;
+    const baseXp   = s.base_xp || 0;
+    const xpToNext = s.xp_to_next_level || 100;
+    const pct      = Math.min(100, Math.round(baseXp / xpToNext * 100));
+    const divs     = s.divisions || {};
+    const streaks  = s.streaks   || {};
+
+    // ── Hero ──
+    let html = `
+      <div class="jclaw-hero">
+        <div class="jclaw-title">J_CLAW</div>
+        ${prestige > 0 ? `<div class="jclaw-prestige">${'⭐'.repeat(prestige)} PRESTIGE ${prestige} · ×${s.prestige_multiplier || 1} XP</div>` : ''}
+        <div class="jclaw-rank">${escHtml(s.rank || 'Apprentice of the Realm')}</div>
+        <div class="jclaw-level">LEVEL ${s.level || 1}</div>
+        <div class="xp-bar-wrap" style="margin:8px 0 4px;">
+          <div class="xp-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div>
         </div>
-      </div>
-    `;
+        <div class="jclaw-xp-label">${baseXp} / ${xpToNext} XP to next level · ${s.total_xp_earned || 0} total earned</div>
+      </div>`;
+
+    // ── Battle stats row ──
+    html += `
+      <div class="jclaw-stats-row">
+        <div class="jclaw-stat-box">
+          <div class="jclaw-stat-val" style="color:var(--green);">${d.xp_per_day_7d || 0}</div>
+          <div class="jclaw-stat-lbl">XP / DAY (7D)</div>
+        </div>
+        <div class="jclaw-stat-box">
+          <div class="jclaw-stat-val" style="color:var(--yellow);">${d.achievements_earned || 0}/${d.achievements_total || 8}</div>
+          <div class="jclaw-stat-lbl">TROPHIES</div>
+        </div>
+        <div class="jclaw-stat-box">
+          <div class="jclaw-stat-val">${s.total_xp_earned || 0}</div>
+          <div class="jclaw-stat-lbl">TOTAL XP</div>
+        </div>
+      </div>`;
+
+    // ── Division ranks ──
+    html += `<div class="jclaw-section-title">⚔ Division Ranks</div>`;
+    html += `<div class="jclaw-div-grid">`;
+    for (const { key, icon, label } of DIV_CONFIG) {
+      const div    = divs[key];
+      const streak = streaks[key];
+      const fire   = streak && streak.current > 0 ? ` 🔥${streak.current}d` : '';
+      if (div) {
+        html += `<div class="jclaw-div-card">
+          <div class="jclaw-div-icon">${icon}</div>
+          <div class="jclaw-div-label">${escHtml(label)}${fire}</div>
+          <div class="jclaw-div-rank">${escHtml(div.rank)}</div>
+          <div class="jclaw-div-xp">${div.xp} XP</div>
+        </div>`;
+      } else {
+        html += `<div class="jclaw-div-card jclaw-div-inactive">
+          <div class="jclaw-div-icon">${icon}</div>
+          <div class="jclaw-div-label">${escHtml(label)}</div>
+          <div class="jclaw-div-rank" style="color:var(--subtext);">Inactive</div>
+          <div class="jclaw-div-xp">0 XP</div>
+        </div>`;
+      }
+    }
+    html += `</div>`;
+
+    // ── Achievements ──
+    html += `<div class="jclaw-section-title">🏆 Achievements</div>`;
+    html += `<div class="jclaw-ach-grid">`;
+    for (const ach of ALL_ACHIEVEMENTS) {
+      const isEarned = earned.has(ach.id);
+      html += `<div class="jclaw-ach-badge${isEarned ? ' jclaw-ach-earned' : ''}">
+        <div class="jclaw-ach-icon">${isEarned ? ach.icon : '🔒'}</div>
+        <div class="jclaw-ach-name">${ach.name}</div>
+        <div class="jclaw-ach-desc">${ach.desc}</div>
+      </div>`;
+    }
+    html += `</div>`;
+
+    // ── Longest streaks ──
+    const longestStreaks = d.longest_streaks || {};
+    const streakEntries  = Object.entries(longestStreaks).filter(([,v]) => v > 0);
+    if (streakEntries.length) {
+      const sl = { opportunity:'Opps', trading:'Trading', dev_automation:'Dev', personal:'Personal', op_sec:'Op-Sec' };
+      html += `<div class="jclaw-section-title">🔥 Longest Streaks</div>`;
+      html += `<div class="card"><div class="card-body" style="padding:4px 0;">`;
+      for (const [k, v] of streakEntries) {
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);">
+          <span style="color:var(--subtext);font-size:11px;">${sl[k]||k}</span>
+          <span style="color:var(--yellow);font-size:11px;">🔥 ${v}d</span>
+        </div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div class="card"><div class="card-body" style="color:var(--subtext)">Failed to load stats</div></div>';
+    el.innerHTML = '<div class="card"><div class="card-body" style="color:var(--subtext)">Failed to load J_Claw</div></div>';
   }
 }
 
@@ -2413,6 +2541,67 @@ function _renderTrading(d, histIdx) {
     ${isCurrentCycle && d.hours_since_update != null ? `<div class="card-meta">Updated ${d.hours_since_update}h ago</div>` : ''}
   </div>`;
 
+  // ── Account Value card (current cycle only) ──
+  if (isCurrentCycle && d.account) {
+    const acct = d.account;
+    const growthPos = acct.growth_usd >= 0;
+    const growthColor = growthPos ? 'var(--green)' : 'var(--red)';
+    const growthSign = growthPos ? '+' : '';
+    html += '<div class="card">';
+    html += '<div class="card-title" style="margin-bottom:10px;">Account</div>';
+    html += '<div class="acct-grid">';
+    html += `<div class="acct-box"><div class="av">$${acct.balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div><div class="al">Balance</div></div>`;
+    html += `<div class="acct-box"><div class="av" style="color:${growthColor}">${growthSign}$${Math.abs(acct.growth_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div><div class="al">Account Growth</div></div>`;
+    if (s.total_pnl_pct != null) {
+      const pPos = s.total_pnl_pct >= 0;
+      html += `<div class="acct-box"><div class="av" style="color:${pPos ? 'var(--green)' : 'var(--red)'}">${pPos ? '+' : ''}${s.total_pnl_pct}%</div><div class="al">Strategy Profit</div></div>`;
+    }
+    if (s.annualised_return_pct != null) {
+      const aPos = s.annualised_return_pct >= 0;
+      html += `<div class="acct-box"><div class="av" style="color:${aPos ? 'var(--green)' : 'var(--red)'}">${aPos ? '+' : ''}${s.annualised_return_pct}%</div><div class="al">Ann. Return</div></div>`;
+    }
+    if (s.projected_monthly_pnl_pct != null) {
+      html += `<div class="acct-box wide"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="al" style="font-size:10px;">Projected / Month</span><span style="font-size:15px;font-weight:700;color:var(--teal)">${s.projected_monthly_pnl_pct >= 0 ? '+' : ''}${s.projected_monthly_pnl_pct}%</span></div></div>`;
+    }
+    html += '</div>';
+    // Open positions
+    if (acct.open_positions && acct.open_positions.length) {
+      html += '<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">';
+      html += '<div style="font-size:10px;color:var(--subtext);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Open Positions</div>';
+      acct.open_positions.forEach(p => {
+        const pPos = (p.unrealized_pnl || p.pnl || 0) >= 0;
+        html += `<div class="trade-row">
+          <div><div class="trade-sym">${escHtml(p.symbol || '?')}</div><div class="trade-meta">${escHtml(p.direction || '')}${p.entry_price != null ? ' · $' + p.entry_price : ''}</div></div>
+          <div style="text-align:right;">
+            ${p.unrealized_pnl != null ? `<div class="trade-pnl ${pPos ? 'pos' : 'neg'}">${pPos ? '+' : ''}${p.unrealized_pnl.toFixed(2)}R</div>` : ''}
+            ${p.size != null ? `<div class="trade-meta">${p.size} units</div>` : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // ── Return Projections card (current cycle only) ──
+  if (isCurrentCycle && s.return_projections) {
+    const rp = s.return_projections;
+    const periods = [['1mo','1m'],['3mo','3m'],['6mo','6m'],['1yr','12m'],['2yr','24m']];
+    const available = periods.filter(([,k]) => rp[k] && rp[k].per_trade != null);
+    if (available.length) {
+      html += '<div class="card">';
+      html += '<div class="card-title" style="margin-bottom:8px;">Return Projections</div>';
+      html += '<div class="proj-grid">';
+      available.forEach(([label, k]) => {
+        const val = Math.round(rp[k].per_trade * 10000) / 100;
+        const pos = val >= 0;
+        html += `<div class="proj-box"><div class="pv" style="color:${pos ? 'var(--green)' : 'var(--red)'}">${pos ? '+' : ''}${val}%</div><div class="pl">${label}</div></div>`;
+      });
+      html += '</div>';
+      html += '</div>';
+    }
+  }
+
   // ── Win rate ring + sharpe/RR ──
   if (s.win_rate != null || s.sharpe != null) {
     html += '<div class="card">';
@@ -2428,8 +2617,8 @@ function _renderTrading(d, histIdx) {
       html += `<div class="tstat-row"><span class="tstat-lbl">Risk / Reward</span><span class="tstat-val">${escHtml(s.rr_display || (s.rr_ratio ? s.rr_ratio.toFixed(2)+':1' : '—'))}</span></div>`;
     if (s.profit_factor != null)
       html += `<div class="tstat-row"><span class="tstat-lbl">Prof. Factor</span><span class="tstat-val">${s.profit_factor.toFixed(2)}</span></div>`;
-    if (s.total_pnl_pct != null)
-      html += `<div class="tstat-row"><span class="tstat-lbl">Backtest P&L</span><span class="tstat-val" style="color:${s.total_pnl_pct >= 0 ? 'var(--green)' : 'var(--red)'}">${s.total_pnl_pct >= 0 ? '+' : ''}${s.total_pnl_pct}%</span></div>`;
+    if (s.best_risk_pct != null)
+      html += `<div class="tstat-row"><span class="tstat-lbl">Risk / Trade</span><span class="tstat-val">${s.best_risk_pct}%</span></div>`;
     html += '</div>';
     html += '</div>';
     if (equityCurve && equityCurve.length >= 2) {
@@ -2442,20 +2631,20 @@ function _renderTrading(d, histIdx) {
   }
 
   // ── Extended metrics ──
-  const hasExt = s.sortino != null || s.max_drawdown_pct != null;
+  const hasExt = s.sortino != null || s.max_drawdown_pct != null || s.mc_p95_dd != null;
   if (hasExt) {
     html += '<div class="card"><div class="metrics-row">';
     if (s.sortino != null)          html += metricBox(s.sortino.toFixed(3), 'Sortino');
     if (s.max_drawdown_pct != null) html += metricBox(s.max_drawdown_pct.toFixed(2) + '%', 'Max DD', 'var(--red)');
-    if (s.profit_factor != null)    html += metricBox(s.profit_factor.toFixed(2), 'Prof.F');
+    if (s.mc_p95_dd != null)        html += metricBox(s.mc_p95_dd.toFixed(1) + '%', 'MC p95 DD', 'var(--red)');
     html += '</div></div>';
   }
 
   // ── Avg Win / Loss / Trade count ──
   if (s.avg_win_r != null || s.avg_loss_r != null || s.trade_count != null) {
     html += '<div class="metrics-row">';
-    if (s.avg_win_r != null)  html += metricBox('+' + s.avg_win_r.toFixed(2) + 'R',  'Avg Win',  'var(--green)');
-    if (s.avg_loss_r != null) html += metricBox('−' + s.avg_loss_r.toFixed(2) + 'R', 'Avg Loss', 'var(--red)');
+    if (s.avg_win_r != null)   html += metricBox('+' + s.avg_win_r.toFixed(2) + 'R',  'Avg Win',  'var(--green)');
+    if (s.avg_loss_r != null)  html += metricBox('−' + s.avg_loss_r.toFixed(2) + 'R', 'Avg Loss', 'var(--red)');
     if (s.trade_count != null) html += metricBox(s.trade_count, 'Trades');
     html += '</div>';
   }
@@ -2468,8 +2657,29 @@ function _renderTrading(d, histIdx) {
     if (oosVal.sharpe != null)      html += `<div class="oos-box"><div class="ov">${oosVal.sharpe.toFixed(2)}</div><div class="ol">Sharpe</div></div>`;
     if (oosVal.win_rate != null)    html += `<div class="oos-box"><div class="ov">${oosVal.win_rate}%</div><div class="ol">Win Rate</div></div>`;
     if (oosVal.trade_count != null) html += `<div class="oos-box"><div class="ov">${oosVal.trade_count}</div><div class="ol">Trades</div></div>`;
+    if (oosVal.growth_pct != null) {
+      const ogPos = oosVal.growth_pct >= 0;
+      html += `<div class="oos-box"><div class="ov" style="color:${ogPos ? 'var(--green)' : 'var(--red)'}">${ogPos ? '+' : ''}${oosVal.growth_pct}%</div><div class="ol">Growth</div></div>`;
+    }
     html += '</div>';
     if (oosVal.note) html += `<div class="card-meta" style="margin-top:8px;">${escHtml(oosVal.note)}</div>`;
+    html += '</div>';
+  }
+
+  // ── Coach Review (current cycle only) ──
+  if (isCurrentCycle && d.latest_weekly_review) {
+    const wr = d.latest_weekly_review;
+    const tier = (wr.health_tier || '').toUpperCase();
+    const tierClass = tier === 'GOOD' ? 'health-good' : tier === 'WATCH' ? 'health-watch' : tier === 'CRITICAL' ? 'health-critical' : 'health-neutral';
+    html += '<div class="card">';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span class="card-title">Coach Review</span><span class="health-badge ${tierClass}">${escHtml(tier || 'N/A')}</span></div>`;
+    if (wr.date) html += `<div class="card-meta" style="margin-bottom:6px;">${escHtml(wr.date)}</div>`;
+    const coachStats = [];
+    if (wr.trades != null)  coachStats.push(`${wr.trades} trades`);
+    if (wr.win_rate != null) coachStats.push(`${wr.win_rate}% WR`);
+    if (wr.pnl_r != null)   coachStats.push(`${wr.pnl_r >= 0 ? '+' : ''}${wr.pnl_r.toFixed(2)}R`);
+    if (coachStats.length)  html += `<div style="font-size:12px;color:var(--subtext);margin-bottom:6px;">${escHtml(coachStats.join(' · '))}</div>`;
+    if (wr.summary) html += `<div style="font-size:12px;color:var(--text);line-height:1.5;">${escHtml(wr.summary)}</div>`;
     html += '</div>';
   }
 
@@ -2488,17 +2698,18 @@ function _renderTrading(d, histIdx) {
     html += '<div class="section-title">Recent Trades</div>';
     html += '<div class="card">';
     d.recent_trades.slice(0, 10).forEach(t => {
-      const pos = (t.pnl || 0) >= 0;
+      const pos = (t.r_multiple != null ? t.r_multiple : (t.pnl || 0)) >= 0;
       const r   = t.r_multiple != null ? (t.r_multiple >= 0 ? '+' : '') + t.r_multiple.toFixed(2) + 'R' : '';
-      const pnlStr = (pos ? '+' : '') + (t.pnl || 0).toFixed(2);
       html += `<div class="trade-row">
         <div>
-          <div class="trade-sym">${escHtml(t.symbol || '?')}${t.outcome ? ' · <span style="font-size:10px;color:' + (t.outcome === 'WIN' ? 'var(--green)' : 'var(--red)') + '">' + escHtml(t.outcome) + '</span>' : ''}</div>
+          <div class="trade-sym">${escHtml(t.symbol || '?')} <span style="font-size:10px;color:${pos ? 'var(--green)' : 'var(--red)'}">${pos ? 'WIN' : 'LOSS'}</span></div>
           <div class="trade-meta">${escHtml(t.date || '')}${r ? ' · ' + r : ''}</div>
         </div>
-        <div>
-          <div class="trade-pnl ${pos ? 'pos' : 'neg'}">${pnlStr}</div>
-          ${t.pnl_dollar != null ? `<div class="trade-meta" style="text-align:right;">${pos ? '+' : ''}$${Math.abs(t.pnl_dollar).toFixed(0)}</div>` : ''}
+        <div style="text-align:right;">
+          ${t.pnl_dollar != null
+            ? `<div class="trade-pnl ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}$${Math.abs(t.pnl_dollar).toFixed(2)}</div>`
+            : r ? `<div class="trade-pnl ${pos ? 'pos' : 'neg'}">${r}</div>` : ''}
+          ${t.entry_price != null && t.exit_price != null ? `<div class="trade-meta">${t.entry_price} → ${t.exit_price}</div>` : ''}
         </div>
       </div>`;
     });

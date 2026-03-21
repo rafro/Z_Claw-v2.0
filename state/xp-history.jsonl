@@ -7,3 +7,7 @@
 {"ts":"2026-03-21T16:02:48.622Z","event":"skill_complete","skill":"refactor-scan","div":"dev_automation","xp":0,"streak":1}
 {"ts":"2026-03-21T17:00:02.219Z","event":"skill_complete","skill":"breach-check","div":"op_sec","xp":10,"streak":1}
 {"ts":"2026-03-21T17:13:20.360Z","event":"ruler_bestow","amount":2,"level":1,"rank":"Apprentice of the Realm","reason":"Great work, you are learning quickly my pupil"}
+{"ts":"2026-03-21T18:00:03.070Z","event":"skill_complete","skill":"cred-audit","div":"op_sec","xp":15,"multiplier":1,"streak":1}
+{"ts":"2026-03-21T18:00:24.139Z","event":"skill_complete","skill":"dev-digest","div":"dev_automation","xp":0,"multiplier":1,"streak":1}
+{"ts":"2026-03-21T18:03:03.857Z","event":"skill_complete","skill":"refactor-scan","div":"dev_automation","xp":0,"multiplier":1,"streak":1}
+{"ts":"2026-03-21T18:09:18.031Z","event":"skill_complete","skill":"job-intake","div":"opportunity","xp":10,"multiplier":1,"streak":1}

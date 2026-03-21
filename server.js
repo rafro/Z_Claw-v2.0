@@ -714,13 +714,26 @@ function handleGetTradingCycle(res) {
         oos_sharpe:       h.oos_sharpe,
         oos_win_rate:     h.oos_win_rate != null ? Math.round(h.oos_win_rate * 100) : null,
         oos_trade_count:  h.oos_trade_count,
+        oos_growth_pct:   h.oos_growth_pct != null ? Math.round(h.oos_growth_pct * 1000) / 10 : null,
         theoretical_ev_r: h.theoretical_ev_r,
         empirical_ev_r:   h.empirical_ev_r,
         confidence_rating: h.confidence_rating,
         backtest_years:   (h.recent_window && h.recent_window.years) ? Math.round(h.recent_window.years * 10) / 10 : null,
         total_pnl_pct:    h.total_pnl_pct != null ? Math.round(h.total_pnl_pct * 1000) / 10 : null,
+        total_pnl_usd:    h.total_pnl_usd != null ? Math.round(h.total_pnl_usd * 100) / 100 : null,
+        annualised_return_pct: h.annualised_return_pct != null ? Math.round(h.annualised_return_pct * 100) / 100 : null,
+        projected_monthly_pnl_pct: h.projected_monthly_pnl_pct != null ? Math.round(h.projected_monthly_pnl_pct * 10000) / 100 : null,
+        return_projections: h.return_projections || null,
+        mc_p95_dd:        h.mc_p95_dd != null ? Math.round(h.mc_p95_dd * 1000) / 10 : null,
+        best_risk_pct:    h.best_risk_pct,
       };
     }
+
+    // Read virtual account state
+    let virtualAccount = null;
+    try {
+      virtualAccount = JSON.parse(fs2.readFileSync(path2.join(agentNetworkState, 'virtual_account.json'), 'utf8'));
+    } catch(e) {}
 
     // Build performance_history (last 10 cycle winners, newest first, equity_curve stripped for size)
     const rawHistory = (cycleData.performance_history || []).slice(-10).reverse();
@@ -742,7 +755,14 @@ function handleGetTradingCycle(res) {
         sharpe:      strat.oos_sharpe,
         win_rate:    strat.oos_win_rate != null ? Math.round(strat.oos_win_rate * 100) : null,
         trade_count: strat.oos_trade_count,
+        growth_pct:  strat.oos_growth_pct != null ? Math.round(strat.oos_growth_pct * 1000) / 10 : null,
         note:        strat.confidence_rating ? `Confidence: ${strat.confidence_rating}` : null,
+      } : null,
+      account: virtualAccount ? {
+        balance:         virtualAccount.account_balance,
+        initial_balance: virtualAccount.initial_balance,
+        growth_usd:      Math.round((virtualAccount.account_balance - virtualAccount.initial_balance) * 100) / 100,
+        open_positions:  virtualAccount.open_positions || [],
       } : null,
       performance_history: perfHistory,
       agents: {
@@ -752,16 +772,25 @@ function handleGetTradingCycle(res) {
         trading_coach:    { role: 'Reviews performance, adjusts risk',    last_output: lastWeekly.health_tier ? `Health: ${lastWeekly.health_tier}` : 'No review yet' },
       },
       recent_trades: recentTrades.map(t => ({
-        symbol:     t.symbol,
-        pnl:        t.pnl,
-        r_multiple: t.r_multiple,
-        result:     t.result,
-        reason:     t.reason,
+        symbol:      t.symbol,
+        pnl:         t.pnl,
+        pnl_dollar:  t.pnl_dollar != null ? t.pnl_dollar : (t.pnl != null && t.risk_usd != null ? Math.round(t.pnl * t.risk_usd * 100) / 100 : null),
+        r_multiple:  t.r_multiple,
+        result:      t.result,
+        reason:      t.reason,
         entry_price: t.entry_price,
         exit_price:  t.exit_price,
         risk_usd:    t.risk_usd,
         date: t.timestamp ? new Date(t.timestamp).toISOString().slice(0,10) : null,
       })),
+      latest_weekly_review: lastWeekly && lastWeekly.health_tier ? {
+        health_tier:   lastWeekly.health_tier,
+        summary:       lastWeekly.summary || lastWeekly.coaching_notes || null,
+        date:          lastWeekly.date || lastWeekly.week_end || null,
+        win_rate:      lastWeekly.win_rate != null ? Math.round(lastWeekly.win_rate * 100) : null,
+        trades:        lastWeekly.total_trades || lastWeekly.trade_count || null,
+        pnl_r:         lastWeekly.total_pnl_r || lastWeekly.pnl_r || null,
+      } : null,
       weekly_reviews: weekly,
       performance_summary: {
         total_trades: (cycleData.trade_log || []).length,

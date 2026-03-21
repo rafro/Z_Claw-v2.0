@@ -1,16 +1,16 @@
 {
   "division": "opportunity",
-  "generated_at": "2026-03-21T15:08:47.661085+00:00",
+  "generated_at": "2026-03-21T18:09:17.907492+00:00",
   "skill": "job-intake",
   "status": "success",
-  "summary": "The job intake run from sources including WeWorkRemotely, RemoteOK, and Remotive shows stable health with no critical issues. Notable finds include three new opportunities, but concerns remain due to partial data from Adzuna.",
+  "summary": "The job intake run from WeWorkRemotely, RemoteOK, and Remotive shows all sources as \"ok,\" while Adzuna has partial data. Notable finds include 221 total positions with 4 new opportunities in the D category. No specific concerns noted at this time.",
   "action_items": [],
   "metrics": {
-    "new_jobs_found": 3,
+    "new_jobs_found": 4,
     "tier_a": 0,
     "tier_b": 0,
-    "tier_c": 1,
-    "tier_d": 2,
+    "tier_c": 0,
+    "tier_d": 4,
     "source_status": {
       "WeWorkRemotely": "ok",
       "RemoteOK": "ok",
