@@ -2,14 +2,6 @@
   "messages": [
     {
       "role": "user",
-      "content": "Please explain the total project and where we’re at so far"
-    },
-    {
-      "role": "assistant",
-      "content": "Here's the full picture:\n\n---\n\n## 🦾 J_Claw / OpenClaw — What It Is\n\n**J_Claw** is your personal AI orchestration system running 24/7 on Tyler's Windows 11 desktop. Think of it as a self-managing AI operations center that handles multiple areas of your life autonomously. You (Matthew) are the creator and operator; Tyler is the co-user on the desktop.\n\n---\n\n## 🧠 The Brain — Architecture\n\nAfter a major refactor in March 2026, it's now called **OpenClaw** internally. The core idea: Claude is no longer required — every AI call goes through a **ProviderRouter** that can use:\n- **Ollama** (local, on the RX 9070 XT GPU) — free, fast, private\n- **Anthropic/Claude** — premium, cloud\n- **Gemini** — cloud fallback\n- **Deterministic** — hard-coded logic, no AI needed\n\n### Key Components:\n| Layer | What It Does |\n|---|---|\n| `providers/` | BaseProvider, OllamaProvider, AnthropicProvider, GeminiProvider, router.py |\n| `schemas/` | Pydantic data models (ExecutivePacket, TaskPacket, etc.) |\n| `mission_control/` | Task queue, approval gate, audit log, Telegram notifications |\n| `runtime/workers/` | Dev pipeline workers + sentinel health monitors |\n| `runtime/orchestrators/` | Dev pipeline + sentinel orchestrators |\n| `divisions/` | Per-division logic (see below) |\n| `server.js` | Mission Control web server at `localhost:3000` |\n\n---\n\n## 🏛️ The 5 Divisions (Active 24/7)\n\n| Division | Purpose | Status |\n|---|---|---|\n| **opportunity** | Job hunting — scrapes listings, scores them, tracks applications | 65 pending review |\n| **trading** | Algorithmic trading / DeFi monitoring | Idle |\n| **dev_automation** | Code refactor scans, auto-dev tasks | Running every ~30min |\n| **personal** | Wellness, personal tracking | Idle |\n| **op_sec** | Security monitoring | Idle |\n\n---\n\n## 🖥️ What's Running (PM2 Processes)\n\n- **`openclaw`** — Mission Control dashboard (`localhost:3000/dashboard`) — your control panel\n- **`openclaw-gateway`** — **Zenith**, a Discord bot powered by a local 20.9B Ollama model on the 9070 XT\n\n---\n\n## 🤖 AI Stack\n\n- **Local**: Ollama running `zenith-expert` (20.9B MXFP4) on the AMD RX 9070 XT (16GB VRAM)\n- **Cloud**: Claude CLI (via OAuth session), Anthropic API, Gemini as fallback\n- **Mission Control chat**: Spawns Claude CLI as a subprocess — that's me talking to you here\n\n---\n\n## 📊 Current State\n\n- **Gamification active**: J_Claw has XP/rank system (currently Rank: Apprentice)\n- **Opportunity division is most active**: Grand Hunter rank, 215 XP, 65 jobs queued\n- **Health logging**: Last logged 2026-03-20 (yesterday)\n- **Ollama fallback issue**: Logged at 00:41 — Ollama timed out, fell back to Claude CLI\n\n---\n\n## 🔧 What's Been Built So Far (Key Milestones)\n\n1. ✅ Full provider-agnostic architecture (March 2026 refactor)\n2. ✅ Mission Control web dashboard + chat\n3. ✅ Zenith Discord bot (local AI on your GPU)\n4. ✅ Job intake pipeline (scrape → score → queue → apply)\n5. ✅ Dev automation pipeline (refactor scans running)\n6. ✅ Gamification / XP system\n7. ✅ Telegram notifications via mission_control\n8. ✅ Audit log + approval gate for sensitive tasks\n\n---\n\n## 🚧 Known Issues / Next Steps\n\n- Ollama timeouts happening (fallback to Claude CLI is working though)\n- XP total showing as `null` / `undefined` — likely a bug in XP tracking\n- 65 jobs sitting in `pending_review` — opportunity division needs review/apply automation or manual review\n- Health logging is one day stale\n\n---\n\nWhat area do you want to dig into or improve?"
-    },
-    {
-      "role": "user",
       "content": "What’s up?"
     },
     {
@@ -399,7 +391,15 @@
     {
       "role": "assistant",
       "content": "**No -- the server reset button just restarts the J_Claw server process.** It doesn't run any git commands.\n\nThe git stash/pull/push has to be done manually in the terminal. It's just 4 lines -- have Tyler paste this in that same PowerShell window (it should still be in `J_Claw_Reborn`):\n\n```powershell\ngit stash\ngit pull origin master\ngit stash pop\ngit push origin master\n```"
+    },
+    {
+      "role": "user",
+      "content": "Does resetting the server before this do anything?"
+    },
+    {
+      "role": "assistant",
+      "content": "**No.** Server reset and git are completely independent. Resetting the server:\n- Restarts the J_Claw Python process\n- Reloads configs/skills in memory\n- Does **nothing** to git history, branches, or remote sync\n\nThe git conflict will still be there after a reset. The only fix is those 4 terminal commands. They're quick -- 30 seconds for Tyler to run."
     }
   ],
-  "last_updated": "2026-03-21T15:19:34.996Z"
+  "last_updated": "2026-03-21T15:22:16.295Z"
 }
