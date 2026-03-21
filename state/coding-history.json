@@ -223,7 +223,15 @@
     {
       "role": "assistant",
       "content": "Both fixes are confirmed in the code:\n\n## ✅ Verified Live\n\n**Groq Fallback** — Fully implemented. When Ollama fails:\n- Shows `⚡ Local AI offline — using cloud AI (Groq)` banner\n- Streams from `llama-3.3-70b-versatile`\n- Double failure shows a clear error\n\n**Trading Division Context** — Fixed. Reads from actual packets:\n- `divisions/trading/packets/market-scan.json`\n- `divisions/trading/packets/trading-report.json`\n- `trade-log.json` is now just a fallback, not the primary source\n\nEverything is in order. What are you seeing in mobile chat that made you want to re-check?"
+    },
+    {
+      "role": "user",
+      "content": "Please explain what changes were made and why"
+    },
+    {
+      "role": "assistant",
+      "content": "Now I have the real picture. Here's the honest breakdown:\n\n---\n\n## Changes Made This Session\n\n### 1. Trading Division Context Fix (lines 764–784)\n**What changed:** The mobile chat system prompt now builds the `[ TRADING ]` section by reading from the actual division output packets:\n- `divisions/trading/packets/market-scan.json` → price data, signals\n- `divisions/trading/packets/trading-report.json` → strategy, cycle stats, win rate\n\n`trade-log.json` is now just a **fallback** if the packets don't exist, instead of the primary source.\n\n**Why:** `trade-log.json` was never being created, so every chat request hit the catch block. The AI in mobile chat was seeing blank/default trading data and couldn't actually discuss what the trading division had done.\n\n---\n\n### 2. Groq Fallback (lines 1115–1265)\n**What changed:** The `/mobile-chat` endpoint now has a two-stage AI strategy:\n1. **Primary:** Ollama (local, runs on Tyler's GPU)\n2. **Fallback:** If Ollama returns a 500/error → automatically switches to Groq's `llama-3.3-70b-versatile` via `GROQ_API_KEY`\n3. **Double failure:** Shows a clear error message instead of silently hanging\n\n**Why:** Ollama has been intermittently 500ing due to VRAM pressure (multiple models competing). Before this fix, those failures just broke mobile chat entirely with no explanation.\n\n---\n\n## What Was NOT Changed\n- Division logic, trading strategy, backtester, orchestrator -- all untouched\n- These were targeted fixes to the **mobile chat server layer only**"
     }
   ],
-  "last_updated": "2026-03-21T13:25:10.220Z"
+  "last_updated": "2026-03-21T13:28:19.220Z"
 }
