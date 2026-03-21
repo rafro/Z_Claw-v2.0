@@ -1,0 +1,28 @@
+{
+  "division": "op-sec",
+  "generated_at": "2026-03-21T01:39:33.063401+00:00",
+  "skill": "privacy-scan",
+  "status": "success",
+  "summary": "No high or medium severity risks found; a low severity risk related to an email address was identified.",
+  "action_items": [
+    {
+      "priority": "normal",
+      "description": "[LOW] C:\\Users\\Tyler\\Desktop\\New Text Document.txt: Email Address",
+      "requires_matthew": false
+    }
+  ],
+  "metrics": {
+    "findings": 1,
+    "high": 0
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

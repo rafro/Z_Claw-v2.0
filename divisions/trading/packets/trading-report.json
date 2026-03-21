@@ -1,6 +1,6 @@
 {
   "division": "trading",
-  "generated_at": "2026-03-20T22:11:49.793160+00:00",
+  "generated_at": "2026-03-21T01:37:06.957961+00:00",
   "skill": "trading-report",
   "status": "partial",
   "summary": "Trading system not yet activated — no session data found.",
@@ -16,11 +16,11 @@
     "total_pnl": null,
     "source": "none",
     "market_context": true,
-    "cycle_number": 381,
+    "cycle_number": 401,
     "risk_multiplier": 1.0,
-    "active_strategy": "Bollinger Lower Touch with Volume Surge",
-    "strategy_sharpe": 0.645,
-    "strategy_win_rate_pct": 39.3
+    "active_strategy": "Bollinger Lower Band Touch with ATR Expansion Confirmation",
+    "strategy_sharpe": 0.943,
+    "strategy_win_rate_pct": 39.1
   },
   "artifact_refs": [
     {

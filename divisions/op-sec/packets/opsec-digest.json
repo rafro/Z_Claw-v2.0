@@ -1,0 +1,21 @@
+{
+  "division": "op-sec",
+  "generated_at": "2026-03-21T01:40:39.853679+00:00",
+  "skill": "opsec-digest",
+  "status": "success",
+  "summary": "**Overall Risk Level:** WARNING  \n**Top Action Item:** Address the unexpected listening ports, investigate the scheduled task, and refactor the codebase to eliminate uses of potentially dangerous functions like `eval()` and `os.system()`.",
+  "action_items": [],
+  "metrics": {
+    "data_sources": 6
+  },
+  "artifact_refs": [],
+  "escalate": true,
+  "escalation_reason": "2 HIGH severity anomalies detected",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

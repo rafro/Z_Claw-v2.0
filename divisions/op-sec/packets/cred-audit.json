@@ -1,15 +1,13 @@
 {
-  "division": "sentinel",
-  "generated_at": "2026-03-21T01:46:38.090145+00:00",
-  "skill": "queue-monitor",
+  "division": "op-sec",
+  "generated_at": "2026-03-21T01:39:02.157583+00:00",
+  "skill": "cred-audit",
   "status": "success",
-  "summary": "No task queue found",
+  "summary": "Cred audit: clean — no credential patterns detected",
   "action_items": [],
   "metrics": {
-    "queue_depth": 0,
-    "running_count": 0,
-    "failed_count": 0,
-    "anomaly_count": 0
+    "findings": 0,
+    "high": 0
   },
   "artifact_refs": [],
   "escalate": false,
@@ -18,7 +16,7 @@
   "confidence": null,
   "urgency": "normal",
   "recommended_action": "",
-  "provider_used": "deterministic",
+  "provider_used": "",
   "approval_required": false,
   "approval_status": ""
 }

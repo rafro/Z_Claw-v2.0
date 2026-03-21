@@ -1,17 +1,28 @@
 {
   "division": "op-sec",
-  "generated_at": "2026-03-20T23:23:07.631430+00:00",
+  "generated_at": "2026-03-21T01:38:59.311456+00:00",
   "skill": "threat-surface",
   "status": "success",
-  "summary": "The system has multiple unexpected listening ports and a scheduled task that appears to be running as SYSTEM. The high number of svchost.exe processes could indicate potential resource usage issues.",
-  "action_items": [],
+  "summary": "The system has multiple unexpected listening ports and a scheduled task that appears to be running a potentially malicious executable.",
+  "action_items": [
+    {
+      "priority": "high",
+      "description": "[HIGH] PORT: Multiple high-numbered ports (17500, 27036, etc.) are in LISTENING state, which could indicate a potential backdoor or unauthorized service. — Investigate the purpose of these listening ports and consider blocking them if not needed.",
+      "requires_matthew": true
+    },
+    {
+      "priority": "high",
+      "description": "[HIGH] TASK: The task 'AMDRyzenMasterSDKTask' is running a potentially malicious executable located at 'C:\\Program Files\\AMD\\CNext\\CNext\\cpumetricsserver.exe'. The last result code (267009) suggests an error, but the executable's origin and purpose are unclear. — Review the task's source and purpose. If unsure, consider disabling or removing it.",
+      "requires_matthew": true
+    }
+  ],
   "metrics": {
     "anomaly_count": 2,
-    "high_severity": 1
+    "high_severity": 2
   },
   "artifact_refs": [],
   "escalate": true,
-  "escalation_reason": "1 HIGH severity anomalies detected",
+  "escalation_reason": "2 HIGH severity anomalies detected",
   "task_id": "",
   "confidence": null,
   "urgency": "normal",

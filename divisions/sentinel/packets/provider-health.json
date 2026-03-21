@@ -1,47 +1,46 @@
 {
   "division": "sentinel",
-  "generated_at": "2026-03-20T05:02:26.685120+00:00",
+  "generated_at": "2026-03-21T01:46:38.089356+00:00",
   "skill": "provider-health",
   "status": "success",
-  "summary": "5/6 providers healthy. ollama:qwen2.5:7b-instruct-q4_K_M: available | ollama:llama3.2:3b: available | ollama:qwen2.5-coder:7b-instruct-q4_K_M: available | ollama:qwen2.5-coder:14b-instruct-q4_K_M: available",
+  "summary": "4/6 providers healthy. ollama:qwen2.5:7b-instruct-q4_K_M: available | ollama:qwen2.5-coder:7b-instruct-q4_K_M: available | ollama:qwen2.5-coder:14b-instruct-q4_K_M: available | groq: available",
   "action_items": [],
   "metrics": {
-    "healthy_count": 5,
+    "healthy_count": 4,
     "total_count": 6,
     "providers": {
       "ollama:qwen2.5:7b-instruct-q4_K_M": {
         "status": "available",
-        "latency_ms": 2299,
-        "host": "http://localhost:11434",
-        "last_checked": "2026-03-20T05:02:26.671257+00:00"
-      },
-      "ollama:llama3.2:3b": {
-        "status": "available",
         "latency_ms": 4,
         "host": "http://localhost:11434",
-        "last_checked": "2026-03-20T05:02:26.675804+00:00"
+        "last_checked": "2026-03-21T01:46:38.081200+00:00"
       },
       "ollama:qwen2.5-coder:7b-instruct-q4_K_M": {
         "status": "available",
-        "latency_ms": 4,
+        "latency_ms": 3,
         "host": "http://localhost:11434",
-        "last_checked": "2026-03-20T05:02:26.680393+00:00"
+        "last_checked": "2026-03-21T01:46:38.085026+00:00"
       },
       "ollama:qwen2.5-coder:14b-instruct-q4_K_M": {
         "status": "available",
         "latency_ms": 4,
         "host": "http://localhost:11434",
-        "last_checked": "2026-03-20T05:02:26.685019+00:00"
+        "last_checked": "2026-03-21T01:46:38.089270+00:00"
       },
-      "claude": {
+      "groq": {
         "status": "available",
         "note": "API key presence only — not pinged",
-        "last_checked": "2026-03-20T05:02:26.685032+00:00"
+        "last_checked": "2026-03-21T01:46:38.089281+00:00"
+      },
+      "deepseek": {
+        "status": "unavailable",
+        "note": "API key presence only — not pinged",
+        "last_checked": "2026-03-21T01:46:38.089285+00:00"
       },
       "gemini": {
         "status": "unavailable",
         "note": "API key presence only — not pinged",
-        "last_checked": "2026-03-20T05:02:26.685036+00:00"
+        "last_checked": "2026-03-21T01:46:38.089288+00:00"
       }
     }
   },

@@ -1,0 +1,55 @@
+{
+  "division": "dev-automation",
+  "generated_at": "2026-03-21T02:02:04.262704+00:00",
+  "skill": "refactor-scan",
+  "status": "success",
+  "summary": "Several files contain large functions that could be refactored to improve maintainability and readability.",
+  "action_items": [
+    {
+      "priority": "high",
+      "description": "[high] runtime\\orchestrators\\dev_automation.py: The function `_synthesize_dev_state` is 58 lines long, which is considered large and could be broken down into smaller functions. — Refactor `_synthesize_dev_state` into smaller, more focused functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\tools\\jobs.py: The function `fetch_adzuna` is 68 lines long, which could be refactored to improve readability and maintainability. — Refactor `fetch_adzuna` into smaller functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\skills\\hard_filter.py: The function `_score_job_deterministic` is 51 lines long, which could be broken down into smaller functions. — Refactor `_score_job_deterministic` into smaller, more focused functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\skills\\repo_monitor.py: The function `_scan_repo` is 82 lines long, which could be refactored to improve readability and maintainability. — Refactor `_scan_repo` into smaller functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\orchestrators\\opportunity.py: The function `run_job_intake` is 98 lines long, which could be broken down into smaller functions. — Refactor `run_job_intake` into smaller, more focused functions.",
+      "requires_matthew": false
+    },
+    {
+      "priority": "high",
+      "description": "[high] runtime\\orchestrators\\personal.py: The function `_synthesize_personal_state` is 54 lines long, which could be broken down into smaller functions. — Refactor `_synthesize_personal_state` into smaller, more focused functions.",
+      "requires_matthew": false
+    }
+  ],
+  "metrics": {
+    "findings": 8,
+    "high": 8,
+    "files_scanned": 15,
+    "model_used": "qwen2.5-coder:7b-instruct-q4_K_M"
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "",
+  "approval_required": false,
+  "approval_status": ""
+}

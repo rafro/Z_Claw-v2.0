@@ -1,0 +1,26 @@
+{
+  "division": "sentinel",
+  "generated_at": "2026-03-21T01:46:38.091457+00:00",
+  "skill": "agent-network-monitor",
+  "status": "success",
+  "summary": "agent-network last cycle: 0.1h ago (spx500_cycle_state.json). Status: ACTIVE.",
+  "action_items": [],
+  "metrics": {
+    "state_file": "spx500_cycle_state.json",
+    "hours_since_update": 0.14,
+    "stale": false,
+    "stale_threshold_hours": 6,
+    "last_modified": "2026-03-21T01:38:09.851608+00:00",
+    "checked_at": "2026-03-21T01:46:38.090644+00:00"
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "deterministic",
+  "approval_required": false,
+  "approval_status": ""
+}

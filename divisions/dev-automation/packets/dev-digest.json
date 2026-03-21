@@ -1,16 +1,16 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-20T18:00:09.278572+00:00",
+  "generated_at": "2026-03-21T01:46:13.431258+00:00",
   "skill": "dev-digest",
   "status": "success",
-  "summary": "Immediate action required: Address the two missing README.md files and review the large Python script for potential inefficiencies or maintenance issues. The repo health scan indicates medium priority flags that need attention to ensure proper documentation and maintainability.",
+  "summary": "Immediate action required: Address the three medium priority repository flags across three repositories. While no critical security issues were found, there is a need to refactor several large functions and methods to enhance code maintainability and readability.",
   "action_items": [],
   "metrics": {
-    "data_sources": 1,
-    "total_high": 0,
+    "data_sources": 2,
+    "total_high": 8,
     "repo_flags": 0,
     "security_high": 0,
-    "refactor_high": 0
+    "refactor_high": 8
   },
   "artifact_refs": [],
   "escalate": false,

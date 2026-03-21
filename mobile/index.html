@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mission Control">
+  <meta name="theme-color" content="#1e1e2e">
+  <link rel="manifest" href="/mobile/manifest.json">
+  <title>Mission Control</title>
+  <style>
+    /* ── Design tokens (Catppuccin Mocha — matches desktop) ── */
+    :root {
+      --bg:      #1e1e2e;
+      --surface: #181825;
+      --overlay: #313244;
+      --text:    #cdd6f4;
+      --subtext: #a6adc8;
+      --purple:  #cba6f7;
+      --blue:    #89b4fa;
+      --green:   #a6e3a1;
+      --yellow:  #f9e2af;
+      --red:     #f38ba8;
+      --teal:    #94e2d5;
+      --border:  #45475a;
+      /* iPhone 16 Pro Max safe areas */
+      --safe-top:    env(safe-area-inset-top,    47px);
+      --safe-bottom: env(safe-area-inset-bottom, 34px);
+      --safe-left:   env(safe-area-inset-left,    0px);
+      --safe-right:  env(safe-area-inset-right,   0px);
+      --tab-height:  60px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      overflow: hidden;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top header ── */
+    #mc-header {
+      padding: calc(var(--safe-top) + 8px) 20px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #mc-header .logo { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--purple); text-transform: uppercase; }
+    #mc-header .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+    #mc-header .header-right { font-size: 11px; color: var(--subtext); display: flex; align-items: center; gap: 8px; }
+
+    /* ── Screen container ── */
+    #screens {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      padding-bottom: 8px;
+    }
+
+    /* ── Screen ── */
+    .screen { display: none; padding: 16px 16px 20px; }
+    .screen.active { display: block; }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--subtext);
+      margin-bottom: 10px;
+      margin-top: 18px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .card-body  { font-size: 13px; color: var(--subtext); }
+    .card-meta  { font-size: 11px; color: var(--subtext); margin-top: 6px; }
+
+    /* ── Pill / badge ── */
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .pill-green  { color: var(--green);  border-color: var(--green);  background: rgba(166,227,161,.1); }
+    .pill-red    { color: var(--red);    border-color: var(--red);    background: rgba(243,139,168,.1); }
+    .pill-yellow { color: var(--yellow); border-color: var(--yellow); background: rgba(249,226,175,.1); }
+    .pill-blue   { color: var(--blue);   border-color: var(--blue);   background: rgba(137,180,250,.1); }
+    .pill-purple { color: var(--purple); border-color: var(--purple); background: rgba(203,166,247,.1); }
+    .pill-grey   { color: var(--subtext);border-color: var(--border); background: transparent; }
+
+    /* ── Division grid ── */
+    .div-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .div-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .div-chip .name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .div-chip .last { font-size: 10px; color: var(--subtext); }
+
+    /* ── Stat row ── */
+    .stat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+    }
+    .stat-box .val  { font-size: 22px; font-weight: 700; color: var(--text); }
+    .stat-box .lbl  { font-size: 10px; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    /* ── Alert card ── */
+    .alert-card {
+      background: var(--surface);
+      border-left: 3px solid var(--red);
+      border-radius: 0 12px 12px 0;
+      border-top: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .alert-card.medium { border-left-color: var(--yellow); }
+    .alert-card.low    { border-left-color: var(--blue); }
+    .alert-card .alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .alert-card .alert-msg    { font-size: 13px; margin-bottom: 8px; }
+    .alert-card .alert-meta   { font-size: 11px; color: var(--subtext); }
+
+    /* ── Approval card ── */
+    .approval-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .approval-card .approval-header  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .approval-card .approval-title   { font-size: 14px; font-weight: 600; flex: 1; }
+    .approval-card .approval-reason  { font-size: 13px; color: var(--subtext); margin-bottom: 12px; }
+    .approval-actions { display: flex; gap: 10px; margin-top: 12px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 46px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-appearance: none;
+      flex: 1;
+      transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn-approve { background: var(--green);  color: #1e1e2e; }
+    .btn-reject  { background: var(--red);    color: #1e1e2e; }
+    .btn-ack     { background: var(--overlay); color: var(--text); border: 1px solid var(--border); }
+    .btn-pause   { background: var(--yellow); color: #1e1e2e; }
+    .btn-resume  { background: var(--green);  color: #1e1e2e; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+
+    /* ── Trade row ── */
+    .trade-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .trade-row:last-child { border-bottom: none; }
+    .trade-sym  { font-size: 13px; font-weight: 600; }
+    .trade-pnl  { font-size: 13px; font-weight: 700; }
+    .trade-pnl.pos { color: var(--green); }
+    .trade-pnl.neg { color: var(--red); }
+    .trade-meta { font-size: 11px; color: var(--subtext); }
+
+    /* ── Metrics row ── */
+    .metrics-row { display: flex; gap: 8px; }
+    .metric-box {
+      flex: 1;
+      background: var(--overlay);
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .metric-box .mval { font-size: 16px; font-weight: 700; }
+    .metric-box .mlbl { font-size: 10px; color: var(--subtext); text-transform: uppercase; }
+
+    /* ── Bottom tab bar ── */
+    #tab-bar {
+      height: calc(var(--tab-height) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      border: none;
+      background: none;
+      color: var(--subtext);
+      font-size: 10px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      transition: color 0.15s;
+      padding: 0;
+      padding-top: 8px;
+    }
+    .tab-btn.active { color: var(--purple); }
+    .tab-btn .tab-icon { font-size: 20px; line-height: 1; }
+    .tab-btn .tab-badge {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 18px);
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 1px 4px;
+      min-width: 16px;
+      text-align: center;
+    }
+    .tab-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--subtext); }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── Loading spinner ── */
+    .loading { text-align: center; padding: 30px; color: var(--subtext); font-size: 13px; }
+
+    /* ── Toast notification ── */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--overlay);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 9999;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Setup screen ── */
+    #setup-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      z-index: 100;
+    }
+    #setup-screen.hidden { display: none; }
+    #setup-screen h1 { font-size: 20px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+    #setup-screen p  { font-size: 13px; color: var(--subtext); text-align: center; margin-bottom: 28px; line-height: 1.6; }
+    #setup-screen input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 12px;
+      -webkit-appearance: none;
+    }
+    #setup-screen input:focus { outline: none; border-color: var(--purple); }
+    #setup-screen .setup-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--purple);
+      color: var(--bg);
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Action confirm sheet ── */
+    #confirm-sheet {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 20px 24px calc(var(--safe-bottom) + 20px);
+      z-index: 200;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    #confirm-sheet.open { transform: translateY(0); }
+    #confirm-sheet .sheet-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    #confirm-sheet .sheet-body  { font-size: 13px; color: var(--subtext); margin-bottom: 20px; }
+    #confirm-sheet .sheet-actions { display: flex; gap: 10px; }
+    #sheet-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+      display: none;
+    }
+    #sheet-backdrop.open { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Setup screen (token entry) -->
+<div id="setup-screen">
+  <h1>Mission Control</h1>
+  <p>Enter your mobile access token to connect to the OpenClaw server.</p>
+  <input type="password" id="token-input" placeholder="Mobile access token" autocomplete="off" autocorrect="off" spellcheck="false">
+  <input type="text" id="server-input" placeholder="Server (e.g. http://192.168.1.x:3000)" autocomplete="off" autocorrect="off" spellcheck="false">
+  <button class="setup-btn" onclick="saveSetup()">Connect</button>
+</div>
+
+<!-- Header -->
+<div id="mc-header">
+  <div class="logo">
+    <span class="status-dot" id="conn-dot"></span>Mission Control
+  </div>
+  <div class="header-right">
+    <span id="header-time">—</span>
+    <button onclick="refreshCurrent()" style="background:none;border:none;color:var(--subtext);font-size:16px;cursor:pointer;padding:0;">↻</button>
+  </div>
+</div>
+
+<!-- Screens -->
+<div id="screens">
+
+  <!-- ── OVERVIEW ── -->
+  <div id="screen-overview" class="screen active">
+    <div id="overview-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- ── ALERTS ── -->
+  <div id="screen-alerts" class="screen">
+    <div id="alerts-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- ── APPROVALS ── -->
+  <div id="screen-approvals" class="screen">
+    <div id="approvals-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- ── TASKS ── -->
+  <div id="screen-tasks" class="screen">
+    <div id="tasks-content"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- ── TRADING ── -->
+  <div id="screen-trading" class="screen">
+    <div id="trading-content"><div class="loading">Loading...</div></div>
+  </div>
+
+</div>
+
+<!-- Bottom tab bar -->
+<nav id="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">
+    <div class="tab-wrap">
+      <span class="tab-icon">⌂</span>
+      <span>Overview</span>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('alerts')" id="tab-alerts">
+    <div class="tab-wrap" style="position:relative;">
+      <span class="tab-icon">⚠</span>
+      <span id="alert-badge" class="tab-badge" style="display:none;">0</span>
+      <span>Alerts</span>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('approvals')" id="tab-approvals">
+    <div class="tab-wrap" style="position:relative;">
+      <span class="tab-icon">✓</span>
+      <span id="approval-badge" class="tab-badge" style="display:none;">0</span>
+      <span>Approvals</span>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tasks')" id="tab-tasks">
+    <div class="tab-wrap">
+      <span class="tab-icon">≡</span>
+      <span>Tasks</span>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('trading')" id="tab-trading">
+    <div class="tab-wrap">
+      <span class="tab-icon">📈</span>
+      <span>Trading</span>
+    </div>
+  </button>
+</nav>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Action confirm sheet -->
+<div id="sheet-backdrop" onclick="closeSheet()"></div>
+<div id="confirm-sheet">
+  <div class="sheet-title" id="sheet-title">Confirm Action</div>
+  <div class="sheet-body"  id="sheet-body">Are you sure?</div>
+  <div class="sheet-actions">
+    <button class="btn btn-outline" onclick="closeSheet()">Cancel</button>
+    <button class="btn" id="sheet-confirm-btn">Confirm</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// Mission Control Mobile — Core Logic
+// Trust model: mobile is untrusted client. All actions
+// require Bearer token + fresh server challenge + biometric.
+// Admin operations are blocked server-side; mobile only
+// surfaces Observer (read) and Operator (structured actions).
+// ══════════════════════════════════════════════════════
+
+// ── Config ──────────────────────────────────────────────
+let MC_TOKEN  = localStorage.getItem('mc_token') || '';
+let MC_SERVER = localStorage.getItem('mc_server') || (location.origin);
+let _currentTab = 'overview';
+let _pendingAction = null;
+
+// ── Setup ────────────────────────────────────────────────
+function checkSetup() {
+  if (!MC_TOKEN) {
+    document.getElementById('setup-screen').classList.remove('hidden');
+    const si = document.getElementById('server-input');
+    si.value = MC_SERVER !== location.origin ? MC_SERVER : '';
+  } else {
+    document.getElementById('setup-screen').classList.add('hidden');
+    init();
+  }
+}
+
+function saveSetup() {
+  const tok = document.getElementById('token-input').value.trim();
+  const srv = document.getElementById('server-input').value.trim();
+  if (!tok) { showToast('Token required'); return; }
+  MC_TOKEN  = tok;
+  MC_SERVER = srv || location.origin;
+  localStorage.setItem('mc_token', MC_TOKEN);
+  localStorage.setItem('mc_server', MC_SERVER);
+  document.getElementById('setup-screen').classList.add('hidden');
+  init();
+}
+
+// ── API fetch wrapper ────────────────────────────────────
+async function api(endpoint, options = {}) {
+  const url = MC_SERVER + endpoint;
+  const opts = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + MC_TOKEN,
+      ...(options.headers || {}),
+    },
+  };
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    // Token invalid — show setup
+    MC_TOKEN = '';
+    localStorage.removeItem('mc_token');
+    document.getElementById('setup-screen').classList.remove('hidden');
+    throw new Error('Unauthorized — check your token');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.json();
+}
+
+// ── Init ─────────────────────────────────────────────────
+function init() {
+  updateClock();
+  setInterval(updateClock, 1000);
+  loadTab('overview');
+  setInterval(() => loadTab(_currentTab, true), 30000); // auto-refresh every 30s
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('header-time').textContent =
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+// ── Tab navigation ───────────────────────────────────────
+function switchTab(name) {
+  _currentTab = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  loadTab(name);
+  // Scroll content to top
+  document.getElementById('screens').scrollTop = 0;
+}
+
+function refreshCurrent() { loadTab(_currentTab); }
+
+function loadTab(name, silent = false) {
+  switch(name) {
+    case 'overview':  loadOverview(silent);  break;
+    case 'alerts':    loadAlerts(silent);    break;
+    case 'approvals': loadApprovals(silent); break;
+    case 'tasks':     loadTasks(silent);     break;
+    case 'trading':   loadTrading(silent);   break;
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Connection dot ────────────────────────────────────────
+function setConnected(ok) {
+  const dot = document.getElementById('conn-dot');
+  dot.style.background = ok ? 'var(--green)' : 'var(--red)';
+}
+
+// ── Confirm sheet ─────────────────────────────────────────
+function openSheet(title, body, btnLabel, btnClass, onConfirm) {
+  document.getElementById('sheet-title').textContent  = title;
+  document.getElementById('sheet-body').textContent   = body;
+  const btn = document.getElementById('sheet-confirm-btn');
+  btn.textContent  = btnLabel;
+  btn.className    = 'btn ' + btnClass;
+  btn.onclick      = () => { closeSheet(); onConfirm(); };
+  document.getElementById('confirm-sheet').classList.add('open');
+  document.getElementById('sheet-backdrop').classList.add('open');
+}
+
+function closeSheet() {
+  document.getElementById('confirm-sheet').classList.remove('open');
+  document.getElementById('sheet-backdrop').classList.remove('open');
+}
+
+// ── Biometric / challenge gate ────────────────────────────
+// Called before any Operator action.
+// Gets a 30s server challenge, triggers WebAuthn (Face ID),
+// then calls the action endpoint with the challenge_id.
+async function requireBiometricThenAct(action, payload) {
+  let challengeId;
+  try {
+    const ch = await api('/mobile/api/challenge?action=' + encodeURIComponent(action));
+    challengeId = ch.challenge_id;
+  } catch(e) {
+    showToast('Could not get challenge: ' + e.message);
+    return;
+  }
+
+  // Try WebAuthn (Face ID on iOS Safari)
+  let biometricOk = false;
+  try {
+    if (window.PublicKeyCredential) {
+      // Minimal WebAuthn get — uses platform authenticator (Face ID / Touch ID)
+      const cred = await navigator.credentials.get({
+        publicKey: {
+          challenge: new TextEncoder().encode(challengeId),
+          timeout: 20000,
+          userVerification: 'required',
+          rpId: location.hostname,
+        }
+      });
+      biometricOk = !!cred;
+    }
+  } catch(e) {
+    // WebAuthn unavailable or denied
+    biometricOk = false;
+  }
+
+  // Fallback: PIN prompt (WebAuthn requires HTTPS+registered credential)
+  if (!biometricOk) {
+    const pin = prompt('Biometric unavailable. Enter PIN to confirm:');
+    const storedHash = localStorage.getItem('mc_pin_hash');
+    if (!pin) { showToast('Action cancelled'); return; }
+    if (storedHash) {
+      const h = await sha256(pin);
+      if (h !== storedHash) { showToast('Incorrect PIN'); return; }
+    } else {
+      // First time: set the PIN
+      const h = await sha256(pin);
+      localStorage.setItem('mc_pin_hash', h);
+      showToast('PIN set');
+    }
+    biometricOk = true;
+  }
+
+  if (!biometricOk) { showToast('Auth failed'); return; }
+
+  // Execute action
+  try {
+    const result = await api('/mobile/api/action', {
+      method: 'POST',
+      body: JSON.stringify({ ...payload, action, challenge_id: challengeId }),
+    });
+    showToast(result.message || 'Done');
+    // Refresh current tab
+    setTimeout(() => loadTab(_currentTab), 500);
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: OVERVIEW
+// ══════════════════════════════════════════════════════
+async function loadOverview(silent = false) {
+  const el = document.getElementById('overview-content');
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/overview');
+    setConnected(true);
+
+    // Update badges
+    const alertCount = (d.alerts || []).length;
+    const approvalCount = (d.approvals || []).length;
+    updateBadge('alert-badge', alertCount);
+    updateBadge('approval-badge', approvalCount);
+
+    let html = '';
+
+    // Stats row
+    html += '<div class="stat-row">';
+    html += statBox(d.stats?.pending_jobs ?? '—', 'Jobs');
+    html += statBox(alertCount, 'Alerts', alertCount > 0 ? 'var(--red)' : null);
+    html += statBox(approvalCount, 'Pending', approvalCount > 0 ? 'var(--yellow)' : null);
+    html += '</div>';
+
+    // Division health grid
+    html += '<div class="section-title">Divisions</div>';
+    html += '<div class="div-grid">';
+    for (const [key, div] of Object.entries(d.divisions || {})) {
+      const color = div.status === 'idle' ? 'var(--green)'
+                  : div.status === 'running' ? 'var(--blue)'
+                  : div.status === 'error' ? 'var(--red)' : 'var(--subtext)';
+      html += `<div class="div-chip">
+        <div class="name" style="color:${color}">${key.replace('_','-')}</div>
+        <div class="last">${div.last_run ? relTime(div.last_run) : 'Never'}</div>
+        <div><span class="pill pill-grey">${div.status || 'unknown'}</span></div>
+      </div>`;
+    }
+    html += '</div>';
+
+    // Active alerts summary (up to 3)
+    if ((d.alerts || []).length) {
+      html += '<div class="section-title">Active Alerts</div>';
+      (d.alerts || []).slice(0, 3).forEach(a => {
+        html += renderAlertCard(a, false);
+      });
+    }
+
+    // System health
+    if (d.system) {
+      html += '<div class="section-title">System</div>';
+      html += '<div class="card">';
+      html += `<div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+      for (const [k, v] of Object.entries(d.system)) {
+        const ok = v === 'available' || v === 'ok' || v === true;
+        html += `<span class="pill ${ok ? 'pill-green' : 'pill-red'}">${k}</span>`;
+      }
+      html += '</div></div>';
+    }
+
+    // Briefing snippet
+    if (d.briefing) {
+      html += '<div class="section-title">Briefing</div>';
+      html += `<div class="card"><div class="card-body" style="font-size:12px;line-height:1.6;">${escHtml(d.briefing.slice(0, 300))}${d.briefing.length > 300 ? '…' : ''}</div></div>`;
+    }
+
+    el.innerHTML = html;
+  } catch(e) {
+    setConnected(false);
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><p>${escHtml(e.message)}</p></div>`;
+  }
+}
+
+function statBox(val, lbl, color) {
+  return `<div class="stat-box"><div class="val" ${color ? `style="color:${color}"` : ''}>${val}</div><div class="lbl">${lbl}</div></div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: ALERTS
+// ══════════════════════════════════════════════════════
+async function loadAlerts(silent = false) {
+  const el = document.getElementById('alerts-content');
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/alerts');
+    updateBadge('alert-badge', (d.alerts || []).length);
+    if (!d.alerts?.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><p>No active alerts</p></div>`;
+      return;
+    }
+    let html = `<div class="section-title">${d.alerts.length} Active Alert${d.alerts.length !== 1 ? 's' : ''}</div>`;
+    d.alerts.forEach(a => { html += renderAlertCard(a, true); });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><p>${escHtml(e.message)}</p></div>`;
+  }
+}
+
+function renderAlertCard(a, showAck) {
+  const sev = (a.severity || 'HIGH').toUpperCase();
+  const cls = sev === 'HIGH' ? '' : sev === 'MEDIUM' ? ' medium' : ' low';
+  const sevClass = sev === 'HIGH' ? 'pill-red' : sev === 'MEDIUM' ? 'pill-yellow' : 'pill-blue';
+  return `<div class="alert-card${cls}">
+    <div class="alert-header">
+      <span class="pill ${sevClass}">${sev}</span>
+      <span class="pill pill-grey">${escHtml(a.division || '?')}</span>
+    </div>
+    <div class="alert-msg">${escHtml(a.message || a.escalation_reason || '')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="alert-meta">${a.generated_at ? relTime(a.generated_at) : ''}</div>
+      ${showAck ? `<button class="btn btn-ack" style="flex:0;padding:6px 14px;height:34px;font-size:12px;" onclick="ackAlert('${escHtml(a.id || a.skill || '')}', '${escHtml(a.division || '')}')">ACK</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function ackAlert(id, division) {
+  openSheet(
+    'Acknowledge Alert',
+    `Acknowledge the ${division} alert?`,
+    'Acknowledge',
+    'btn-ack',
+    () => requireBiometricThenAct('ack_alert', { target_id: id, division })
+  );
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: APPROVALS
+// ══════════════════════════════════════════════════════
+async function loadApprovals(silent = false) {
+  const el = document.getElementById('approvals-content');
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/approvals');
+    updateBadge('approval-badge', (d.approvals || []).length);
+    if (!d.approvals?.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><p>No pending approvals</p></div>`;
+      return;
+    }
+    let html = `<div class="section-title">${d.approvals.length} Pending Approval${d.approvals.length !== 1 ? 's' : ''}</div>`;
+    html += '<div style="background:var(--overlay);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--yellow);">⚠ Face ID or PIN required for each action</div>';
+    d.approvals.forEach(a => {
+      const riskClass = a.risk === 'high' ? 'pill-red' : a.risk === 'medium' ? 'pill-yellow' : 'pill-green';
+      html += `<div class="approval-card">
+        <div class="approval-header">
+          <div class="approval-title">${escHtml(a.type || a.skill || 'Approval Required')}</div>
+          <span class="pill ${riskClass}">${(a.risk || 'low').toUpperCase()}</span>
+        </div>
+        <div class="approval-reason">${escHtml(a.reason || a.escalation_reason || '')}</div>
+        ${a.division ? `<div class="card-meta">Division: ${escHtml(a.division)}</div>` : ''}
+        <div class="approval-actions">
+          <button class="btn btn-reject"  onclick="doApproval('reject',  '${escHtml(a.id)}', '${escHtml(a.type || '')}')">Reject</button>
+          <button class="btn btn-approve" onclick="doApproval('approve', '${escHtml(a.id)}', '${escHtml(a.type || '')}')">Approve</button>
+        </div>
+      </div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><p>${escHtml(e.message)}</p></div>`;
+  }
+}
+
+function doApproval(decision, id, type) {
+  const isApprove = decision === 'approve';
+  openSheet(
+    isApprove ? 'Approve Task' : 'Reject Task',
+    `${isApprove ? 'Approve' : 'Reject'} "${type}"? Face ID will be required.`,
+    isApprove ? 'Approve' : 'Reject',
+    isApprove ? 'btn-approve' : 'btn-reject',
+    () => requireBiometricThenAct(isApprove ? 'approve_task' : 'reject_task', { target_id: id })
+  );
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: TASKS
+// ══════════════════════════════════════════════════════
+async function loadTasks(silent = false) {
+  const el = document.getElementById('tasks-content');
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/tasks');
+    const tasks = d.tasks || [];
+    if (!tasks.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">≡</div><p>No tasks in queue</p></div>`;
+      return;
+    }
+    const groups = { running: [], queued: [], completed: [], failed: [] };
+    tasks.forEach(t => { (groups[t.status] || groups.queued).push(t); });
+    let html = '';
+    for (const [status, list] of Object.entries(groups)) {
+      if (!list.length) continue;
+      const color = status === 'running' ? 'pill-blue' : status === 'completed' ? 'pill-green' : status === 'failed' ? 'pill-red' : 'pill-grey';
+      html += `<div class="section-title">${status.toUpperCase()} (${list.length})</div>`;
+      list.slice(0, 20).forEach(t => {
+        html += `<div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div class="card-title">${escHtml(t.skill || t.type || t.id)}</div>
+            <span class="pill ${color}">${status}</span>
+          </div>
+          <div class="card-meta">
+            ${t.division ? `<span>${escHtml(t.division)}</span> · ` : ''}
+            ${t.submitted_at ? relTime(t.submitted_at) : ''}
+          </div>
+        </div>`;
+      });
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><p>${escHtml(e.message)}</p></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: TRADING
+// ══════════════════════════════════════════════════════
+async function loadTrading(silent = false) {
+  const el = document.getElementById('trading-content');
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/trading');
+    if (!d.available) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📈</div><p>Trading system not active</p></div>`;
+      return;
+    }
+    const s = d.active_strategy || {};
+    let html = '';
+
+    // Cycle header
+    html += `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div><span class="pill pill-blue">CYCLE ${d.cycle_number || '—'}</span></div>
+        ${d.stale ? '<span class="pill pill-red">STALE</span>' : '<span class="pill pill-green">LIVE</span>'}
+      </div>
+      <div class="card-title" style="color:var(--teal);font-size:13px;">${escHtml(s.name || 'No active strategy')}</div>
+      ${d.hours_since_update != null ? `<div class="card-meta">Updated ${d.hours_since_update}h ago</div>` : ''}
+    </div>`;
+
+    // Key metrics
+    if (s.win_rate != null || s.sharpe != null) {
+      html += '<div class="section-title">Strategy Metrics</div>';
+      html += '<div class="metrics-row" style="margin-bottom:8px;">';
+      html += metricBox(s.win_rate != null ? s.win_rate + '%' : '—', 'Win Rate');
+      html += metricBox(s.sharpe != null ? s.sharpe.toFixed(2) : '—', 'Sharpe');
+      html += metricBox(s.rr_display || (s.rr_ratio ? s.rr_ratio.toFixed(2)+':1' : '—'), 'RR');
+      html += '</div>';
+      html += '<div class="metrics-row">';
+      html += metricBox(s.avg_win_r != null ? '+'+s.avg_win_r.toFixed(2)+'R' : '—', 'Avg Win', 'var(--green)');
+      html += metricBox(s.avg_loss_r != null ? '-'+s.avg_loss_r.toFixed(2)+'R' : '—', 'Avg Loss', 'var(--red)');
+      html += metricBox(s.max_drawdown_pct != null ? s.max_drawdown_pct.toFixed(1)+'%' : '—', 'Max DD', 'var(--red)');
+      html += '</div>';
+    }
+
+    // Controls — Operator-gated
+    html += '<div class="section-title">Controls</div>';
+    html += '<div style="background:var(--overlay);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--subtext);">Face ID required for trading controls</div>';
+    html += '<div style="display:flex;gap:10px;margin-bottom:14px;">';
+    html += `<button class="btn btn-pause"  onclick="tradingControl('pause_trading')">⏸ Pause</button>`;
+    html += `<button class="btn btn-resume" onclick="tradingControl('resume_trading')">▶ Resume</button>`;
+    html += '</div>';
+
+    // Recent trades
+    if ((d.recent_trades || []).length) {
+      html += '<div class="section-title">Recent Trades</div>';
+      html += '<div class="card">';
+      (d.recent_trades || []).slice(0, 8).forEach(t => {
+        const pos = (t.pnl || 0) >= 0;
+        const r   = t.r_multiple != null ? (t.r_multiple >= 0 ? '+' : '') + t.r_multiple.toFixed(2) + 'R' : '';
+        html += `<div class="trade-row">
+          <div>
+            <div class="trade-sym">${escHtml(t.symbol || '?')}</div>
+            <div class="trade-meta">${t.date || ''} ${r ? '· '+r : ''}</div>
+          </div>
+          <div class="trade-pnl ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}${(t.pnl || 0).toFixed(2)}</div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Agent statuses
+    if (d.agents) {
+      html += '<div class="section-title">Agents</div>';
+      html += '<div class="card">';
+      for (const [name, info] of Object.entries(d.agents)) {
+        html += `<div class="trade-row">
+          <div>
+            <div class="trade-sym">${escHtml(name.replace('_','-'))}</div>
+            <div class="trade-meta">${escHtml(info.last_output || '—')}</div>
+          </div>
+          <span class="pill pill-grey">AUTO</span>
+        </div>`;
+      }
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div><p>${escHtml(e.message)}</p></div>`;
+  }
+}
+
+function metricBox(val, lbl, color) {
+  return `<div class="metric-box"><div class="mval" ${color ? `style="color:${color}"` : ''}>${val}</div><div class="mlbl">${lbl}</div></div>`;
+}
+
+function tradingControl(action) {
+  const label = action === 'pause_trading' ? 'Pause Trading' : 'Resume Trading';
+  openSheet(
+    label,
+    `${label}? Face ID will be required.`,
+    label,
+    action === 'pause_trading' ? 'btn-pause' : 'btn-resume',
+    () => requireBiometricThenAct(action, {})
+  );
+}
+
+// ══════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════
+function updateBadge(id, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (count > 0) { el.textContent = count > 99 ? '99+' : count; el.style.display = 'block'; }
+  else { el.style.display = 'none'; }
+}
+
+function relTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ─────────────────────────────────────────────────
+checkSetup();
+</script>
+</body>
+</html>

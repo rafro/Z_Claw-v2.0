@@ -1,14 +1,13 @@
 {
-  "division": "dev-automation",
-  "generated_at": "2026-03-21T01:46:03.527975+00:00",
-  "skill": "artifact-manager",
-  "status": "success",
-  "summary": "Artifact cleanup: 0 files archived, 0 cold files purged.",
+  "division": "op-sec",
+  "generated_at": "2026-03-21T01:33:10.296207+00:00",
+  "skill": "breach-check",
+  "status": "skipped",
+  "summary": "Breach check skipped — HIBP_API_KEY not configured",
   "action_items": [],
   "metrics": {
-    "archived": 0,
-    "purged": 0,
-    "errors": 0
+    "emails_checked": 0,
+    "breached_count": 0
   },
   "artifact_refs": [],
   "escalate": false,

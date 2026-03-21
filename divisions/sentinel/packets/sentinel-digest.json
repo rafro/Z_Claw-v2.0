@@ -1,0 +1,73 @@
+{
+  "division": "sentinel",
+  "generated_at": "2026-03-21T01:46:38.092131+00:00",
+  "skill": "sentinel-digest",
+  "status": "success",
+  "summary": "System health: 4/6 providers available. Queue: 0 queued, 0 failed, 0 anomalies. agent-network: 0.1h since last cycle.",
+  "action_items": [],
+  "metrics": {
+    "provider_health": {
+      "healthy_count": 4,
+      "total_count": 6,
+      "providers": {
+        "ollama:qwen2.5:7b-instruct-q4_K_M": {
+          "status": "available",
+          "latency_ms": 4,
+          "host": "http://localhost:11434",
+          "last_checked": "2026-03-21T01:46:38.081200+00:00"
+        },
+        "ollama:qwen2.5-coder:7b-instruct-q4_K_M": {
+          "status": "available",
+          "latency_ms": 3,
+          "host": "http://localhost:11434",
+          "last_checked": "2026-03-21T01:46:38.085026+00:00"
+        },
+        "ollama:qwen2.5-coder:14b-instruct-q4_K_M": {
+          "status": "available",
+          "latency_ms": 4,
+          "host": "http://localhost:11434",
+          "last_checked": "2026-03-21T01:46:38.089270+00:00"
+        },
+        "groq": {
+          "status": "available",
+          "note": "API key presence only — not pinged",
+          "last_checked": "2026-03-21T01:46:38.089281+00:00"
+        },
+        "deepseek": {
+          "status": "unavailable",
+          "note": "API key presence only — not pinged",
+          "last_checked": "2026-03-21T01:46:38.089285+00:00"
+        },
+        "gemini": {
+          "status": "unavailable",
+          "note": "API key presence only — not pinged",
+          "last_checked": "2026-03-21T01:46:38.089288+00:00"
+        }
+      }
+    },
+    "queue_health": {
+      "queue_depth": 0,
+      "running_count": 0,
+      "failed_count": 0,
+      "anomaly_count": 0
+    },
+    "agent_network": {
+      "state_file": "spx500_cycle_state.json",
+      "hours_since_update": 0.14,
+      "stale": false,
+      "stale_threshold_hours": 6,
+      "last_modified": "2026-03-21T01:38:09.851608+00:00",
+      "checked_at": "2026-03-21T01:46:38.090644+00:00"
+    }
+  },
+  "artifact_refs": [],
+  "escalate": false,
+  "escalation_reason": "",
+  "task_id": "",
+  "confidence": null,
+  "urgency": "normal",
+  "recommended_action": "",
+  "provider_used": "deterministic",
+  "approval_required": false,
+  "approval_status": ""
+}

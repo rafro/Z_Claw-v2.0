@@ -1,0 +1,63 @@
+{
+  "date": "2026-03-20",
+  "generated_at": "2026-03-21T02:02:04.262226+00:00",
+  "summary": "Several files contain large functions that could be refactored to improve maintainability and readability.",
+  "findings": [
+    {
+      "file": "runtime\\orchestrators\\dev_automation.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_synthesize_dev_state` is 58 lines long, which is considered large and could be broken down into smaller functions.",
+      "suggestion": "Refactor `_synthesize_dev_state` into smaller, more focused functions."
+    },
+    {
+      "file": "runtime\\tools\\jobs.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `fetch_adzuna` is 68 lines long, which could be refactored to improve readability and maintainability.",
+      "suggestion": "Refactor `fetch_adzuna` into smaller functions."
+    },
+    {
+      "file": "runtime\\skills\\hard_filter.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_score_job_deterministic` is 51 lines long, which could be broken down into smaller functions.",
+      "suggestion": "Refactor `_score_job_deterministic` into smaller, more focused functions."
+    },
+    {
+      "file": "runtime\\skills\\repo_monitor.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_scan_repo` is 82 lines long, which could be refactored to improve readability and maintainability.",
+      "suggestion": "Refactor `_scan_repo` into smaller functions."
+    },
+    {
+      "file": "runtime\\orchestrators\\opportunity.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `run_job_intake` is 98 lines long, which could be broken down into smaller functions.",
+      "suggestion": "Refactor `run_job_intake` into smaller, more focused functions."
+    },
+    {
+      "file": "runtime\\orchestrators\\personal.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_synthesize_personal_state` is 54 lines long, which could be broken down into smaller functions.",
+      "suggestion": "Refactor `_synthesize_personal_state` into smaller, more focused functions."
+    },
+    {
+      "file": "runtime\\skills\\market_scan.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_detect_signals` is 71 lines long, which could be refactored to improve readability and maintainability.",
+      "suggestion": "Refactor `_detect_signals` into smaller functions."
+    },
+    {
+      "file": "runtime\\orchestrators\\trading.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The function `_synthesize_trading_session` is 74 lines long, which could be broken down into smaller functions.",
+      "suggestion": "Refactor `_synthesize_trading_session` into smaller, more focused functions."
+    }
+  ]
+}
