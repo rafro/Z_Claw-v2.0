@@ -23,6 +23,14 @@ INSTRUMENTS = {
     "GOLD":   "GC=F",
 }
 
+# Timeframe -> (yfinance interval, yfinance period)
+_TF_MAP = {
+    "15m": ("15m", "5d"),    # ~130 intraday 15-min bars
+    "1h":  ("1h",  "30d"),   # ~480 1h bars
+    "4h":  ("1h",  "30d"),   # fetch 1h, resample → ~120 4h bars
+    "1d":  ("1d",  "3mo"),   # daily fallback
+}
+
 DEFAULT_BALANCE    = 10_000.0
 RISK_PER_TRADE_PCT = 1.0   # 1% of account per trade
 STOP_PCT           = 0.01  # 1% stop loss distance
@@ -70,14 +78,36 @@ def save_virtual_account(data: dict) -> None:
 
 # ── Price data ─────────────────────────────────────────────────────────────────
 
-def fetch_ohlcv(ticker: str, period: str = "3mo") -> Optional[dict]:
+def _resample_4h(ohlcv: dict) -> dict:
+    """Aggregate 1h OHLCV dict into 4h candles (every 4 bars)."""
+    dates, opens, highs = ohlcv["date"], ohlcv["open"], ohlcv["high"]
+    lows, closes, volumes = ohlcv["low"], ohlcv["close"], ohlcv["volume"]
+    n = len(dates)
+    r_d, r_o, r_h, r_l, r_c, r_v = [], [], [], [], [], []
+    i = 0
+    while i < n:
+        end = min(i + 4, n)
+        r_d.append(dates[i])
+        r_o.append(opens[i])
+        r_h.append(max(highs[i:end]))
+        r_l.append(min(lows[i:end]))
+        r_c.append(closes[end - 1])
+        r_v.append(sum(volumes[i:end]))
+        i += 4
+    return {"ticker": ohlcv["ticker"], "date": r_d, "open": r_o,
+            "high": r_h, "low": r_l, "close": r_c, "volume": r_v}
+
+
+def fetch_ohlcv(ticker: str, timeframe: str = "1d") -> Optional[dict]:
     """
-    Fetch daily OHLCV via yfinance.
-    Returns dict with lists: date, open, high, low, close, volume.
+    Fetch OHLCV via yfinance for the given timeframe (15m, 1h, 4h, 1d).
+    4h is fetched as 1h then resampled. Returns dict with lists:
+    date, open, high, low, close, volume.
     """
+    yf_interval, yf_period = _TF_MAP.get(timeframe, ("1d", "3mo"))
     try:
         import yfinance as yf
-        df = yf.download(ticker, period=period, interval="1d",
+        df = yf.download(ticker, period=yf_period, interval=yf_interval,
                          auto_adjust=True, progress=False)
         if df.empty:
             log.warning("No data returned for %s", ticker)
@@ -85,15 +115,19 @@ def fetch_ohlcv(ticker: str, period: str = "3mo") -> Optional[dict]:
         # Flatten in case yfinance returns MultiIndex columns
         if hasattr(df.columns, "levels"):
             df.columns = df.columns.get_level_values(0)
-        return {
+        ohlcv = {
             "ticker": ticker,
-            "date":   [str(d.date()) for d in df.index],
+            "date":   [str(d) for d in df.index],
             "open":   [float(v) for v in df["Open"].tolist()],
             "high":   [float(v) for v in df["High"].tolist()],
             "low":    [float(v) for v in df["Low"].tolist()],
             "close":  [float(v) for v in df["Close"].tolist()],
             "volume": [float(v) for v in df["Volume"].tolist()],
         }
+        if timeframe == "4h":
+            ohlcv = _resample_4h(ohlcv)
+        log.debug("Fetched %d %s bars for %s", len(ohlcv["close"]), timeframe, ticker)
+        return ohlcv
     except ImportError:
         log.error("yfinance not installed — run: pip install yfinance pandas")
         return None
@@ -289,13 +323,23 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
         cycle_state = _load_file(state_file)
 
     strategy_id = "Bollinger Lower Band Touch with ATR Expansion Confirmation"
+    timeframe   = "1d"   # fallback — daily candles
     if cycle_state:
-        strat = cycle_state.get("active_strategy", {})
+        strat       = cycle_state.get("active_strategy", {})
         strategy_id = (
             strat.get("strategy_id")
             or strat.get("strategy_name")
             or strategy_id
         )
+        # Read timeframe from the strategy schema (15m, 1h, 4h, 1d)
+        schema_tf = (
+            strat.get("strategy_schema", {})
+                 .get("metadata", {})
+                 .get("timeframe", "1d")
+        )
+        if schema_tf in _TF_MAP:
+            timeframe = schema_tf
+    log.info("Virtual trader running on %s timeframe (strategy: %s)", timeframe, strategy_id)
 
     now         = datetime.now(timezone.utc)
     balance     = account.get("account_balance", DEFAULT_BALANCE)
@@ -305,7 +349,7 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
     for display_name, ticker in INSTRUMENTS.items():
         try:
-            ohlcv = fetch_ohlcv(ticker)
+            ohlcv = fetch_ohlcv(ticker, timeframe)
             if not ohlcv:
                 errors.append(f"No OHLCV data for {display_name} ({ticker})")
                 continue

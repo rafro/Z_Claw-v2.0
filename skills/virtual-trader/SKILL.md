@@ -1,19 +1,31 @@
 ---
 name: virtual-trader
-description: Daily virtual paper trading for SPX500 and Gold using real yfinance market data. No broker account, no KYC. Reads active strategy from agent-network cycle state, generates entry/exit signals, and simulates execution. Writes virtual_account.json for trading-report to consume.
+description: Intraday virtual paper trading for SPX500 and Gold using real yfinance market data. No broker account, no KYC. Reads active strategy from agent-network cycle state — including its timeframe (15m, 1h, 4h) — generates entry/exit signals on the correct candle interval, and simulates execution. Writes virtual_account.json for trading-report to consume.
 division: trading
 schedule: daily 18:00 (runs first, before trading-report)
 requires: yfinance, pandas
 ---
 
 ## Role
-Simulate paper trades on SPX500 (^GSPC) and Gold (GC=F) using real market data from Yahoo Finance.
-No broker account required. Strategy signals are derived from the active strategy in agent-network.
+Simulate paper trades on SPX500 (^GSPC) and Gold (GC=F) using real intraday market data from Yahoo Finance.
+No broker account required. The active strategy is loaded from agent-network, and its declared timeframe
+(15m, 1h, or 4h) is used to fetch the correct candle interval. 4h candles are built by resampling 1h data.
 
 ## Data Sources
 - Price data: Yahoo Finance via `yfinance` (`^GSPC` for SPX500, `GC=F` for Gold)
 - Active strategy: `C:\Users\Tyler\agent-network\state\spx500_cycle_state.json`
+  - Reads `active_strategy.strategy_schema.metadata.timeframe` for candle interval (15m / 1h / 4h)
 - Account state: `C:\Users\Tyler\agent-network\state\virtual_account.json`
+
+## Timeframe Resolution
+Timeframe is read from the active strategy schema. Fallback is `1d` if not set.
+
+| Strategy timeframe | yfinance fetch  | Candles returned |
+|--------------------|-----------------|------------------|
+| 15m                | interval=15m, 5d  | ~130 bars        |
+| 1h                 | interval=1h, 30d  | ~480 bars        |
+| 4h                 | interval=1h, 30d → resample | ~120 bars |
+| 1d (fallback)      | interval=1d, 3mo  | ~63 bars         |
 
 ## Account Setup
 - Default starting balance: $10,000 (virtual)
@@ -22,7 +34,8 @@ No broker account required. Strategy signals are derived from the active strateg
 - Instruments: SPX500 (S&P 500), Gold (Gold Futures)
 
 ## Signal Engine
-Parses the active strategy_id from agent-network and runs matching indicators:
+Parses the active strategy_id from agent-network and runs matching indicators
+against candles at the strategy's declared timeframe:
 
 1. **EMA + Price Above + ATR Expanding (Long)**
    - Entry: Price > EMA(n), ATR expanding (current ATR > 5-bar average)

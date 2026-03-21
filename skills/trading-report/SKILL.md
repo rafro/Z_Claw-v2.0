@@ -1,6 +1,6 @@
 ---
 name: trading-report
-description: Read today's closed trades from Alpaca state files, calculate daily session stats, save to state/trade-log.json, and compile an executive packet for the trading division chief. Run by division-chief-trading at 18:00 daily.
+description: Read today's closed trades from virtual_account.json, calculate daily session stats, save to state/trade-log.json, and compile an executive packet for the trading division chief. Run by division-chief-trading at 18:00 daily.
 schedule: daily 18:00
 division: trading
 runner: division-chief-trading
@@ -11,16 +11,14 @@ Called by division-chief-trading at 18:00 daily. Also runs on manual invocation.
 Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
 
 ## Prerequisites
-- Alpaca state files must exist at the paths listed below
-- Credentials: load `ALPACA_API_KEY` and `ALPACA_API_SECRET` from `C:\Users\Matty\OpenClaw-Orchestrator\.env`
-- If BOTH state files are missing: return `status: partial` packet with note "trading system not yet activated" — do not send Telegram
-- If state files exist but are empty or have no trades for today: return packet noting "no trades logged today"
+- If state file is missing: return `status: partial` packet with note "trading system not yet activated" — do not send Telegram
+- If state file exists but has no trades for today: return packet noting "no trades logged today"
 
 ## Data Sources
 
-### Live mode (Alpaca paper trading)
+### Primary: Virtual paper trading
 ```
-C:\Users\Matty\agent-network\state\alpaca_paper_state.json
+C:\Users\Tyler\agent-network\state\virtual_account.json
 ```
 Contains a `trade_log` array. Each record:
 ```json
@@ -35,18 +33,13 @@ Contains a `trade_log` array. Each record:
   "risk_usd": null,
   "reason": "",
   "pnl": null,
+  "r_multiple": null,
   "timestamp": ""
 }
 ```
 
-### Dry run mode
-```
-C:\Users\Matty\agent-network\state\virtual_account.json
-```
-Same structure. Exit records also include `r_multiple` field.
-
-**Which to use:** Check if `alpaca_paper_state.json` exists and has entries for today. If yes, use it.
-If not found or empty for today, fall back to `virtual_account.json`.
+**Which to use:** `virtual_account.json` is the sole data source. If a live CFD broker
+integration is added in future, it will be checked first and virtual_account used as fallback.
 
 ## Steps
 
@@ -95,7 +88,7 @@ If not found or empty for today, fall back to `virtual_account.json`.
    {
      "date": "YYYY-MM-DD",
      "logged_at": "<ISO timestamp>",
-     "source": "alpaca_paper | dry_run",
+     "source": "virtual_paper | cfd_demo",
      "trades": [],
      "stats": {
        "total_trades": 0,
@@ -129,7 +122,7 @@ trading-report contributes to division-chief-trading packet:
     "total_pnl": null,
     "best_r": null,
     "worst_r": null,
-    "source": "alpaca_paper | dry_run"
+    "source": "virtual_paper | cfd_demo"
   },
   "summary": "Trades: {n} | W/L: {w}/{l} | Win Rate: {%} | Avg R: {r} | PnL: ${pnl}",
   "artifact_refs": [{ "bundle_id": "trade-session-{date}", "location": "hot" }]
