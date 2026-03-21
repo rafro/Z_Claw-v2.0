@@ -1,6 +1,6 @@
 {
   "division": "opportunity",
-  "generated_at": "2026-03-20T17:01:10.835633+00:00",
+  "generated_at": "2026-03-21T17:05:13.351429+00:00",
   "skill": "funding-finder",
   "status": "success",
   "summary": "No new funding opportunities found this run.",
@@ -12,7 +12,7 @@
   },
   "artifact_refs": [
     {
-      "bundle_id": "funding-2026-03-20",
+      "bundle_id": "funding-2026-03-21",
       "location": "hot"
     }
   ],
