@@ -165,8 +165,7 @@ def run_burnout_monitor() -> dict:
     )
 
     packet.write(pkt)
-    if level != "ok":
-        grant_skill_xp("burnout-monitor")
+    grant_skill_xp("burnout-monitor")
     log.info("Burnout-monitor packet written. Level=%s", level)
     return pkt
 
@@ -214,6 +213,6 @@ def run_personal_digest() -> dict:
     )
 
     packet.write(pkt)
-    grant_skill_xp("perf-correlation")  # credit for cross-skill synthesis
+    grant_skill_xp("personal-digest")
     log.info("Personal digest packet written. Escalate=%s", escalate)
     return pkt

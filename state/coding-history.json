@@ -47,7 +47,15 @@
     {
       "role": "assistant",
       "content": "Good news -- **biometric is actually already built in.** Here's the current state:\n\n---\n\n## Current Setup\n\nThe mobile auth flow already has biometric + PIN fallback:\n\n```\nrequireBiometricThenAct(action, payload):\n  1. Get challenge from server (30s, single-use)\n  2. Try WebAuthn biometric (fingerprint/FaceID)\n  3. If biometric unavailable → fall back to PIN\n  4. Send action + challenge_id to server\n```\n\nSo biometric *is* attempted first -- but it falls back to PIN if WebAuthn isn't available/set up on your mobile browser.\n\n---\n\n## Why It Might Be Showing PIN Only\n\nWebAuthn biometric via browser has some gotchas:\n- **Requires HTTPS** -- if you're hitting `http://` (local IP), WebAuthn won't work\n- **Requires a registered passkey** -- first-time setup needs a credential to be registered\n- **Browser support** -- must be Safari (iOS) or Chrome (Android)\n\n---\n\n## What Would Actually Fix It\n\n**Option A -- Add passkey registration flow** in the mobile UI so you can register your fingerprint once, then it works every time.\n\n**Option B -- Force HTTPS** via a self-signed cert or a local tunnel (like Tailscale), which is required for WebAuthn to activate.\n\n**Option C -- Both** (recommended).\n\n---\n\nWant me to build out the passkey registration flow in the mobile UI? That's probably the missing piece. I'd add a \"Register Biometric\" button in mobile settings that walks you through the WebAuthn credential creation."
+    },
+    {
+      "role": "user",
+      "content": "Please also add a thought icon in mobile chats to show when you’re thinking and not just frozen"
+    },
+    {
+      "role": "assistant",
+      "content": "Done. Here's what changed:\n\n---\n\n### 🧠 Thinking Indicator -- What's New\n\n| Mode | Indicator | Why |\n|---|---|---|\n| **J_Claw** (Ollama) | 3 animated dots (unchanged) | Fast local model, dots are fine |\n| **Claude / Coding** | 🧠 pulsing brain + *\"Thinking…\"* fading text | CLI can take 5-10s to spin up -- now clearly working |\n\nThe brain slowly pulses and tilts, the \"Thinking…\" text fades in and out -- so it's unmistakably alive, not frozen. When the first token arrives it swaps out for the streaming text as usual.\n\nNo server changes needed -- purely frontend. Reload the mobile PWA and it's live."
     }
   ],
-  "last_updated": "2026-03-21T06:38:51.968Z"
+  "last_updated": "2026-03-21T06:41:29.452Z"
 }

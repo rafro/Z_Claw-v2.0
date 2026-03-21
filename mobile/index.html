@@ -298,6 +298,18 @@
     .sleep-bar-wrap { background: var(--overlay); border-radius: 6px; height: 8px; overflow: hidden; margin: 6px 0; }
     .sleep-bar-fill { height: 100%; background: var(--teal); border-radius: 6px; transition: width 0.5s ease; }
 
+    /* ── XP rank card ── */
+    .xp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+    .xp-rank-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .xp-rank-title { font-size: 13px; font-weight: 700; color: var(--purple); }
+    .xp-level { font-size: 11px; color: var(--subtext); }
+    .xp-bar-wrap { background: var(--overlay); border-radius: 6px; height: 6px; overflow: hidden; margin-bottom: 8px; }
+    .xp-bar-fill { height: 100%; background: var(--purple); border-radius: 6px; transition: width 0.5s ease; }
+    .xp-label { font-size: 10px; color: var(--subtext); margin-bottom: 10px; }
+    .xp-divs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .xp-div-badge { background: var(--overlay); border-radius: 8px; padding: 5px 8px; font-size: 10px; color: var(--subtext); }
+    .xp-div-badge span { color: var(--text); font-weight: 600; }
+
     /* ── Flag rows ── */
     .flag-row { display: flex; gap: 8px; }
     .flag-box { flex: 1; background: var(--overlay); border-radius: 8px; padding: 8px 6px; text-align: center; }
@@ -464,6 +476,11 @@
     .chat-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--subtext); animation: typing-dot 1.2s ease-in-out infinite; }
     .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
     .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+    .chat-thinking { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+    .chat-thinking-icon { font-size: 17px; display: inline-block; animation: thinking-pulse 1.8s ease-in-out infinite; }
+    .chat-thinking-text { font-size: 13px; color: var(--subtext); animation: thinking-fade 1.8s ease-in-out infinite; }
+    @keyframes thinking-pulse { 0%,100%{transform:scale(1) rotate(-5deg);opacity:0.65} 50%{transform:scale(1.25) rotate(5deg);opacity:1} }
+    @keyframes thinking-fade { 0%,100%{opacity:0.45} 50%{opacity:1} }
     @keyframes typing-dot { 0%,80%,100%{opacity:.3;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
     #screen-chat.active { display: flex !important; flex-direction: column; padding: 0; }
 
@@ -1451,6 +1468,31 @@ async function loadOverview(silent = false) {
     html += statBox(Object.keys(d.divisions || {}).length, 'Divs');
     html += '</div>';
 
+    // ── XP / Rank card ──
+    try {
+      const s = await api('/mobile/api/stats');
+      const baseXp   = s.base_xp  || 0;
+      const level    = s.level    || 1;
+      const rank     = s.rank     || 'Apprentice of the Realm';
+      const xpToNext = Math.max(1, (level) * 100);
+      const pct      = Math.min(100, Math.round((baseXp % 100) / 100 * 100));
+      const divs     = s.divisions || {};
+      const divOrder = [['op_sec','OP-Sec'],['dev_automation','Dev'],['trading','Trading'],['opportunity','Opps'],['personal','Personal']];
+      html += '<div class="xp-card">';
+      html += '<div class="xp-rank-row">';
+      html += `<div class="xp-rank-title">${escHtml(rank)}</div>`;
+      html += `<div class="xp-level">LVL ${level}</div>`;
+      html += '</div>';
+      html += '<div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:' + pct + '%"></div></div>';
+      html += `<div class="xp-label">${baseXp} base XP · ${100 - (baseXp % 100)} to next level</div>`;
+      html += '<div class="xp-divs">';
+      for (const [key, label] of divOrder) {
+        const div = divs[key];
+        if (div) html += `<div class="xp-div-badge">${label} <span>${div.xp} XP</span> · ${escHtml(div.rank)}</div>`;
+      }
+      html += '</div></div>';
+    } catch(e) {}
+
     // ── Division cards 2-col grid ──
     html += '<div class="section-title">Divisions</div>';
     html += '<div class="div-grid">';
@@ -2347,7 +2389,13 @@ function showTypingIndicator() {
   const div = document.createElement('div');
   div.className = 'chat-msg assistant';
   div.id = 'chat-typing';
-  div.innerHTML = '<div class="chat-sender">J_Claw</div><div class="chat-bubble chat-typing"><span></span><span></span><span></span></div>';
+  const isCoding = _chatMode === 'coding';
+  const senderName = isCoding ? 'Claude' : 'J_Claw';
+  const accentStyle = isCoding ? 'border-color:var(--blue)' : '';
+  const innerHtml = isCoding
+    ? `<div class="chat-bubble chat-thinking" style="${accentStyle}"><span class="chat-thinking-icon">🧠</span><span class="chat-thinking-text">Thinking…</span></div>`
+    : `<div class="chat-bubble chat-typing"><span></span><span></span><span></span></div>`;
+  div.innerHTML = `<div class="chat-sender">${senderName}</div>${innerHtml}`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }

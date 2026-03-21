@@ -2035,6 +2035,10 @@ const server = http.createServer(async (req, res) => {
       if (method === 'GET' && reqPath === '/mobile/api/status') {
         return jsonOk(res, { ok: true, uptime: Math.floor(process.uptime()) });
       }
+      if (method === 'GET' && reqPath === '/mobile/api/stats') {
+        const s = readState('jclaw-stats.json') || {};
+        return jsonOk(res, s);
+      }
       if (method === 'GET' && reqPath === '/mobile/api/alerts') {
         return handleMobileAlerts(res);
       }

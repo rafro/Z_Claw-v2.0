@@ -363,6 +363,6 @@ def run_dev_digest() -> dict:
     )
 
     packet.write(pkt)
-    grant_skill_xp("repo-monitor")  # credit for cross-skill synthesis
+    grant_skill_xp("dev-digest")
     log.info("Dev-digest packet written. Escalate=%s TotalHigh=%d", escalate, total_high)
     return pkt
