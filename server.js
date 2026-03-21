@@ -1635,10 +1635,28 @@ function mobileApproveTask(approvalId, decision) {
   });
 }
 
+const DISMISSED_ALERTS_FILE = path.join(STATE_DIR, 'dismissed-alerts.json');
+
+function _loadDismissedAlerts() {
+  try {
+    if (fs.existsSync(DISMISSED_ALERTS_FILE)) {
+      return new Set(JSON.parse(fs.readFileSync(DISMISSED_ALERTS_FILE, 'utf8')));
+    }
+  } catch { /* ignore */ }
+  return new Set();
+}
+
+function _saveDismissedAlerts(set) {
+  try {
+    fs.writeFileSync(DISMISSED_ALERTS_FILE, JSON.stringify([...set], null, 2));
+  } catch { /* ignore */ }
+}
+
 function mobileAckAlert(alertId, division) {
-  // Alerts are ephemeral (derived from packets). Log the ack; dashboard
-  // suppresses ack'd alerts via the dismissedAlerts client-side set.
-  // Here we record the ack in the activity log so desktop also sees it.
+  // Persist dismissed alert ID so it stays gone after page reload.
+  const dismissed = _loadDismissedAlerts();
+  dismissed.add(alertId);
+  _saveDismissedAlerts(dismissed);
   logActivity(division || 'SYS', `[MOBILE] Alert ack'd: ${alertId}`, 'yellow');
   _broadcastAlertUpdate();
   return { ok: true, message: 'Alert acknowledged' };
@@ -1920,6 +1938,7 @@ function handleMobileDivisions(res) {
 
 function _collectMobileAlerts() {
   const alerts = [];
+  const dismissed = _loadDismissedAlerts();
   const packetDirs = ['op-sec', 'trading', 'opportunity', 'dev-automation', 'personal', 'sentinel'];
   for (const div of packetDirs) {
     const pktDir = path.join(ROOT, 'divisions', div, 'packets');
@@ -1929,10 +1948,12 @@ function _collectMobileAlerts() {
       try {
         const pkt = JSON.parse(fs.readFileSync(path.join(pktDir, file), 'utf8'));
         if (pkt.escalate && pkt.escalation_reason) {
+          const id = pkt.skill || file.replace('.json', '');
+          if (dismissed.has(id)) continue; // skip ack'd alerts
           alerts.push({
-            id:               pkt.skill || file.replace('.json', ''),
+            id,
             division:         div,
-            skill:            pkt.skill || file.replace('.json', ''),
+            skill:            id,
             message:          pkt.escalation_reason,
             severity:         'HIGH',
             generated_at:     pkt.generated_at || null,
