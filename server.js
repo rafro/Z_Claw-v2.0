@@ -346,6 +346,26 @@ function handleGetGrants(res) {
   jsonOk(res, { pending, applied, stats: fp.stats });
 }
 
+// GET /api/packets  — returns all division executive packets organised by division
+function handleGetPackets(res) {
+  const divisions = ['trading', 'opportunity', 'dev-automation', 'personal', 'op-sec', 'sentinel'];
+  const result = {};
+  for (const div of divisions) {
+    const packetDir = path.join(ROOT, 'divisions', div, 'packets');
+    result[div] = {};
+    if (!fs.existsSync(packetDir)) continue;
+    const files = fs.readdirSync(packetDir).filter(f => f.endsWith('.json'));
+    for (const f of files) {
+      try {
+        const pkt = JSON.parse(fs.readFileSync(path.join(packetDir, f), 'utf8'));
+        const skill = f.replace('.json', '');
+        result[div][skill] = pkt;
+      } catch(e) {}
+    }
+  }
+  jsonOk(res, result);
+}
+
 // GET /api/trading/cycle  — returns agent-network cycle state for dashboard
 function proxyZenith(method, zenithPath, body, res) {
   const payload = body ? JSON.stringify(body) : null;
@@ -939,6 +959,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (method === 'GET' && reqPath === '/api/jobs') { return handleGetJobs(res); }
       if (method === 'GET' && reqPath === '/api/grants') { return handleGetGrants(res); }
+      if (method === 'GET' && reqPath === '/api/packets') { return handleGetPackets(res); }
       if (method === 'GET' && reqPath === '/api/trading/cycle') { return handleGetTradingCycle(res); }
       if (method === 'GET' && reqPath === '/api/trading/cycle/status') { return proxyZenith('GET', '/status', null, res); }
       if (method === 'POST' && reqPath === '/api/trading/cycle/run') {
@@ -1469,16 +1490,16 @@ cron.schedule('0 15 * * *', async () => {
   await runSkillViaPython('dev-digest', 'DEV');
 }, { timezone: TZ });
 
-// Sunday scans
-cron.schedule('0 10 * * 0', async () => {
+// Dev weekly scans — TEMP: daily until verified, then restore Sunday-only
+cron.schedule('0 10 * * *', async () => {
   await runSkillViaPython('refactor-scan', 'DEV');
 }, { timezone: TZ });
 
-cron.schedule('0 11 * * 0', async () => {
+cron.schedule('0 11 * * *', async () => {
   await runSkillViaPython('security-scan', 'DEV');
 }, { timezone: TZ });
 
-cron.schedule('0 12 * * 0', async () => {
+cron.schedule('0 12 * * *', async () => {
   await runSkillViaPython('doc-update', 'DEV');
 }, { timezone: TZ });
 
@@ -1498,17 +1519,22 @@ cron.schedule('0 19 * * *', async () => {
   await runSkillViaPython('threat-surface', 'OP_SEC');
 }, { timezone: TZ });
 
-// Sunday deep scans — breach-check 13:00, cred-audit 14:00, privacy-scan 15:00
-cron.schedule('0 13 * * 0', async () => {
+// OP-SEC deep scans — TEMP: daily until verified, then restore Sunday-only
+cron.schedule('0 13 * * *', async () => {
   await runSkillViaPython('breach-check', 'OP_SEC');
 }, { timezone: TZ });
 
-cron.schedule('0 14 * * 0', async () => {
+cron.schedule('0 14 * * *', async () => {
   await runSkillViaPython('cred-audit', 'OP_SEC');
 }, { timezone: TZ });
 
-cron.schedule('0 15 * * 0', async () => {
+cron.schedule('0 15 * * *', async () => {
   await runSkillViaPython('privacy-scan', 'OP_SEC');
+}, { timezone: TZ });
+
+// opsec-digest — daily at 15:30 (after breach/cred/privacy complete)
+cron.schedule('30 15 * * *', async () => {
+  await runSkillViaPython('opsec-digest', 'OP_SEC');
 }, { timezone: TZ });
 
 // ── Briefings ──────────────────────────────────────────────────────────────
