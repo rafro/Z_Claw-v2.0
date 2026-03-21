@@ -1509,6 +1509,7 @@ const MOBILE_ALLOWED_ACTIONS = new Set([
   'resume_division',// re-enable a division agent
   'restart_server', // graceful process.exit(0) — PM2 auto-restarts
   'restart_pm2',    // spawns a new PowerShell window running: pm2 restart openclaw
+  'git_sync',       // stash → pull → stash pop → push in a visible PowerShell window
   'approve_coding', // keep file edits made by a mobile coding session
   'revert_coding',  // git reset --hard back to pre-session HEAD
 ]);
@@ -1598,6 +1599,8 @@ async function handleMobileAction(body, req, res) {
         result = mobileRestartServer(); break;
       case 'restart_pm2':
         result = mobileRestartPm2(); break;
+      case 'git_sync':
+        result = mobileGitSync(); break;
       case 'approve_coding':
         result = mobileApproveCoding(targetId); break;
       case 'revert_coding':
@@ -1702,6 +1705,30 @@ function mobileRestartPm2() {
     logActivity('SYS', '[MOBILE] PM2 restart triggered — PowerShell window opened on desktop', 'yellow');
     mobileAuditLog({ action: 'restart_pm2', actor: 'mobile-operator', result: 'succeeded' });
     return { ok: true, message: 'PowerShell window opened — running pm2 restart openclaw' };
+  } catch(e) {
+    return { ok: false, message: 'Failed to open PowerShell: ' + e.message };
+  }
+}
+
+function mobileGitSync() {
+  try {
+    const repoPath = 'C:\\Users\\Tyler\\Desktop\\J_Claw_Reborn';
+    const cmds = [
+      `cd "${repoPath}"`,
+      'git stash',
+      'git pull origin master',
+      'git stash pop',
+      'git push origin master',
+    ].join(' && ');
+    const proc = spawn(
+      'cmd.exe',
+      ['/c', 'start', 'powershell.exe', '-NoExit', '-Command', cmds],
+      { detached: true, stdio: 'ignore', windowsHide: false }
+    );
+    proc.unref();
+    logActivity('SYS', '[MOBILE] Git sync triggered — PowerShell window opened on desktop', 'yellow');
+    mobileAuditLog({ action: 'git_sync', actor: 'mobile-operator', result: 'succeeded' });
+    return { ok: true, message: 'PowerShell window opened — running git stash → pull → push' };
   } catch(e) {
     return { ok: false, message: 'Failed to open PowerShell: ' + e.message };
   }
