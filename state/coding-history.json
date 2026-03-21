@@ -191,7 +191,15 @@
     {
       "role": "assistant",
       "content": "Here's exactly what each one does under the hood:\n\n---\n\n## Restart Server\n- Calls `process.exit(0)` on the Node.js server process (graceful kill)\n- PM2 detects the process died and **auto-restarts it within ~3 seconds**\n- The restart happens **inside the same PM2-managed process** -- no new window opens\n- Your mobile connection drops briefly, then reconnects automatically\n- **Use for:** Quick bounce when something is misbehaving\n\n---\n\n## PM2 Restart (New Terminal)\n- Opens a **visible PowerShell window on Tyler's desktop screen**\n- That window runs `pm2 restart openclaw` with `-NoExit` so Tyler can see the output\n- PM2 restarts the process from outside (the standard way)\n- **Use for:** Applying code updates -- because the new PowerShell window lets Tyler visually confirm the restart succeeded and see any startup errors\n\n---\n\n## TL;DR\n\n| | Restart Server | PM2 Restart (New Terminal) |\n|---|---|---|\n| How | Process kills itself | PowerShell runs `pm2 restart` |\n| Visible on desktop? | No | Yes -- window pops up |\n| Tyler sees output? | No | Yes |\n| Best for | Quick fix/bounce | After code changes |\n\nThey both end up restarting the server -- the difference is **visibility**. When Tyler's at the desk and you want confirmation it worked, use PM2 Restart. For a quick remote bounce, Restart Server is cleaner."
+    },
+    {
+      "role": "user",
+      "content": "Which option do I chose to confirm an update from mobile?"
+    },
+    {
+      "role": "assistant",
+      "content": "**Restart Server.**\n\nIt works entirely remotely -- no window needs to pop up on Tyler's desktop. PM2 handles the restart automatically within a few seconds and your mobile reconnects on its own.\n\n**PM2 Restart (New Terminal)** is really meant for when Tyler is sitting at the PC and wants to visually confirm the restart in a terminal window."
     }
   ],
-  "last_updated": "2026-03-21T13:13:31.523Z"
+  "last_updated": "2026-03-21T13:15:17.976Z"
 }
