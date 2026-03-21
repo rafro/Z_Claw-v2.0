@@ -503,9 +503,14 @@
     .party-name  { font-size: 15px; font-weight: 900; letter-spacing: 0.1em; margin-bottom: 1px; }
     .party-order { font-size: 7px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
     .party-class { font-size: 8px; color: var(--subtext); letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase; }
-    .party-xp-wrap { background: var(--overlay); border-radius: 3px; height: 3px; overflow: hidden; margin-bottom: 6px; }
+    .party-xp-wrap { background: var(--overlay); border-radius: 3px; height: 3px; overflow: hidden; margin-bottom: 3px; }
     .party-xp-fill { height: 100%; border-radius: 3px; transition: width 0.7s cubic-bezier(0.22,1,0.36,1); }
-    .party-morale { font-size: 8px; color: var(--subtext); margin-bottom: 5px; }
+    .party-bars-row { display: flex; gap: 3px; margin-bottom: 5px; }
+    .party-hp-wrap { flex: 1; background: var(--overlay); border-radius: 3px; height: 3px; overflow: hidden; }
+    .party-hp-fill { height: 100%; border-radius: 3px; transition: width 0.7s cubic-bezier(0.22,1,0.36,1); }
+    .party-morale-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .party-morale { font-size: 8px; color: var(--subtext); }
+    .party-shield { font-size: 7px; color: #60a5fa; letter-spacing: 0.05em; }
     .party-view-hint { font-size: 7px; color: var(--border); letter-spacing: 0.06em; }
 
     /* ── Chronicle ── */
@@ -547,8 +552,9 @@
 
     /* ── Rank-Up Overlay (cinematic) ── */
     #rankup-overlay {
+      --rankup-color: #3b82f6;
       position: fixed; inset: 0; z-index: 9000;
-      background: rgba(8,4,20,0.97);
+      background: rgba(6,4,18,0.97);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
       transition: opacity 0.35s ease;
@@ -556,32 +562,42 @@
     #rankup-overlay.open { opacity: 1; pointer-events: all; }
     .rankup-bg-glow {
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 42%, #7c3aed38 0%, transparent 65%);
+      background: radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--rankup-color) 22%, transparent) 0%, transparent 65%);
       animation: rankup-breathe 1.6s ease-in-out infinite;
     }
     @keyframes rankup-breathe {
       0%,100% { opacity: 0.5; transform: scale(1); }
       50%      { opacity: 1;   transform: scale(1.07); }
     }
+    .rankup-commander-portrait {
+      position: relative; width: 64px; height: 64px; margin-bottom: 14px;
+      opacity: 0; animation: ro-fadein 0.4s ease 0.05s forwards;
+      filter: drop-shadow(0 0 14px var(--rankup-color));
+    }
+    .rankup-commander-name {
+      position: relative; font-size: 13px; font-weight: 900; letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--rankup-color); margin-bottom: 2px;
+      opacity: 0; animation: ro-fadein 0.35s ease 0.15s forwards;
+    }
     .rankup-label {
-      position: relative; font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
-      text-transform: uppercase; color: #a78bfa; margin-bottom: 6px;
+      position: relative; font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--rankup-color); margin-bottom: 4px; opacity: 0.7;
       opacity: 0; animation: ro-fadein 0.4s ease 0.2s forwards;
     }
     .rankup-division-name {
-      position: relative; font-size: 12px; color: #7c3aed66; letter-spacing: 0.12em;
-      text-transform: uppercase; margin-bottom: 22px;
-      opacity: 0; animation: ro-fadein 0.4s ease 0.3s forwards;
+      position: relative; font-size: 9px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--rankup-color); opacity: 0.5; margin-bottom: 22px;
+      opacity: 0; animation: ro-fadein 0.4s ease 0.28s forwards;
     }
     .rankup-rank-text {
-      position: relative; font-size: 28px; font-weight: 900; color: #fff;
-      letter-spacing: 0.04em; text-shadow: 0 0 40px #a78bfaaa, 0 0 80px #7c3aed44;
-      margin-bottom: 10px; text-align: center; padding: 0 20px;
+      position: relative; font-size: 26px; font-weight: 900; color: #fff;
+      letter-spacing: 0.04em; text-shadow: 0 0 40px color-mix(in srgb, var(--rankup-color) 70%, transparent), 0 0 80px color-mix(in srgb, var(--rankup-color) 30%, transparent);
+      margin-bottom: 10px; text-align: center; padding: 0 24px;
       opacity: 0; transform: scale(0.65);
       animation: ro-scale-in 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.38s forwards;
     }
     .rankup-tap-hint {
-      position: relative; font-size: 10px; color: #7c3aed99; margin-top: 32px;
+      position: relative; font-size: 10px; color: var(--rankup-color); opacity: 0.4; margin-top: 32px;
       letter-spacing: 0.1em; text-transform: uppercase;
       opacity: 0; animation: ro-fadein 0.4s ease 1.1s forwards;
     }
@@ -1516,16 +1532,46 @@ function showRankUpBanner(text) {
 function showRankUpOverlay(evt) {
   const overlay = document.getElementById('rankup-overlay');
   if (!overlay) return;
-  const labelEl = document.getElementById('rankup-label');
-  const divEl   = document.getElementById('rankup-division-name');
-  const rankEl  = document.getElementById('rankup-rank-text');
 
-  labelEl.textContent = evt._prestige ? '✦ PRESTIGE ✦' : '⚔ RANK UP';
-  divEl.textContent   = evt.division ? evt.division.replace(/_/g,' ').toUpperCase() + ' DIVISION' : '';
-  rankEl.textContent  = evt.new_rank || '';
+  const labelEl     = document.getElementById('rankup-label');
+  const divEl       = document.getElementById('rankup-division-name');
+  const rankEl      = document.getElementById('rankup-rank-text');
+  const portraitEl  = document.getElementById('rankup-commander-portrait');
+  const cmdNameEl   = document.getElementById('rankup-commander-name');
+
+  // Resolve commander identity
+  const cmdKey  = evt.division || 'base';
+  const cmd     = _COMMANDER_DEF[cmdKey] || _COMMANDER_DEF.base;
+  const color   = cmd.color;
+
+  // Set CSS color variable on overlay
+  overlay.style.setProperty('--rankup-color', color);
+
+  // Populate elements
+  if (evt._prestige) {
+    labelEl.textContent    = '✦ PRESTIGE ASCENSION ✦';
+    divEl.textContent      = 'Realm Command';
+    if (cmdNameEl) cmdNameEl.textContent = 'J_CLAW';
+  } else if (cmdKey === 'base') {
+    labelEl.textContent    = '✦ LEVEL UP';
+    divEl.textContent      = 'Realm Command · Level ' + (evt.level || '');
+    if (cmdNameEl) cmdNameEl.textContent = 'J_CLAW';
+  } else {
+    labelEl.textContent    = '⚔ RANK UP';
+    divEl.textContent      = cmd.order;
+    if (cmdNameEl) cmdNameEl.textContent = cmd.name;
+  }
+  rankEl.textContent = evt.new_rank || '';
+
+  // Set commander portrait
+  if (portraitEl) {
+    portraitEl.innerHTML = cmdKey === 'base'
+      ? `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="20" cy="20" r="16" fill="none" stroke="${color}" stroke-width="2"/><circle cx="20" cy="20" r="10" fill="${color}" opacity="0.25"/><circle cx="20" cy="20" r="5" fill="${color}"/></svg>`
+      : commanderPortraitSVG(cmdKey, color, 64);
+  }
 
   // Restart CSS animations by cloning the animated children
-  [labelEl, divEl, rankEl].forEach(el => {
+  [labelEl, divEl, rankEl, portraitEl, cmdNameEl].filter(Boolean).forEach(el => {
     el.style.animation = 'none';
     void el.offsetWidth;
     el.style.animation = '';
@@ -1549,14 +1595,17 @@ function _dismissRankUpOverlay() {
 
 // ── Achievement Cinematic Overlay ─────────────────────────
 const _ACH_DEFS = {
-  rulers_blessing: { icon: '👑', name: "Ruler's Blessing",  desc: 'First reward from Matthew' },
-  first_hunt:      { icon: '🏹', name: 'First Hunt',         desc: 'First job opportunity found' },
-  market_watcher:  { icon: '📈', name: 'Market Watcher',     desc: 'First trading report sent' },
-  code_warden:     { icon: '🛡', name: 'Code Warden',        desc: 'First repo-monitor run' },
-  healthy_habits:  { icon: '🔥', name: 'Loyal Flame',        desc: '7-day health log streak' },
-  division_master: { icon: '⚔',  name: 'Division Master',    desc: 'Any division reaches Master' },
-  realm_commander: { icon: '🌟', name: 'Realm Commander',    desc: 'Reach Level 10' },
-  eternal:         { icon: '♾',  name: 'Eternal',            desc: 'Reach Level 50' },
+  rulers_blessing:  { icon: '👑', name: "Ruler's Blessing",  desc: 'Recognized by Matthew, the sovereign of the realm' },
+  first_hunt:       { icon: '🏹', name: 'First Hunt',         desc: 'Vael marked the first quarry — the Dawnhunt Order has opened its ledger' },
+  market_watcher:   { icon: '📈', name: 'First Signal',       desc: 'Seren read the first rune — the Auric Veil is active' },
+  code_warden:      { icon: '⬡',  name: 'Forge Lit',          desc: 'Kaelen lit the forge — the Iron Codex is building' },
+  covenant_keeper:  { icon: '🔥', name: 'Flame Kindled',      desc: 'Lyrin tended the flame — the Ember Covenant is watching' },
+  veil_opened:      { icon: '👁',  name: 'The Veil Opens',     desc: 'Zeth raised the first ward — the Nullward Circle is watching' },
+  loyal_flame:      { icon: '🔥', name: 'Loyal Flame',        desc: 'Any order held a 7-day streak — Elite morale reached' },
+  division_master:  { icon: '⚔',  name: 'Division Master',    desc: 'An order reached the third ascension — mastery approaches' },
+  five_orders:      { icon: '✦',  name: 'Five Orders Stand',  desc: 'All five orders have opened their ledger' },
+  realm_commander:  { icon: '🌟', name: 'Realm Commander',    desc: 'J_Claw reached Level 10 — command authority established' },
+  eternal:          { icon: '♾',  name: 'Eternal',            desc: 'J_Claw reached Level 50 — the Eternal Orchestrator ascends' },
 };
 
 function showAchievementOverlay(achievementId) {
@@ -1679,6 +1728,55 @@ function loadCommand(silent = false) {
   loadOps(true);
 }
 
+// ── Commander identity map (module-scope — used by overlays + party cards) ──
+const _COMMANDER_DEF = {
+  opportunity:    { name:'VAEL',   order:'The Dawnhunt Order',   color:'#f59e0b' },
+  trading:        { name:'SEREN',  order:'The Auric Veil',        color:'#06b6d4' },
+  dev_automation: { name:'KAELEN', order:'The Iron Codex',        color:'#a78bfa' },
+  personal:       { name:'LYRIN',  order:'The Ember Covenant',    color:'#10b981' },
+  op_sec:         { name:'ZETH',   order:'The Nullward Circle',   color:'#ef4444' },
+  base:           { name:'J_CLAW', order:'Realm Command',         color:'#3b82f6' },
+};
+
+function commanderPortraitSVG(key, color, size) {
+  const sz = size || 42;
+  const c  = color;
+  const portraits = {
+    opportunity: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" shape-rendering="crispEdges">
+      <circle cx="20" cy="20" r="16" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
+      <line x1="20" y1="4" x2="20" y2="10" stroke="${c}" stroke-width="1.5" opacity="0.55"/>
+      <line x1="20" y1="30" x2="20" y2="36" stroke="${c}" stroke-width="1.5" opacity="0.55"/>
+      <line x1="4" y1="20" x2="10" y2="20" stroke="${c}" stroke-width="1.5" opacity="0.55"/>
+      <line x1="30" y1="20" x2="36" y2="20" stroke="${c}" stroke-width="1.5" opacity="0.55"/>
+      <polygon points="13,27 27,13 27,20 27,13 20,13" fill="none" stroke="${c}" stroke-width="1.8"/>
+      <polygon points="27,13 20,13 27,20" fill="${c}"/>
+    </svg>`,
+    trading: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}">
+      <path d="M5,20 Q20,7 35,20 Q20,33 5,20 Z" fill="none" stroke="${c}" stroke-width="1.5"/>
+      <circle cx="20" cy="20" r="7" fill="#0e2a30" stroke="${c}" stroke-width="1"/>
+      <circle cx="20" cy="20" r="4" fill="${c}"/>
+      <circle cx="18" cy="18" r="1.5" fill="#e0f9ff" opacity="0.85"/>
+    </svg>`,
+    dev_automation: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" shape-rendering="crispEdges">
+      <polygon points="20,5 33,12 33,28 20,35 7,28 7,12" fill="none" stroke="${c}" stroke-width="2"/>
+      <polygon points="20,11 28,20 20,29 12,20" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.6"/>
+      <circle cx="20" cy="20" r="3" fill="${c}"/>
+    </svg>`,
+    personal: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}">
+      <path d="M20,35 C11,29 9,21 13,15 C15,11 17,14 17,10 C19,14 19,16 20,14 C21,16 21,14 23,10 C23,14 25,11 27,15 C31,21 29,29 20,35 Z" fill="#062014" stroke="${c}" stroke-width="1.4"/>
+      <path d="M20,31 C14,25 14,19 17,16 C18,14 19,16 20,15 C21,16 22,14 23,16 C26,19 26,25 20,31 Z" fill="${c}" opacity="0.65"/>
+      <circle cx="20" cy="23" r="3" fill="${c}" opacity="0.9"/>
+    </svg>`,
+    op_sec: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}">
+      <path d="M20,5 L33,10 L33,22 C33,30 27,36 20,38 C13,36 7,30 7,22 L7,10 Z" fill="#1f0505" stroke="${c}" stroke-width="1.8"/>
+      <ellipse cx="20" cy="22" rx="7.5" ry="5" fill="none" stroke="${c}" stroke-width="1.4"/>
+      <line x1="14" y1="17" x2="26" y2="27" stroke="${c}" stroke-width="1.6"/>
+      <circle cx="20" cy="22" r="2" fill="${c}" opacity="0.75"/>
+    </svg>`,
+  };
+  return portraits[key] || `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}"><circle cx="20" cy="20" r="14" fill="none" stroke="${c}" stroke-width="2"/></svg>`;
+}
+
 async function loadStatsTab() {
   const el = document.getElementById('stats-content');
   if (!el) return;
@@ -1728,45 +1826,6 @@ async function loadStatsTab() {
       op_sec:         ['Circle Watchman','Veil Scout','Shadow Warden','Grand Sentinel','Sovereign of the Null'],
     };
     const DIV_THRESHOLDS = [0, 51, 151, 301, 500];
-
-    // ── Order Commander Model (single source: /mobile/api/realm/config) ──
-    function commanderPortraitSVG(key, color, size) {
-      const s = size || 42;
-      const portraits = {
-        opportunity: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" shape-rendering="crispEdges">
-          <circle cx="20" cy="20" r="16" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.35"/>
-          <line x1="20" y1="4" x2="20" y2="10" stroke="${color}" stroke-width="1.5" opacity="0.55"/>
-          <line x1="20" y1="30" x2="20" y2="36" stroke="${color}" stroke-width="1.5" opacity="0.55"/>
-          <line x1="4" y1="20" x2="10" y2="20" stroke="${color}" stroke-width="1.5" opacity="0.55"/>
-          <line x1="30" y1="20" x2="36" y2="20" stroke="${color}" stroke-width="1.5" opacity="0.55"/>
-          <polygon points="13,27 27,13 27,20 27,13 20,13" fill="none" stroke="${color}" stroke-width="1.8"/>
-          <polygon points="27,13 20,13 27,20" fill="${color}"/>
-        </svg>`,
-        trading: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
-          <path d="M5,20 Q20,7 35,20 Q20,33 5,20 Z" fill="none" stroke="${color}" stroke-width="1.5"/>
-          <circle cx="20" cy="20" r="7" fill="#0e2a30" stroke="${color}" stroke-width="1"/>
-          <circle cx="20" cy="20" r="4" fill="${color}"/>
-          <circle cx="18" cy="18" r="1.5" fill="#e0f9ff" opacity="0.85"/>
-        </svg>`,
-        dev_automation: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" shape-rendering="crispEdges">
-          <polygon points="20,5 33,12 33,28 20,35 7,28 7,12" fill="none" stroke="${color}" stroke-width="2"/>
-          <polygon points="20,11 28,20 20,29 12,20" fill="none" stroke="${color}" stroke-width="1.4" opacity="0.6"/>
-          <circle cx="20" cy="20" r="3" fill="${color}"/>
-        </svg>`,
-        personal: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
-          <path d="M20,35 C11,29 9,21 13,15 C15,11 17,14 17,10 C19,14 19,16 20,14 C21,16 21,14 23,10 C23,14 25,11 27,15 C31,21 29,29 20,35 Z" fill="#062014" stroke="${color}" stroke-width="1.4"/>
-          <path d="M20,31 C14,25 14,19 17,16 C18,14 19,16 20,15 C21,16 22,14 23,16 C26,19 26,25 20,31 Z" fill="${color}" opacity="0.65"/>
-          <circle cx="20" cy="23" r="3" fill="${color}" opacity="0.9"/>
-        </svg>`,
-        op_sec: `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}">
-          <path d="M20,5 L33,10 L33,22 C33,30 27,36 20,38 C13,36 7,30 7,22 L7,10 Z" fill="#1f0505" stroke="${color}" stroke-width="1.8"/>
-          <ellipse cx="20" cy="22" rx="7.5" ry="5" fill="none" stroke="${color}" stroke-width="1.4"/>
-          <line x1="14" y1="17" x2="26" y2="27" stroke="${color}" stroke-width="1.6"/>
-          <circle cx="20" cy="22" r="2" fill="${color}" opacity="0.75"/>
-        </svg>`,
-      };
-      return portraits[key] || `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}"><circle cx="20" cy="20" r="14" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
-    }
 
     const PARTY = {
       opportunity: {
@@ -1927,7 +1986,7 @@ async function loadStatsTab() {
         <div class="jclaw-rank">${escHtml(s.rank || 'Apprentice of the Realm')}</div>
         <div class="jclaw-level">LEVEL ${s.level || 1}</div>
         <div class="xp-bar-wrap" style="margin:8px 0 4px;">
-          <div class="xp-bar-fill" id="hero-xp-fill" data-pct="${pct}" style="width:0%;background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div>
+          <div class="xp-bar-fill" id="hero-xp-fill" data-pct="${pct}" style="width:0%;background:linear-gradient(90deg,#1d4ed8,#60a5fa);"></div>
         </div>
         <div class="jclaw-xp-label">${baseXp} / ${xpToNext} XP to next level · ${s.total_xp_earned || 0} total earned</div>
       </div>`;
@@ -1973,10 +2032,12 @@ async function loadStatsTab() {
         const prev = DIV_THRESHOLDS[classIdx], next = DIV_THRESHOLDS[classIdx + 1];
         xpPct = Math.min(100, Math.round(((div.xp || 0) - prev) / (next - prev) * 100));
       } else { xpPct = 100; }
-      // Morale from streak
-      const sc = streak.current || 0;
+      // Morale + HP from streak
+      const sc         = streak.current || 0;
+      const hpPct      = sc >= 7 ? 100 : sc >= 6 ? 85 : sc >= 3 ? 70 : sc >= 2 ? 55 : sc >= 1 ? 40 : 20;
       const moraleFlames = sc >= 7 ? '🔥🔥🔥' : sc >= 3 ? '🔥🔥' : sc >= 1 ? '🔥' : '';
       const moraleLabel  = sc >= 7 ? 'ELITE' : sc >= 3 ? 'HIGH' : sc >= 1 ? 'BUILDING' : 'DORMANT';
+      const hasShield    = streak.shield_this_week;
       // Status badge
       const badgeClass = isQuest ? 'status-quest' : isRest ? 'status-rest' : 'status-standby';
       const badgeText  = isQuest ? 'ON QUEST' : isRest ? 'RESTING' : 'STANDBY';
@@ -1990,7 +2051,13 @@ async function loadStatsTab() {
         <div class="party-order" style="color:${char.color};opacity:0.65;">${char.order}</div>
         <div class="party-class">${escHtml(className)}</div>
         <div class="party-xp-wrap"><div class="party-xp-fill" data-pct="${xpPct}" style="width:0%;background:${char.color};"></div></div>
-        <div class="party-morale">${moraleFlames ? moraleFlames + ' ' + moraleLabel : moraleLabel}</div>
+        <div class="party-bars-row">
+          <div class="party-hp-wrap"><div class="party-hp-fill" data-pct="${hpPct}" style="width:0%;background:${char.color};opacity:0.55;"></div></div>
+        </div>
+        <div class="party-morale-row">
+          <div class="party-morale">${moraleFlames ? moraleFlames + ' ' + moraleLabel : moraleLabel}</div>
+          ${hasShield ? '<div class="party-shield">⛨ SHIELD</div>' : ''}
+        </div>
         <div class="party-view-hint">TAP FOR MORE →</div>
       </div>`;
     }
@@ -2034,7 +2101,7 @@ async function loadStatsTab() {
     requestAnimationFrame(() => setTimeout(() => {
       const heroFill = document.getElementById('hero-xp-fill');
       if (heroFill) heroFill.style.width = heroFill.dataset.pct + '%';
-      el.querySelectorAll('.party-xp-fill[data-pct]').forEach(bar => {
+      el.querySelectorAll('.party-xp-fill[data-pct], .party-hp-fill[data-pct]').forEach(bar => {
         bar.style.width = bar.dataset.pct + '%';
       });
     }, 60));
@@ -3970,6 +4037,8 @@ checkSetup();
     <div class="rp rp7"></div><div class="rp rp8"></div><div class="rp rp9"></div>
     <div class="rp rp10"></div><div class="rp rp11"></div><div class="rp rp12"></div>
   </div>
+  <div id="rankup-commander-portrait" class="rankup-commander-portrait"></div>
+  <div id="rankup-commander-name" class="rankup-commander-name"></div>
   <div id="rankup-label" class="rankup-label">⚔ RANK UP</div>
   <div id="rankup-division-name" class="rankup-division-name"></div>
   <div id="rankup-rank-text" class="rankup-rank-text"></div>
