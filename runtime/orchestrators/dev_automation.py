@@ -304,6 +304,7 @@ def run_artifact_manager() -> dict:
     )
 
     packet.write(pkt)
+    grant_skill_xp("artifact-manager")
     log.info(
         "Artifact-manager packet written. Archived=%d Purged=%d",
         result.get("total_archived", 0), result.get("total_purged", 0)

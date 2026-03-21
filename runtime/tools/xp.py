@@ -17,19 +17,36 @@ STATS_FILE = STATE_DIR / "jclaw-stats.json"
 # ── XP table per skill completion ─────────────────────────────────────────────
 
 SKILL_XP = {
-    "job-intake":      ("opportunity",    10),
-    "hard-filter":     ("opportunity",     5),
-    "funding-finder":  ("opportunity",     5),
-    "trading-report":  ("trading",        15),
-    "market-scan":     ("trading",         5),
-    "backtester":      ("trading",         5),
-    "repo-monitor":    ("dev_automation", 10),
-    "refactor-scan":   ("dev_automation",  5),
-    "doc-update":      ("dev_automation",  5),
-    "security-scan":   ("dev_automation",  5),
-    "health-logger":   ("personal",       15),
-    "perf-correlation":("personal",       10),
-    # daily-briefing grants no XP
+    # ── Opportunity ───────────────────────────────────────────────────────────
+    "job-intake":           ("opportunity",    10),
+    "hard-filter":          ("opportunity",     5),
+    "funding-finder":       ("opportunity",     5),
+    # ── Trading ───────────────────────────────────────────────────────────────
+    "trading-report":       ("trading",        15),
+    "market-scan":          ("trading",         5),
+    "backtester":           ("trading",         5),
+    # ── Dev Automation ────────────────────────────────────────────────────────
+    "repo-monitor":         ("dev_automation", 10),
+    "refactor-scan":        ("dev_automation",  5),
+    "doc-update":           ("dev_automation",  5),
+    "security-scan":        ("dev_automation",  5),
+    "debug-agent":          ("dev_automation",  8),
+    "artifact-manager":     ("dev_automation",  3),
+    "dev-digest":           ("dev_automation",  5),
+    # ── Personal ──────────────────────────────────────────────────────────────
+    "health-logger":        ("personal",       15),
+    "perf-correlation":     ("personal",       10),
+    "burnout-monitor":      ("personal",        5),
+    "personal-digest":      ("personal",        5),
+    # ── OP-Sec ────────────────────────────────────────────────────────────────
+    "device-posture":       ("op_sec",         10),
+    "breach-check":         ("op_sec",         10),
+    "threat-surface":       ("op_sec",          8),
+    "cred-audit":           ("op_sec",          8),
+    "privacy-scan":         ("op_sec",          5),
+    "opsec-digest":         ("op_sec",          5),
+    "mobile-audit-review":  ("op_sec",          5),
+    # daily-briefing grants no XP (synthesis only)
 }
 
 # ── Base rank table ───────────────────────────────────────────────────────────
@@ -71,6 +88,13 @@ DIVISION_RANKS = {
         (151, "Wellness Expert"),
         (51,  "Wellness Adept"),
         (0,   "Keeper"),
+    ],
+    "op_sec": [
+        (500, "Sovereign Sentinel"),
+        (301, "Grand Sentinel"),
+        (151, "Security Expert"),
+        (51,  "Security Adept"),
+        (0,   "Watchman"),
     ],
 }
 
@@ -118,6 +142,7 @@ def _empty_stats() -> dict:
             "trading":        {"xp": 0, "rank": "Market Scout"},
             "dev_automation": {"xp": 0, "rank": "Code Ward"},
             "personal":       {"xp": 0, "rank": "Keeper"},
+            "op_sec":         {"xp": 0, "rank": "Watchman"},
         },
         "achievements": [],
         "last_updated": None,
