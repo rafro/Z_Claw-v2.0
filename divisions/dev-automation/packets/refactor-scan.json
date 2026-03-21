@@ -1,44 +1,13 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-21T16:02:48.506520+00:00",
+  "generated_at": "2026-03-21T17:02:58.134841+00:00",
   "skill": "refactor-scan",
-  "status": "success",
-  "summary": "Several files contain large functions and duplicate logic, which can be refactored to improve maintainability and readability.",
-  "action_items": [
-    {
-      "priority": "high",
-      "description": "[high] runtime\\tools\\virtual_account.py: The `run_virtual_account` function is 152 lines long, which is quite large for a single function. — Consider breaking down the `run_virtual_account` function into smaller, more focused functions.",
-      "requires_matthew": false
-    },
-    {
-      "priority": "high",
-      "description": "[high] runtime\\skills\\market_scan.py: The `run` function in `market_scan.py` is 81 lines long. — Refactor the `run` function into smaller functions to improve readability and maintainability.",
-      "requires_matthew": false
-    },
-    {
-      "priority": "high",
-      "description": "[high] runtime\\orchestrators\\dev_automation.py: The `run_repo_monitor` function is 63 lines long. — Break down the `run_repo_monitor` function into smaller, more focused functions.",
-      "requires_matthew": false
-    },
-    {
-      "priority": "high",
-      "description": "[high] runtime\\tools\\jobs.py: The `fetch_adzuna` function is 68 lines long. — Refactor the `fetch_adzuna` function into smaller, more focused functions.",
-      "requires_matthew": false
-    },
-    {
-      "priority": "high",
-      "description": "[high] runtime\\skills\\repo_monitor.py: The `_llm_analyze` function is 65 lines long. — Break down the `_llm_analyze` function into smaller, more focused functions.",
-      "requires_matthew": false
-    },
-    {
-      "priority": "high",
-      "description": "[high] runtime\\skills\\mobile_audit_review.py: The `run` function in `mobile_audit_review.py` is 134 lines long. — Refactor the `run` function into smaller, more focused functions.",
-      "requires_matthew": false
-    }
-  ],
+  "status": "failed",
+  "summary": "Refactor scan failed: Expecting ',' delimiter: line 52 column 6 (char 3141)",
+  "action_items": [],
   "metrics": {
-    "findings": 8,
-    "high": 8,
+    "findings": 0,
+    "high": 0,
     "files_scanned": 15,
     "model_used": "qwen2.5-coder:7b-instruct-q4_K_M"
   },
