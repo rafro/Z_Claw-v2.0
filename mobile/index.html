@@ -2043,6 +2043,69 @@ async function restartServer() {
   );
 }
 
+// ── Coding approval banner ─────────────────────────────
+let _pendingApprovalSessionId = null;
+let _approvalCountdownTimer   = null;
+let _approvalCountdown        = 120;
+
+function _showCodingApprovalBanner(sessionId, filesChanged, diffStat) {
+  _pendingApprovalSessionId = sessionId;
+  _approvalCountdown = 120;
+  document.getElementById('approval-body').textContent =
+    `Claude changed ${filesChanged} file${filesChanged !== 1 ? 's' : ''} in this session. Approve to keep the edits, or revert to undo all changes. Auto-reverts in 120s.`;
+  const diffEl = document.getElementById('approval-diff');
+  if (diffStat) { diffEl.textContent = diffStat; diffEl.style.display = 'block'; }
+  else { diffEl.style.display = 'none'; }
+  document.getElementById('coding-approval-banner').classList.add('open');
+  haptic('medium');
+  clearInterval(_approvalCountdownTimer);
+  _approvalCountdownTimer = setInterval(() => {
+    _approvalCountdown--;
+    const timerEl = document.getElementById('approval-timer');
+    if (timerEl) timerEl.textContent = `Auto-reverts in ${_approvalCountdown}s`;
+    if (_approvalCountdown <= 0) {
+      clearInterval(_approvalCountdownTimer);
+      _dismissCodingApprovalBanner(sessionId, 'auto_reverted');
+    }
+  }, 1000);
+}
+
+function _dismissCodingApprovalBanner(sessionId, decision) {
+  if (_pendingApprovalSessionId !== sessionId) return;
+  _pendingApprovalSessionId = null;
+  clearInterval(_approvalCountdownTimer);
+  document.getElementById('coding-approval-banner').classList.remove('open');
+  if (decision === 'approved')      showToast('Changes approved and kept');
+  else if (decision === 'reverted') showToast('Changes reverted');
+  else if (decision === 'auto_reverted') { showToast('Auto-reverted — no approval received'); haptic('error'); }
+}
+
+async function _approveCodingChanges() {
+  if (!_pendingApprovalSessionId) return;
+  await requireBiometricThenAct('approve_coding', { target_id: _pendingApprovalSessionId });
+}
+
+async function _rejectCodingChanges() {
+  if (!_pendingApprovalSessionId) return;
+  const sid = _pendingApprovalSessionId;
+  // Revert is the safe action — still uses challenge/response but no biometric required
+  let challengeId;
+  try {
+    const ch = await api('/mobile/api/challenge?action=revert_coding');
+    challengeId = ch.challenge_id;
+  } catch(e) { showToast('Error: ' + e.message); return; }
+  try {
+    const result = await api('/mobile/api/action', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'revert_coding', target_id: sid, challenge_id: challengeId }),
+    });
+    haptic('light');
+    showToast(result.message || 'Reverted');
+  } catch(e) {
+    showToast('Revert error: ' + e.message);
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // SCREEN: TRADING
 // ══════════════════════════════════════════════════════
