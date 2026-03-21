@@ -1098,9 +1098,9 @@
 
 </div>
 
-<!-- Bottom tab bar (6 tabs) -->
+<!-- Bottom tab bar (6 tabs) — J_Claw in center, default open -->
 <nav id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('home')" id="tab-home">
+  <button class="tab-btn" onclick="switchTab('home')" id="tab-home">
     <div class="tab-wrap">
       <span class="tab-icon">⌂</span>
       <span>Home</span>
@@ -1113,10 +1113,10 @@
       <span>Alerts</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('command')" id="tab-command">
+  <button class="tab-btn active" onclick="switchTab('stats')" id="tab-stats">
     <div class="tab-wrap">
-      <span class="tab-icon">⊞</span>
-      <span>Command</span>
+      <span class="tab-icon">⚔</span>
+      <span>J_Claw</span>
     </div>
   </button>
   <button class="tab-btn" onclick="switchTab('trading')" id="tab-trading">
@@ -1125,16 +1125,16 @@
       <span>Trading</span>
     </div>
   </button>
+  <button class="tab-btn" onclick="switchTab('command')" id="tab-command">
+    <div class="tab-wrap">
+      <span class="tab-icon">⊞</span>
+      <span>Command</span>
+    </div>
+  </button>
   <button class="tab-btn" onclick="switchTab('chat')" id="tab-chat">
     <div class="tab-wrap">
       <span class="tab-icon">💬</span>
       <span>Chat</span>
-    </div>
-  </button>
-  <button class="tab-btn" onclick="switchTab('stats')" id="tab-stats">
-    <div class="tab-wrap">
-      <span class="tab-icon">⚔</span>
-      <span>J_Claw</span>
     </div>
   </button>
 </nav>
