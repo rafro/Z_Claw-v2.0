@@ -8,6 +8,7 @@
   <style>
     :root {
       --bg:       #1e1e2e;
+      --base:     #1e1e2e;
       --surface:  #181825;
       --overlay:  #313244;
       --text:     #cdd6f4;
@@ -53,6 +54,7 @@
     .tag-red    { border-color: var(--red);    color: var(--red); }
     .tag-purple { border-color: var(--purple); color: var(--purple); }
     .tag-blue   { border-color: var(--blue);   color: var(--blue); }
+    .tag-teal   { border-color: var(--teal);   color: var(--teal); }
 
     /* ── Alert Bar ── */
     #alert-bar {
@@ -148,7 +150,7 @@
 
     /* ── Grids ── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
 
     /* ── Section Headers ── */
     .section-header {
@@ -607,7 +609,7 @@
     .report-agent-tab:hover:not(.active-tab) { border-color: var(--text); color: var(--text); }
 
     #report-content {
-      max-height: 420px;
+      max-height: 540px;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--purple) var(--overlay);
@@ -884,22 +886,22 @@
         <div style="margin-top:5px;border-top:1px solid var(--border);padding-top:4px;">
           <div class="agent-row" style="opacity:0.8;">
             <span class="agent-name" style="color:var(--subtext);">strategy-builder</span>
-            <span id="an-agent-builder" style="font-size:7px;color:var(--overlay);">—</span>
+            <span id="an-agent-builder" style="font-size:7px;color:var(--subtext);">—</span>
             <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
           </div>
           <div class="agent-row" style="opacity:0.8;">
             <span class="agent-name" style="color:var(--subtext);">backtester</span>
-            <span id="an-agent-backtester" style="font-size:7px;color:var(--overlay);">—</span>
+            <span id="an-agent-backtester" style="font-size:7px;color:var(--subtext);">—</span>
             <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
           </div>
           <div class="agent-row" style="opacity:0.8;">
             <span class="agent-name" style="color:var(--subtext);">trader</span>
-            <span id="an-agent-trader" style="font-size:7px;color:var(--overlay);">—</span>
+            <span id="an-agent-trader" style="font-size:7px;color:var(--subtext);">—</span>
             <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
           </div>
           <div class="agent-row" style="opacity:0.8;">
             <span class="agent-name" style="color:var(--subtext);">trading-coach</span>
-            <span id="an-agent-coach" style="font-size:7px;color:var(--overlay);">—</span>
+            <span id="an-agent-coach" style="font-size:7px;color:var(--subtext);">—</span>
             <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
           </div>
         </div>
@@ -1874,6 +1876,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
       setTimeout(() => addLog('OPPS',     'Division standing by.', 'blue'),   700);
       setTimeout(() => addLog('DEV',      'Division standing by.', 'blue'),  1000);
       setTimeout(() => addLog('PERSONAL', 'Division standing by.', 'purple'),1300);
+      setTimeout(() => addLog('OP-SEC',   'Division standing by.', 'red'),   1500);
       setTimeout(() => {
         addLog('SYS', 'All divisions online. Loading state...', 'green');
         loadState();
