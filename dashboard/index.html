@@ -775,7 +775,7 @@
         <div class="div-badge"><span>OPPORTUNITY</span><span id="badge-opportunity">Hunter</span><span id="xp-opportunity" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>DEV TEAM</span><span id="badge-dev_automation">Code Ward</span><span id="xp-dev_automation" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>PERSONAL</span><span id="badge-personal">Keeper</span><span id="xp-personal" class="div-xp">0 XP</span></div>
-        <div class="div-badge"><span>OP-SEC</span><span id="badge-op_sec">Sentinel</span><span id="xp-op_sec" class="div-xp">0 XP</span></div>
+        <div class="div-badge"><span>OP-SEC</span><span id="badge-op_sec">Watchman</span><span id="xp-op_sec" class="div-xp">0 XP</span></div>
       </div>
     </div>
   </div>
@@ -2168,11 +2168,12 @@ Hit ⚡ GENERATE NOW to compile immediately.
         document.getElementById('rank-title-text').textContent = s.rank.toUpperCase();
         document.getElementById('rank-level-text').textContent = `LVL ${s.level} // J_CLAW`;
 
-        const pct = s.xp_to_next_level > 0
-          ? Math.min(100, Math.round(s.base_xp / s.xp_to_next_level * 100))
-          : 100;
+        // xp_to_next_level may be absent if Python xp.py wrote the file — compute locally
+        const xpInLevel = s.base_xp % 100;
+        const pct = Math.min(100, Math.round(xpInLevel / 100 * 100));
+        const totalEarned = s.total_xp_earned != null ? s.total_xp_earned : '?';
         document.getElementById('xp-label').textContent =
-          `XP: ${s.base_xp} / ${s.xp_to_next_level}  (${s.total_xp_earned} total)`;
+          `XP: ${xpInLevel} / 100  (${totalEarned} total earned)`;
         document.getElementById('xp-bar-fill').style.width = pct + '%';
 
         ['trading','opportunity','dev_automation','personal','op_sec'].forEach(div => {
