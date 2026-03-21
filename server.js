@@ -624,7 +624,7 @@ function handleGetTradingCycle(res) {
         rr_ratio:       strat.rr_ratio,
         rr_display:     strat.rr_display,
         profit_factor:  strat.profit_factor,
-        max_drawdown_pct: strat.max_drawdown_pct,
+        max_drawdown_pct: strat.max_drawdown_pct != null ? strat.max_drawdown_pct : (strat.max_drawdown != null ? Math.round(strat.max_drawdown * 1000) / 10 : null),
         trade_count:    strat.trade_count,
         oos_sharpe:     strat.oos_sharpe,
         oos_win_rate:   strat.oos_win_rate ? Math.round(strat.oos_win_rate * 100) : null,
@@ -1986,7 +1986,7 @@ function _readDivisionMetrics() {
         sharpe:        s.sharpe,
         rr_ratio:         s.rr_ratio,
         rr_display:       s.rr_display,
-        max_drawdown_pct: s.max_drawdown_pct,
+        max_drawdown_pct: s.max_drawdown_pct != null ? s.max_drawdown_pct : (s.max_drawdown != null ? Math.round(s.max_drawdown * 1000) / 10 : null),
       };
     }
   } catch(e) {}
