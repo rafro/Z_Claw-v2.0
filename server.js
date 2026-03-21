@@ -2570,6 +2570,53 @@ function handleRealmChronicle(res) {
   } catch(e) { jsonError(res, 500, 'chronicle error'); }
 }
 
+// ── Animation queue ──────────────────────────────────────────────────────────
+
+// GET /mobile/api/anim/queue  — returns pending animation events
+function handleAnimQueue(res) {
+  try {
+    const qp = path.join(STATE_DIR, 'anim-queue.json');
+    if (!fs.existsSync(qp)) return jsonOk(res, { queue: [], count: 0 });
+    const queue = JSON.parse(fs.readFileSync(qp, 'utf8') || '[]');
+    jsonOk(res, { queue, count: queue.length });
+  } catch(e) { jsonError(res, 500, 'anim queue read error'); }
+}
+
+// POST /mobile/api/anim/queue/clear  — empties the queue after viewing
+function handleAnimQueueClear(res) {
+  try {
+    const qp = path.join(STATE_DIR, 'anim-queue.json');
+    fs.writeFileSync(qp, '[]');
+    jsonOk(res, { ok: true });
+  } catch(e) { jsonError(res, 500, 'anim queue clear error'); }
+}
+
+// GET /mobile/api/story/state  — current story state + choices made
+function handleStoryState(res) {
+  try {
+    const sp = path.join(STATE_DIR, 'story-state.json');
+    if (!fs.existsSync(sp)) return jsonOk(res, { chapter: 0, choices: [] });
+    jsonOk(res, JSON.parse(fs.readFileSync(sp, 'utf8') || '{}'));
+  } catch(e) { jsonError(res, 500, 'story state error'); }
+}
+
+// POST /mobile/api/story/choice  — record a player story choice
+async function handleStoryChoice(req, res) {
+  try {
+    const body = await parseBody(req);
+    const sp   = path.join(STATE_DIR, 'story-state.json');
+    let state  = {};
+    if (fs.existsSync(sp)) {
+      try { state = JSON.parse(fs.readFileSync(sp, 'utf8') || '{}'); } catch {}
+    }
+    if (!state.choices) state.choices = [];
+    state.choices.push({ ...body, ts: new Date().toISOString() });
+    state.last_choice = body;
+    fs.writeFileSync(sp, JSON.stringify(state, null, 2));
+    jsonOk(res, { ok: true, state });
+  } catch(e) { jsonError(res, 500, 'story choice error'); }
+}
+
 // ── Parse body ──
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -2878,6 +2925,10 @@ const server = http.createServer(async (req, res) => {
       if (method === 'GET' && reqPath === '/mobile/api/realm/config')    { return handleRealmConfig(res); }
       if (method === 'GET' && reqPath === '/mobile/api/realm/directive') { return handleRealmDirective(res); }
       if (method === 'GET' && reqPath === '/mobile/api/realm/chronicle') { return handleRealmChronicle(res); }
+      if (method === 'GET'  && reqPath === '/mobile/api/anim/queue')       { return handleAnimQueue(res); }
+      if (method === 'POST' && reqPath === '/mobile/api/anim/queue/clear') { return handleAnimQueueClear(res); }
+      if (method === 'GET'  && reqPath === '/mobile/api/story/state')      { return handleStoryState(res); }
+      if (method === 'POST' && reqPath === '/mobile/api/story/choice')     { return handleStoryChoice(req, res); }
       if (method === 'GET' && reqPath === '/mobile/api/divisions') {
         return handleMobileDivisions(res);
       }

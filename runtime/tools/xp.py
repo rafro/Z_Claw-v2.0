@@ -17,6 +17,10 @@ from runtime.realm.config import (
     RANK_UP_BASE_XP, ACHIEVEMENTS,
     get_all_skill_xp, rank_title_for_xp, tier_for_xp,
 )
+try:
+    from runtime.tools import anim_queue as _aq
+except Exception:
+    _aq = None
 
 log = logging.getLogger(__name__)
 
@@ -199,6 +203,33 @@ def grant_skill_xp(skill_name: str) -> dict:
     new_achievements = _check_achievements(stats)
 
     _save_stats(stats)
+
+    # ── Queue animation events ─────────────────────────────────────────────
+    if _aq:
+        try:
+            _aq.push_skill_complete(
+                division=division,
+                skill_name=skill_name,
+                xp_granted=xp_actual,
+                rank_up=rank_up,
+                rank_up_msg=f"{old_div_rank} → {new_div_rank}" if rank_up else "",
+                new_rank=new_div_rank,
+                multiplier=round(streak_mult * prestige_mult, 3),
+            )
+            if new_tier > old_tier:
+                _aq.push_rank_up(
+                    division=division,
+                    old_rank=old_div_rank,
+                    new_rank=new_div_rank,
+                    tier=new_tier,
+                    base_xp_bonus=base_xp_bonus,
+                )
+            from runtime.realm.config import ACHIEVEMENTS as _ACH_LIST
+            for aid in new_achievements:
+                ach_data = next((a for a in _ACH_LIST if a["id"] == aid), {})
+                _aq.push_achievement(aid, ach_data.get("name", aid), division=division)
+        except Exception as _e:
+            log.warning("anim_queue push failed (non-fatal): %s", _e)
 
     log.info(
         "XP granted: %s +%d div XP (×%.1f streak, ×%.2f prestige) (%s → %s)%s",

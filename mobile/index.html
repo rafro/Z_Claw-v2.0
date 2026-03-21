@@ -732,6 +732,180 @@
     .posture-display { text-align: center; padding: 16px 0; }
     .posture-display .posture-label { font-size: 28px; font-weight: 800; letter-spacing: 0.04em; margin-top: 4px; }
 
+    /* ── Theater "Watch" floating button ── */
+    #theater-watch-btn {
+      display: none; position: fixed; bottom: calc(var(--tab-height) + var(--safe-bottom) + 14px);
+      right: 16px; z-index: 5000;
+      background: linear-gradient(135deg, #1a0030 0%, #0d0018 100%);
+      border: 1px solid #a78bfa88; border-radius: 22px;
+      padding: 9px 16px 9px 12px; cursor: pointer;
+      box-shadow: 0 4px 24px #a78bfa44, inset 0 0 0 1px #a78bfa20;
+      animation: theater-pulse 2.2s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #theater-watch-btn.has-queue { display: flex !important; }
+    @keyframes theater-pulse {
+      0%,100% { box-shadow: 0 4px 24px #a78bfa44, inset 0 0 0 1px #a78bfa20; }
+      50%      { box-shadow: 0 4px 32px #a78bfa88, inset 0 0 0 1px #a78bfa50; }
+    }
+    #theater-watch-btn .tw-icon { font-size: 20px; }
+    #theater-watch-btn .tw-label { font-size: 11px; font-weight: 700; color: #a78bfa; letter-spacing: 0.06em; }
+    #theater-watch-btn .tw-badge {
+      background: #ef4444; color: #fff; font-size: 10px; font-weight: 800;
+      border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center;
+    }
+
+    /* ── Theater Overlay ── */
+    #theater-overlay {
+      position: fixed; inset: 0; z-index: 9500;
+      background: #000; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex; flex-direction: column;
+      font-family: inherit;
+    }
+    #theater-overlay.open { opacity: 1; pointer-events: all; }
+
+    /* top bar */
+    .th-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px 8px; flex-shrink: 0;
+      border-bottom: 1px solid #ffffff10;
+    }
+    .th-chapter-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #a78bfa; text-transform: uppercase; }
+    .th-progress { font-size: 10px; color: #ffffff50; letter-spacing: 0.05em; }
+    .th-skip-btn { font-size: 10px; color: #ffffff40; letter-spacing: 0.06em; padding: 4px 8px; }
+
+    /* chapter narration screen */
+    #th-chapter-screen {
+      position: absolute; inset: 0; z-index: 2;
+      background: #000; display: none; flex-direction: column;
+      align-items: center; justify-content: center; padding: 40px 28px;
+      text-align: center;
+    }
+    #th-chapter-screen.visible { display: flex; }
+    .th-chapter-icon { font-size: 48px; margin-bottom: 18px; opacity: 0; animation: th-fade 0.6s ease 0.3s forwards; }
+    .th-chapter-title { font-size: 18px; font-weight: 900; color: #a78bfa; letter-spacing: 0.06em; margin-bottom: 14px; opacity: 0; animation: th-fade 0.5s ease 0.7s forwards; }
+    .th-chapter-narration { font-size: 13px; color: #a0a8c0; line-height: 1.8; font-style: italic; max-width: 300px; opacity: 0; animation: th-fade 0.6s ease 1.1s forwards; }
+    .th-chapter-tap { font-size: 10px; color: #ffffff35; letter-spacing: 0.1em; margin-top: 32px; text-transform: uppercase; opacity: 0; animation: th-blink 1.2s ease 2s infinite; }
+    @keyframes th-blink { 0%,100%{opacity:0.35} 50%{opacity:0.8} }
+
+    /* battle arena */
+    #th-battle-arena {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      position: relative; overflow: hidden;
+    }
+    .th-arena-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, #080010 0%, #100020 60%, #0a0015 100%);
+    }
+    .th-arena-stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 15% 20%, #ffffff30 0%, transparent 100%),
+        radial-gradient(1px 1px at 68% 12%, #ffffff25 0%, transparent 100%),
+        radial-gradient(1px 1px at 82% 35%, #ffffff20 0%, transparent 100%),
+        radial-gradient(1px 1px at 32% 55%, #ffffff20 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 78%, #ffffff15 0%, transparent 100%);
+    }
+    .th-arena-glow {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 120px;
+      background: linear-gradient(to top, var(--th-color, #a78bfa)18 0%, transparent 100%);
+      opacity: 0.35;
+    }
+    .th-ground-line {
+      position: absolute; bottom: 70px; left: 0; right: 0;
+      height: 1px; background: linear-gradient(90deg, transparent 0%, var(--th-color,#a78bfa) 20%, var(--th-color,#a78bfa) 80%, transparent 100%);
+      opacity: 0.4;
+    }
+
+    /* HP bars */
+    .th-hp-row {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 10px 14px; gap: 12px; z-index: 3;
+    }
+    .th-hp-block { flex: 1; }
+    .th-hp-name { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+    .th-hp-bar-wrap { background: #ffffff15; border-radius: 3px; height: 5px; overflow: hidden; }
+    .th-hp-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .th-hp-block.enemy .th-hp-name { text-align: right; }
+
+    /* combatant sprites */
+    .th-combatant {
+      position: absolute; bottom: 72px;
+      transition: transform 0.5s cubic-bezier(0.32,0.72,0,1);
+    }
+    #th-commander { left: 12%; transform: translateX(-160px); }
+    #th-enemy     { right: 12%; transform: translateX(160px); }
+    #th-commander.entered { transform: translateX(0); }
+    #th-enemy.entered     { transform: translateX(0); }
+    #th-commander.attacking { transform: translateX(90px); transition: transform 0.22s ease-in; }
+    #th-commander.retreating { transform: translateX(0); transition: transform 0.3s ease-out; }
+    #th-enemy.hit { filter: brightness(4) saturate(0) !important; transition: filter 0.08s ease; }
+    #th-enemy.hit-recover { filter: brightness(1) !important; transition: filter 0.25s ease; }
+    @keyframes th-defeat {
+      0%   { transform: translateX(0) scale(1); opacity: 1; }
+      30%  { transform: translateX(20px) scale(1.15) rotate(8deg); opacity: 0.7; }
+      100% { transform: translateX(60px) scale(0.2) rotate(30deg); opacity: 0; }
+    }
+    #th-enemy.defeated { animation: th-defeat 0.65s ease forwards; }
+
+    /* battle text */
+    .th-battle-text {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, #000000e8 0%, #000000a0 70%, transparent 100%);
+      padding: 14px 18px 10px; z-index: 3;
+    }
+    .th-skill-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
+    .th-battle-msg  { font-size: 13px; color: #e0e8ff; line-height: 1.5; margin-bottom: 6px; min-height: 40px; }
+    .th-xp-reward   {
+      font-size: 20px; font-weight: 900; letter-spacing: 0.05em;
+      opacity: 0; transform: scale(0.7) translateY(8px);
+      transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .th-xp-reward.shown { opacity: 1; transform: scale(1) translateY(0); }
+    .th-tap-hint { font-size: 10px; color: #ffffff30; letter-spacing: 0.1em; margin-top: 6px; text-transform: uppercase; }
+
+    /* choice screen */
+    #th-choice-screen {
+      position: absolute; inset: 0; z-index: 4;
+      background: #000000f0; display: none; flex-direction: column;
+      padding: 28px 20px; overflow-y: auto;
+    }
+    #th-choice-screen.visible { display: flex; }
+    .th-choice-speaker { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+    .th-choice-quote { font-size: 13px; color: #c8d0e8; line-height: 1.6; font-style: italic; margin-bottom: 22px; padding: 10px 14px; background: #ffffff08; border-radius: 8px; border-left: 2px solid; }
+    .th-choice-title { font-size: 9px; color: #ffffff50; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+    .th-choice-btn {
+      background: #0a0a18; border: 1px solid #ffffff20; border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 10px; cursor: pointer; text-align: left;
+      transition: all 0.15s ease; -webkit-tap-highlight-color: transparent;
+    }
+    .th-choice-btn:active { transform: scale(0.97); background: #14142a; }
+    .th-choice-letter { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .th-choice-text   { font-size: 13px; font-weight: 700; color: #e0e8ff; margin-bottom: 3px; }
+    .th-choice-flavor { font-size: 11px; color: #8090a8; line-height: 1.4; }
+
+    /* rank-up evolution cutscene inside theater */
+    #th-rankup-screen {
+      position: absolute; inset: 0; z-index: 4;
+      background: #000; display: none; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 28px;
+    }
+    #th-rankup-screen.visible { display: flex; }
+    .th-evo-portrait { opacity: 0; animation: th-evo-pop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s forwards; }
+    @keyframes th-evo-pop { to { opacity: 1; transform: scale(1); } }
+    .th-evo-label { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; margin: 14px 0 4px; opacity: 0; animation: th-fade 0.5s ease 0.9s forwards; }
+    .th-evo-title { font-size: 28px; font-weight: 900; color: #fff; text-align: center; padding: 0 20px; opacity: 0; transform: scale(0.7); animation: th-evo-title 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.2s forwards; }
+    @keyframes th-evo-title { to { opacity: 1; transform: scale(1); } }
+    .th-evo-bonus { font-size: 14px; font-weight: 700; margin-top: 12px; opacity: 0; animation: th-fade 0.5s ease 1.8s forwards; }
+    .th-evo-tap  { font-size: 10px; color: #ffffff35; letter-spacing: 0.1em; margin-top: 30px; text-transform: uppercase; opacity: 0; animation: th-blink 1.2s ease 2.4s infinite; }
+    @keyframes th-evo-glow { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+    @keyframes th-fade { to { opacity: 1; } }
+
     /* ── Bottom tab bar ── */
     #tab-bar {
       height: calc(var(--tab-height) + var(--safe-bottom));
@@ -1432,6 +1606,9 @@ function init() {
   setInterval(checkStaleness, 15000);
   loadTab('home');
   setInterval(() => loadTab(_currentTab, true), 30000);
+  // Theater queue polling — check every 45s, also on init
+  _pollTheaterQueue();
+  setInterval(_pollTheaterQueue, 45000);
 
   // Pull-to-refresh + swipe tab navigation
   const screens = document.getElementById('screens');
@@ -4548,6 +4725,507 @@ function closeCharSheet() {
   document.getElementById('char-sheet').classList.remove('open');
 }
 
+// ══════════════════════════════════════════════════════════
+// THEATER SYSTEM — queue-based battle animation player
+// ══════════════════════════════════════════════════════════
+
+// ── Enemy sprite SVGs (40×52, indexed by enemy key) ───────────────────────
+function _enemySVG(key, w, h) {
+  const W = w || 40; const H = h || 52;
+  const sprites = {
+    // False Lead — shadowy grey silhouette with ? on chest
+    false_lead: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <ellipse cx="20" cy="14" rx="10" ry="11" fill="#1a1a2a"/>
+      <rect x="13" y="8" width="14" height="12" rx="3" fill="#0a0a1a"/>
+      <rect x="17" y="12" width="2" height="2" fill="#4040a0" opacity="0.8"/>
+      <rect x="21" y="12" width="2" height="2" fill="#4040a0" opacity="0.8"/>
+      <path d="M10,23 Q10,14 20,13 Q30,14 30,23 L32,52 L8,52 Z" fill="#0a0a1a"/>
+      <path d="M12,25 Q12,16 20,15 Q28,16 28,25 L30,50 L10,50 Z" fill="#14142a"/>
+      <rect x="17" y="32" width="6" height="8" rx="1" fill="#0a0a20"/>
+      <text x="20" y="39" text-anchor="middle" font-size="7" fill="#6060c0" font-weight="bold">?</text>
+      <path d="M14,25 L12,50" stroke="#30307a" stroke-width="0.6" opacity="0.4"/>
+      <path d="M26,25 L28,50" stroke="#30307a" stroke-width="0.6" opacity="0.4"/>
+    </svg>`,
+    // Market Noise — chaotic wave entity, orange-red
+    market_noise: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+      <ellipse cx="20" cy="14" rx="11" ry="10" fill="#1a0800"/>
+      <path d="M10,14 Q13,6 16,14 Q19,22 22,14 Q25,6 28,14 Q31,22 30,18" fill="none" stroke="#ff6020" stroke-width="1.8"/>
+      <path d="M12,16 Q14,10 17,16 Q20,22 23,16 Q26,10 28,16" fill="none" stroke="#ff9040" stroke-width="1" opacity="0.6"/>
+      <rect x="16" y="10" width="3" height="3" rx="1" fill="#ff6020"/>
+      <rect x="21" y="10" width="3" height="3" rx="1" fill="#ff6020"/>
+      <rect x="17" y="11" width="2" height="2" fill="#3a0800"/>
+      <rect x="22" y="11" width="2" height="2" fill="#3a0800"/>
+      <rect x="17" y="10" width="1" height="1" fill="#ffcc80" opacity="0.9"/>
+      <rect x="22" y="10" width="1" height="1" fill="#ffcc80" opacity="0.9"/>
+      <path d="M12,24 Q8,30 10,36 Q9,44 12,50 Q20,54 28,50 Q31,44 30,36 Q32,30 28,24 Z" fill="#1a0800"/>
+      <path d="M7,28 Q12,25 16,30 Q13,36 16,42" fill="none" stroke="#ff6020" stroke-width="1.2" opacity="0.7"/>
+      <path d="M33,28 Q28,25 24,30 Q27,36 24,42" fill="none" stroke="#ff6020" stroke-width="1.2" opacity="0.7"/>
+      <path d="M14,26 Q16,22 20,24 Q24,22 26,26" fill="none" stroke="#ff9040" stroke-width="0.8" opacity="0.5"/>
+    </svg>`,
+    // Code Rot — glitchy hexagon, green corruption
+    code_rot: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <polygon points="20,4 30,10 30,22 20,28 10,22 10,10" fill="#050f08" stroke="#00ff40" stroke-width="1.2"/>
+      <polygon points="20,8 27,12 27,20 20,24 13,20 13,12" fill="#020a04" stroke="#00ff40" stroke-width="0.6" opacity="0.5"/>
+      <rect x="16" y="13" width="4" height="3" rx="1" fill="#00ff40" opacity="0.9"/>
+      <rect x="16" y="14" width="2" height="2" fill="#001a08"/>
+      <rect x="16" y="13" width="1" height="1" fill="#80ffb0" opacity="0.9"/>
+      <rect x="17" y="13" width="3" height="3" rx="1" fill="none"/>
+      <rect x="20" y="14" width="4" height="3" rx="1" fill="#00ff40" opacity="0.9"/>
+      <rect x="21" y="14" width="2" height="2" fill="#001a08"/>
+      <rect x="21" y="13" width="1" height="1" fill="#80ffb0" opacity="0.9"/>
+      <rect x="14" y="28" width="12" height="20" fill="#050f08"/>
+      <rect x="11" y="32" width="5" height="12" fill="#040c06"/>
+      <rect x="24" y="32" width="5" height="12" fill="#040c06"/>
+      <!-- glitch lines -->
+      <rect x="10" y="17" width="5" height="1" fill="#00ff40" opacity="0.4"/>
+      <rect x="26" y="14" width="4" height="1" fill="#00ff40" opacity="0.3"/>
+      <rect x="12" y="34" width="8" height="1" fill="#00ff40" opacity="0.25"/>
+      <rect x="22" y="38" width="6" height="1" fill="#00ff40" opacity="0.2"/>
+    </svg>`,
+    // Burnout Shade — wilting dimming flame, grey
+    burnout_shade: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+      <path d="M20,48 C14,40 11,30 13,22 C14,17 16,20 16,16 C18,20 18,22 20,19 C22,22 22,20 24,16 C24,20 26,17 27,22 C29,30 26,40 20,48 Z" fill="#2a1a08" stroke="#6a4a20" stroke-width="0.8"/>
+      <path d="M20,44 C15,36 14,28 15,23 C16,19 17,21 17,19 C19,22 19,23 20,21 C21,23 21,22 23,19 C23,21 24,19 25,23 C26,28 25,36 20,44 Z" fill="#3a2410" opacity="0.7"/>
+      <ellipse cx="20" cy="25" rx="5" ry="6" fill="#1a1008"/>
+      <rect x="17" y="23" width="3" height="3" rx="1" fill="#6a4020" opacity="0.7"/>
+      <rect x="20" y="23" width="3" height="3" rx="1" fill="#6a4020" opacity="0.7"/>
+      <rect x="18" y="24" width="2" height="2" fill="#3a1800" opacity="0.9"/>
+      <rect x="21" y="24" width="2" height="2" fill="#3a1800" opacity="0.9"/>
+      <!-- wilting drips -->
+      <path d="M15,40 Q14,44 13,48" stroke="#2a1800" stroke-width="1.5" fill="none" opacity="0.5"/>
+      <path d="M25,40 Q26,44 27,48" stroke="#2a1800" stroke-width="1.5" fill="none" opacity="0.5"/>
+      <ellipse cx="13" cy="48" rx="2" ry="1" fill="#2a1800" opacity="0.4"/>
+      <ellipse cx="27" cy="48" rx="2" ry="1" fill="#2a1800" opacity="0.4"/>
+    </svg>`,
+    // Null Breach — red data corruption entity
+    null_breach: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <rect x="10" y="4" width="20" height="20" fill="#1a0000"/>
+      <rect x="12" y="6" width="16" height="16" fill="#100000"/>
+      <rect x="14" y="14" width="5" height="3" rx="1" fill="#ff2020"/>
+      <rect x="21" y="14" width="5" height="3" rx="1" fill="#ff2020"/>
+      <rect x="15" y="14" width="3" height="2" fill="#500000"/>
+      <rect x="22" y="14" width="3" height="2" fill="#500000"/>
+      <rect x="15" y="14" width="1" height="1" fill="#ffaaaa" opacity="0.8"/>
+      <rect x="22" y="14" width="1" height="1" fill="#ffaaaa" opacity="0.8"/>
+      <!-- glitch corruption breaks -->
+      <rect x="4"  y="8"  width="6" height="3" fill="#1a0000"/>
+      <rect x="30" y="12" width="6" height="3" fill="#1a0000"/>
+      <rect x="8"  y="18" width="4" height="2" fill="#1a0000"/>
+      <rect x="29" y="20" width="5" height="2" fill="#1a0000"/>
+      <rect x="12" y="24" width="16" height="24" fill="#0d0000"/>
+      <rect x="8"  y="26" width="8"  height="14" fill="#0d0000"/>
+      <rect x="24" y="28" width="8"  height="14" fill="#0d0000"/>
+      <!-- null symbols scattered -->
+      <rect x="7"  y="10" width="3" height="1" fill="#ff2020" opacity="0.3"/>
+      <rect x="31" y="14" width="3" height="1" fill="#ff2020" opacity="0.3"/>
+      <rect x="14" y="38" width="4" height="1" fill="#ff2020" opacity="0.25"/>
+      <rect x="22" y="42" width="4" height="1" fill="#ff2020" opacity="0.2"/>
+    </svg>`,
+  };
+  return sprites[key] || sprites['false_lead'];
+}
+
+// ── Story choice templates per division ────────────────────────────────────
+const _STORY_CHOICES = {
+  opportunity: {
+    speaker: 'VAEL',
+    quotes: [
+      "The lead is confirmed — the target is real. How do we move from here?",
+      "We've marked the quarry. The field is clear. What is your command?",
+      "Another opportunity tracked and taken. The order awaits your direction.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Push harder — double down.', flavor: 'Pursue the next target without pause. The Dawnhunt never stops.' },
+      { id: 'patient',    letter: 'B', text: 'Wait — gather more intel.', flavor: 'Hold position. A sharper signal may be coming.' },
+      { id: 'balanced',   letter: 'C', text: 'Hedge across multiple fronts.', flavor: 'Spread resources. No single target owns the realm.' },
+    ],
+  },
+  trading: {
+    speaker: 'SEREN',
+    quotes: [
+      "The pattern held. The market confirmed what the Veil read first.",
+      "Another signal resolved. The oracle's record remains unbroken.",
+      "The data spoke. We listened. The realm grows richer for it.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Scale the position.', flavor: 'The signal is strong. The Veil says go bigger.' },
+      { id: 'patient',    letter: 'B', text: 'Wait for confirmation.', flavor: 'Do not chase the move. Let the pattern mature.' },
+      { id: 'balanced',   letter: 'C', text: 'Split and observe.', flavor: 'Half now, half when the next signal arrives.' },
+    ],
+  },
+  dev_automation: {
+    speaker: 'KAELEN',
+    quotes: [
+      "The forge holds. Another system reforged and sealed.",
+      "Rot has been burned out. The Codex is cleaner for it.",
+      "The pipeline is running clean. Kaelen's work is done — for now.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Expand the build scope.', flavor: 'Kaelen says: if we are building, build it right and build it all.' },
+      { id: 'patient',    letter: 'B', text: 'Stabilize before adding more.', flavor: 'Let the current system prove itself before extending it.' },
+      { id: 'balanced',   letter: 'C', text: 'Add one system, archive one.', flavor: 'Every new addition earns its place by retiring the old.' },
+    ],
+  },
+  personal: {
+    speaker: 'LYRIN',
+    quotes: [
+      "The flame holds steady. The Covenant is satisfied.",
+      "Another day tended. The sovereign's vitality is protected.",
+      "Rest and discipline, both honored. The realm is stronger for it.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Push further — no rest yet.', flavor: 'High momentum. Lyrin warns: watch the flame.' },
+      { id: 'patient',    letter: 'B', text: 'Rest — let the covenant recover.', flavor: 'Wisdom speaks: a rested sovereign leads better.' },
+      { id: 'balanced',   letter: 'C', text: 'Maintain the current rhythm.', flavor: 'Consistency above all. The Covenant trusts the pattern.' },
+    ],
+  },
+  op_sec: {
+    speaker: 'ZETH',
+    quotes: [
+      "The veil holds. No breach detected this cycle.",
+      "Another threat neutralized before it could compound.",
+      "The null is quiet — for now. Zeth is watching.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Go deeper — full audit.', flavor: 'Zeth: the surface is clean. What lies beneath it?' },
+      { id: 'patient',    letter: 'B', text: 'Hold — maintain current posture.', flavor: 'No news is good news. Overreach invites exposure.' },
+      { id: 'balanced',   letter: 'C', text: 'Rotate the sweep schedule.', flavor: 'Predictable patterns are vulnerabilities. Change the cycle.' },
+    ],
+  },
+};
+
+// ── Theater state ───────────────────────────────────────────────────────────
+let _TH = {
+  queue:          [],
+  idx:            0,
+  phase:          'idle',  // idle | chapter | battle | choice | rankup
+  waitingTap:     false,
+  resolveSkip:    null,
+  lastChapterTitle: '',
+  storyChoices:   [],      // accumulated player choices this session
+};
+
+// ── DOM helpers ────────────────────────────────────────────────────────────
+function _thEl(id) { return document.getElementById(id); }
+
+function _thSetColor(color) {
+  document.getElementById('theater-overlay').style.setProperty('--th-color', color);
+  document.getElementById('th-arena-glow').style.background =
+    `linear-gradient(to top, ${color}22 0%, transparent 100%)`;
+}
+
+// ── Wait for tap or auto-skip ──────────────────────────────────────────────
+function _thWaitTap(ms) {
+  return new Promise(resolve => {
+    _TH.resolveSkip = resolve;
+    _TH.waitingTap  = true;
+    if (ms > 0) setTimeout(() => { if (_TH.waitingTap) { _TH.waitingTap = false; resolve(); } }, ms);
+  });
+}
+
+function _theaterSkip() {
+  if (_TH.resolveSkip) { _TH.waitingTap = false; _TH.resolveSkip(); _TH.resolveSkip = null; }
+}
+
+// ── Delay helper ────────────────────────────────────────────────────────────
+function _thDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Phase: show chapter narration ──────────────────────────────────────────
+async function _thPlayChapter(chapterData) {
+  if (!chapterData || _TH.lastChapterTitle === chapterData.title) return;
+  _TH.lastChapterTitle = chapterData.title;
+  _TH.phase = 'chapter';
+
+  const sc = _thEl('th-chapter-screen');
+  _thEl('th-chap-icon').style.animation = 'none';
+  _thEl('th-chap-title').style.animation = 'none';
+  _thEl('th-chap-narration').style.animation = 'none';
+  void sc.offsetWidth;
+
+  _thEl('th-chap-icon').textContent = '⚔';
+  _thEl('th-chap-title').textContent = chapterData.title || '';
+  _thEl('th-chap-narration').textContent = chapterData.narration || '';
+  _thEl('th-chap-icon').style.animation = 'th-fade 0.6s ease 0.3s forwards';
+  _thEl('th-chap-title').style.animation = 'th-fade 0.5s ease 0.7s forwards';
+  _thEl('th-chap-narration').style.animation = 'th-fade 0.6s ease 1.1s forwards';
+  _thEl('th-chap-icon').style.opacity = '0';
+  _thEl('th-chap-title').style.opacity = '0';
+  _thEl('th-chap-narration').style.opacity = '0';
+
+  sc.classList.add('visible');
+  await _thWaitTap(0);  // wait for tap
+  sc.classList.remove('visible');
+}
+
+// ── Phase: battle sequence ──────────────────────────────────────────────────
+async function _thPlayBattle(event) {
+  _TH.phase = 'battle';
+  const { division, skill, commander, color, enemy, enemy_name, xp, multiplier } = event;
+
+  _thSetColor(color);
+  _thEl('th-chapter-label').textContent = event.chapter?.title || 'Realm Theater';
+  _thEl('th-hp-cmd-name').textContent  = commander;
+  _thEl('th-hp-cmd-name').style.color  = color;
+  _thEl('th-hp-cmd-fill').style.background = color;
+  _thEl('th-hp-cmd-fill').style.width = '100%';
+  _thEl('th-hp-enemy-name').textContent = enemy_name;
+  _thEl('th-hp-enemy-fill').style.width = '100%';
+  _thEl('th-tap-hint').style.opacity = '0';
+  _thEl('th-xp-reward').classList.remove('shown');
+
+  // Set sprites
+  const divKey = division;
+  _thEl('th-commander').innerHTML = commanderPortraitSVG(divKey, color, 48);
+  _thEl('th-enemy').innerHTML     = _enemySVG(enemy, 44, 57);
+
+  // Skill label + flavor
+  const skillLabel = skill.replace(/_/g, ' ').toUpperCase();
+  _thEl('th-skill-label').style.color = color;
+  _thEl('th-skill-label').textContent = skillLabel;
+  _thEl('th-battle-msg').textContent  = '';
+
+  // Phase 1: slide in
+  _thEl('th-commander').classList.remove('attacking','retreating','entered');
+  _thEl('th-enemy').classList.remove('hit','hit-recover','defeated','entered');
+  await _thDelay(80);
+  _thEl('th-commander').classList.add('entered');
+  _thEl('th-enemy').classList.add('entered');
+  await _thDelay(700);
+
+  // Phase 2: HP bars fill
+  _thEl('th-battle-msg').textContent = `${commander} engages the ${enemy_name}...`;
+  await _thDelay(600);
+
+  // Phase 3: attack
+  _thEl('th-commander').classList.add('attacking');
+  await _thDelay(240);
+  _thEl('th-enemy').classList.add('hit');
+  await _thDelay(120);
+  _thEl('th-enemy').classList.remove('hit');
+  _thEl('th-enemy').classList.add('hit-recover');
+  _thEl('th-commander').classList.remove('attacking');
+  _thEl('th-commander').classList.add('retreating');
+  await _thDelay(300);
+  _thEl('th-enemy').classList.remove('hit-recover');
+  _thEl('th-commander').classList.remove('retreating');
+
+  // Drain enemy HP to 55%
+  _thEl('th-hp-enemy-fill').style.width = '55%';
+  await _thDelay(700);
+
+  // Phase 4: second attack
+  _thEl('th-battle-msg').textContent = `${skillLabel} skill executed — decisive blow!`;
+  _thEl('th-commander').classList.add('attacking');
+  await _thDelay(200);
+  _thEl('th-enemy').classList.add('hit');
+  await _thDelay(100);
+  _thEl('th-enemy').classList.remove('hit');
+  _thEl('th-enemy').classList.add('hit-recover');
+  _thEl('th-commander').classList.remove('attacking');
+  _thEl('th-commander').classList.add('retreating');
+  await _thDelay(250);
+  _thEl('th-enemy').classList.remove('hit-recover');
+  _thEl('th-commander').classList.remove('retreating');
+
+  // Drain to 0%
+  _thEl('th-hp-enemy-fill').style.width = '0%';
+  await _thDelay(400);
+
+  // Phase 5: enemy defeated
+  _thEl('th-enemy').classList.add('defeated');
+  await _thDelay(700);
+
+  // Phase 6: XP reward
+  const multTxt = multiplier > 1 ? ` ×${multiplier}` : '';
+  _thEl('th-xp-reward').textContent = `+${xp} XP${multTxt}`;
+  _thEl('th-xp-reward').style.color = color;
+  _thEl('th-xp-reward').classList.add('shown');
+  _thEl('th-battle-msg').textContent = `${enemy_name} vanquished. The realm grows stronger.`;
+  await _thDelay(600);
+
+  _thEl('th-tap-hint').style.opacity = '1';
+  await _thWaitTap(5000);  // auto-advance after 5s
+  _thEl('th-tap-hint').style.opacity = '0';
+  _thEl('th-xp-reward').classList.remove('shown');
+}
+
+// ── Phase: rank-up evolution cutscene ──────────────────────────────────────
+async function _thPlayRankUp(event) {
+  _TH.phase = 'rankup';
+  const { division, commander, color, old_rank, new_rank, tier, base_xp_bonus } = event;
+  _thSetColor(color);
+  _thEl('th-chapter-label').textContent = 'Evolution';
+
+  const rs = _thEl('th-rankup-screen');
+  _thEl('th-evo-portrait').style.transform = 'scale(0.6)';
+  _thEl('th-evo-portrait').style.opacity = '0';
+  _thEl('th-evo-portrait').style.animation = 'none';
+  _thEl('th-evo-label').style.animation = 'none';
+  _thEl('th-evo-title').style.animation = 'none';
+  _thEl('th-evo-bonus').style.animation = 'none';
+  void rs.offsetWidth;
+
+  _thEl('th-evo-portrait').innerHTML = commanderFullPortraitSVG(division, color, 80, 100);
+  _thEl('th-evo-label').textContent  = `${commander} — EVOLUTION`;
+  _thEl('th-evo-label').style.color  = color;
+  _thEl('th-evo-title').textContent  = new_rank;
+  _thEl('th-evo-title').style.textShadow = `0 0 40px ${color}aa`;
+  _thEl('th-evo-bonus').textContent  = base_xp_bonus ? `+${base_xp_bonus} Base XP awarded` : `Tier ${tier} achieved`;
+  _thEl('th-evo-bonus').style.color  = color;
+
+  _thEl('th-evo-portrait').style.animation = 'th-evo-pop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s forwards';
+  _thEl('th-evo-label').style.animation    = 'th-fade 0.5s ease 0.9s forwards';
+  _thEl('th-evo-title').style.animation    = 'th-evo-title 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.2s forwards';
+  _thEl('th-evo-bonus').style.animation    = 'th-fade 0.5s ease 1.8s forwards';
+  _thEl('th-evo-label').style.opacity = '0';
+  _thEl('th-evo-title').style.opacity = '0';
+  _thEl('th-evo-bonus').style.opacity = '0';
+
+  rs.classList.add('visible');
+  await _thWaitTap(0);
+  rs.classList.remove('visible');
+}
+
+// ── Phase: branching story choice ──────────────────────────────────────────
+async function _thPlayChoice(event) {
+  _TH.phase = 'choice';
+  const { division, commander, color } = event;
+  const choiceSet = _STORY_CHOICES[division] || _STORY_CHOICES.opportunity;
+  const quote     = choiceSet.quotes[Math.floor(Math.random() * choiceSet.quotes.length)];
+
+  _thEl('th-choice-speaker').textContent = choiceSet.speaker;
+  _thEl('th-choice-speaker').style.color = color;
+  _thEl('th-choice-quote').textContent   = quote;
+  _thEl('th-choice-quote').style.borderColor = color + '55';
+
+  const container = _thEl('th-choices-container');
+  container.innerHTML = '';
+  const chosen = await new Promise(resolve => {
+    choiceSet.choices.forEach(choice => {
+      const btn = document.createElement('div');
+      btn.className = 'th-choice-btn';
+      btn.innerHTML = `<div class="th-choice-letter" style="color:${color};">${choice.letter}</div><div class="th-choice-text">${choice.text}</div><div class="th-choice-flavor">${choice.flavor}</div>`;
+      btn.onclick = () => { btn.style.borderColor = color; btn.style.background = color + '18'; resolve(choice); };
+      container.appendChild(btn);
+    });
+  });
+
+  // Record choice
+  _TH.storyChoices.push({ division, choice_id: chosen.id, ts: new Date().toISOString() });
+  fetch('/mobile/api/story/choice', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ division, choice_id: chosen.id, choice_text: chosen.text }),
+  }).catch(() => {});
+
+  _thEl('th-choice-screen').classList.remove('visible');
+}
+
+// ── Main queue player ──────────────────────────────────────────────────────
+async function _runTheaterQueue() {
+  const queue = _TH.queue;
+  let shownChapters = new Set();
+
+  for (let i = 0; i < queue.length; i++) {
+    _TH.idx = i;
+    const event = queue[i];
+    _thEl('th-progress').textContent = `${i + 1} / ${queue.length}`;
+
+    // Show chapter narration if new chapter
+    const chapTitle = event.chapter?.title;
+    if (chapTitle && !shownChapters.has(chapTitle)) {
+      shownChapters.add(chapTitle);
+      await _thPlayChapter(event.chapter);
+    }
+
+    if (event.type === 'rank_up') {
+      await _thPlayRankUp(event);
+    } else if (event.type === 'achievement') {
+      // Re-use the existing achievement overlay style inline
+      _thEl('th-chapter-label').textContent = 'Achievement';
+      _thEl('th-chapter-screen').classList.add('visible');
+      _thEl('th-chap-icon').textContent       = '🏆';
+      _thEl('th-chap-title').textContent       = 'Achievement Unlocked';
+      _thEl('th-chap-narration').textContent   = event.achievement_name || event.achievement_id;
+      _thEl('th-chap-icon').style.opacity     = '0';
+      _thEl('th-chap-title').style.opacity    = '0';
+      _thEl('th-chap-narration').style.opacity = '0';
+      _thEl('th-chap-icon').style.animation   = 'th-fade 0.5s ease 0.2s forwards';
+      _thEl('th-chap-title').style.animation  = 'th-fade 0.5s ease 0.6s forwards';
+      _thEl('th-chap-narration').style.animation = 'th-fade 0.6s ease 0.9s forwards';
+      void _thEl('th-chapter-screen').offsetWidth;
+      await _thWaitTap(4000);
+      _thEl('th-chapter-screen').classList.remove('visible');
+    } else {
+      // skill_complete battle
+      await _thPlayBattle(event);
+      // Every 3rd scene or on last: show story choice
+      if ((i + 1) % 3 === 0 || i === queue.length - 1) {
+        _thEl('th-choice-screen').classList.add('visible');
+        await _thPlayChoice(event);
+      }
+    }
+  }
+
+  // All done — clear queue
+  _TH.phase = 'idle';
+  await fetch('/mobile/api/anim/queue/clear', { method: 'POST' }).catch(() => {});
+  closeTheater();
+  _updateTheaterBadge(0);
+}
+
+// ── Public: open / close theater ──────────────────────────────────────────
+async function openTheater() {
+  try {
+    const resp = await fetch('/mobile/api/anim/queue');
+    const data = await resp.json();
+    if (!data.queue || data.queue.length === 0) { return; }
+    _TH.queue = data.queue;
+    _TH.idx   = 0;
+    _TH.lastChapterTitle = '';
+    _TH.storyChoices = [];
+
+    document.getElementById('theater-overlay').classList.add('open');
+    haptic('medium');
+    await _runTheaterQueue();
+  } catch(e) {
+    console.error('Theater error:', e);
+    closeTheater();
+  }
+}
+
+function closeTheater() {
+  document.getElementById('theater-overlay').classList.remove('open');
+  _theaterSkip();  // resolve any pending waits
+  _TH.phase = 'idle';
+  // Hide all sub-screens
+  ['th-chapter-screen','th-choice-screen','th-rankup-screen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('visible');
+  });
+}
+
+// ── Badge polling ──────────────────────────────────────────────────────────
+function _updateTheaterBadge(count) {
+  const btn   = document.getElementById('theater-watch-btn');
+  const badge = document.getElementById('theater-badge');
+  if (!btn || !badge) return;
+  badge.textContent = count;
+  if (count > 0) {
+    btn.classList.add('has-queue');
+  } else {
+    btn.classList.remove('has-queue');
+    btn.style.display = 'none';
+  }
+}
+
+async function _pollTheaterQueue() {
+  try {
+    const resp = await fetch('/mobile/api/anim/queue');
+    const data = await resp.json();
+    _updateTheaterBadge(data.count || 0);
+  } catch {}
+}
+
 // ── Boot ─────────────────────────────────────────────────
 checkSetup();
 </script>
@@ -4582,6 +5260,83 @@ checkSetup();
   <div id="ach-big-name" class="ach-big-name"></div>
   <div id="ach-big-desc" class="ach-big-desc"></div>
   <div class="ach-tap-hint">TAP TO CONTINUE</div>
+</div>
+
+<!-- Theater Watch Button (floating, appears when queue has items) -->
+<button id="theater-watch-btn" onclick="openTheater()">
+  <span class="tw-icon">🎬</span>
+  <span class="tw-label">WATCH</span>
+  <span class="tw-badge" id="theater-badge">0</span>
+</button>
+
+<!-- Theater Overlay -->
+<div id="theater-overlay">
+  <!-- Top bar -->
+  <div class="th-topbar">
+    <div class="th-chapter-label" id="th-chapter-label">Realm Theater</div>
+    <div class="th-progress" id="th-progress">0 / 0</div>
+    <div class="th-skip-btn" onclick="_theaterSkip()">SKIP ›</div>
+  </div>
+
+  <!-- Chapter narration (shown between battles) -->
+  <div id="th-chapter-screen" onclick="_theaterSkip()">
+    <div class="th-chapter-icon" id="th-chap-icon">⚔</div>
+    <div class="th-chapter-title" id="th-chap-title">Chapter I</div>
+    <div class="th-chapter-narration" id="th-chap-narration"></div>
+    <div class="th-chapter-tap">TAP TO CONTINUE</div>
+  </div>
+
+  <!-- Battle arena -->
+  <div id="th-battle-arena" onclick="_theaterSkip()">
+    <div class="th-arena-bg"></div>
+    <div class="th-arena-stars"></div>
+    <div class="th-arena-glow" id="th-arena-glow"></div>
+    <div class="th-ground-line"></div>
+
+    <!-- HP bars -->
+    <div class="th-hp-row">
+      <div class="th-hp-block" id="th-hp-commander">
+        <div class="th-hp-name" id="th-hp-cmd-name" style="color:#a78bfa;">VAEL</div>
+        <div class="th-hp-bar-wrap"><div class="th-hp-bar-fill" id="th-hp-cmd-fill" style="width:100%;background:#a78bfa;"></div></div>
+      </div>
+      <div style="font-size:11px;color:#ffffff40;font-weight:700;padding-top:2px;">VS</div>
+      <div class="th-hp-block enemy" id="th-hp-enemy">
+        <div class="th-hp-name" id="th-hp-enemy-name" style="color:#ef4444;">ENEMY</div>
+        <div class="th-hp-bar-wrap"><div class="th-hp-bar-fill" id="th-hp-enemy-fill" style="width:100%;background:#ef4444;"></div></div>
+      </div>
+    </div>
+
+    <!-- Commander sprite (left) -->
+    <div class="th-combatant" id="th-commander"></div>
+
+    <!-- Enemy sprite (right) -->
+    <div class="th-combatant" id="th-enemy"></div>
+
+    <!-- Battle text overlay -->
+    <div class="th-battle-text">
+      <div class="th-skill-label" id="th-skill-label" style="color:#a78bfa;"></div>
+      <div class="th-battle-msg" id="th-battle-msg"></div>
+      <div class="th-xp-reward" id="th-xp-reward"></div>
+      <div class="th-tap-hint" id="th-tap-hint">TAP TO CONTINUE</div>
+    </div>
+
+    <!-- Choice screen (branching story) -->
+    <div id="th-choice-screen">
+      <div class="th-choice-speaker" id="th-choice-speaker" style="color:#a78bfa;"></div>
+      <div class="th-choice-quote" id="th-choice-quote" style="border-color:#a78bfa44;"></div>
+      <div class="th-choice-title">Choose your path —</div>
+      <div id="th-choices-container"></div>
+    </div>
+
+    <!-- Rank-up evolution screen -->
+    <div id="th-rankup-screen" onclick="_theaterSkip()">
+      <div class="th-evo-portrait" id="th-evo-portrait" style="transform:scale(0.6);"></div>
+      <div class="th-evo-label" id="th-evo-label" style="color:#a78bfa;">Evolution Achieved</div>
+      <div class="th-evo-title" id="th-evo-title"></div>
+      <div class="th-evo-bonus" id="th-evo-bonus"></div>
+      <div class="th-evo-tap">TAP TO CONTINUE</div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
