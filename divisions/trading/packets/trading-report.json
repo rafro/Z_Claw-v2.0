@@ -1,9 +1,9 @@
 {
   "division": "trading",
-  "generated_at": "2026-03-21T01:37:06.957961+00:00",
+  "generated_at": "2026-03-21T14:50:46.880884+00:00",
   "skill": "trading-report",
-  "status": "partial",
-  "summary": "Trading system not yet activated — no session data found.",
+  "status": "success",
+  "summary": "No closed trades today. Market: No significant moves. BTC $70,705 (+0.5%), ETH $2,157 (+0.8%), BNB $644 (+0.4%)",
   "action_items": [],
   "metrics": {
     "total_trades": 0,
@@ -14,13 +14,13 @@
     "best_r": null,
     "worst_r": null,
     "total_pnl": null,
-    "source": "none",
+    "source": "dry_run",
     "market_context": true,
-    "cycle_number": 401,
+    "cycle_number": 139,
     "risk_multiplier": 1.0,
-    "active_strategy": "Bollinger Lower Band Touch with ATR Expansion Confirmation",
-    "strategy_sharpe": 0.943,
-    "strategy_win_rate_pct": 39.1
+    "active_strategy": "EMA38-PriceAbove-ATRExpandingLong",
+    "strategy_sharpe": 0.786,
+    "strategy_win_rate_pct": 46.9
   },
   "artifact_refs": [
     {

@@ -9,7 +9,7 @@ import logging
 
 from runtime.config import SKILL_MODELS, OLLAMA_HOST
 from runtime.ollama_client import chat, is_available
-from runtime.skills import trading_report, market_scan, virtual_trader
+from runtime.skills import trading_report, market_scan, virtual_trader, backtester
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
 from runtime.tools.trading import load_cycle_state, load_active_strategy
@@ -189,6 +189,34 @@ def run_virtual_trader() -> dict:
         result["status"],
         result.get("trades_made", 0),
         result.get("account_balance", 0.0),
+    )
+    return pkt
+
+
+def run_backtester() -> dict:
+    """Run backtester skill — reads cycle state, evaluates strategy quality."""
+    log.info("=== Trading Division: backtester run ===")
+
+    result = backtester.run()
+
+    pkt = packet.build(
+        division="trading",
+        skill="backtester",
+        status=result["status"],
+        summary=result.get("summary", "Backtester run complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] == "success":
+        grant_skill_xp("backtester")
+    log.info(
+        "Backtester packet written. Status=%s changed=%s escalate=%s",
+        result["status"],
+        result.get("strategy_changed"),
+        result.get("escalate", False),
     )
     return pkt
 
