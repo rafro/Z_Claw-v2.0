@@ -1,13 +1,13 @@
 {
   "division": "trading",
-  "generated_at": "2026-03-21T13:00:10.935515+00:00",
+  "generated_at": "2026-03-21T15:03:11.080211+00:00",
   "skill": "market-scan",
   "status": "success",
-  "summary": "No significant moves. BTC $70,705 (+0.5%), ETH $2,157 (+0.8%), BNB $644 (+0.4%)",
+  "summary": "SPX500 down 1.5% today — $6,506.48",
   "action_items": [],
   "metrics": {
-    "signals": 0,
-    "instruments": 4,
+    "signals": 1,
+    "instruments": 6,
     "high": 0
   },
   "artifact_refs": [],
