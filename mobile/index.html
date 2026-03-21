@@ -395,6 +395,21 @@
       100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 6px #3b82f660); }
     }
 
+    /* ── XP Float bubbles ── */
+    .xp-float { position: fixed; font-size: 15px; font-weight: 800; letter-spacing: 0.05em; pointer-events: none; z-index: 9500; transform: translateX(-50%); animation: xp-float-up 1.9s ease-out forwards; }
+    @keyframes xp-float-up {
+      0%   { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.75); }
+      14%  { opacity: 1; transform: translateX(-50%) translateY(-10px) scale(1.15); }
+      55%  { opacity: 1; transform: translateX(-50%) translateY(-44px) scale(1); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-80px) scale(0.9); }
+    }
+    /* ── Commander quote toast ── */
+    .cmd-quote-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 90px; z-index: 8500; display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; max-width: 300px; box-shadow: 0 4px 24px #00000066; pointer-events: none; transition: opacity 0.3s ease, bottom 0.3s ease; }
+    .cmd-quote-toast.visible { pointer-events: all; }
+    .cmd-quote-portrait { width: 32px; height: 32px; flex-shrink: 0; }
+    .cmd-quote-text { font-size: 12px; font-style: italic; color: var(--text); line-height: 1.4; }
+    .cmd-quote-name { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 2px; }
+
     /* ── Battle cards ── */
     .battle-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border-left: 3px solid var(--border); margin-bottom: 8px; }
     .battle-anim-wrap { width: 44px; height: 44px; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; }
@@ -532,7 +547,7 @@
     #char-sheet.open { transform: translateY(0); }
     .cs-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
     .cs-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px 14px; border-bottom: 1px solid var(--border); }
-    .cs-portrait { width: 60px; height: 60px; flex-shrink: 0; }
+    .cs-portrait { width: 56px; height: 75px; flex-shrink: 0; }
     .cs-meta { text-align: left; flex: 1; }
     .cs-name { font-size: 22px; font-weight: 900; letter-spacing: 0.12em; }
     .cs-class-label { font-size: 10px; color: var(--subtext); letter-spacing: 0.06em; margin: 3px 0 5px; text-transform: uppercase; }
@@ -570,7 +585,7 @@
       50%      { opacity: 1;   transform: scale(1.07); }
     }
     .rankup-commander-portrait {
-      position: relative; width: 64px; height: 64px; margin-bottom: 14px;
+      position: relative; width: 48px; height: 64px; margin-bottom: 12px;
       opacity: 0; animation: ro-fadein 0.4s ease 0.05s forwards;
       filter: drop-shadow(0 0 14px var(--rankup-color));
     }
@@ -595,6 +610,11 @@
       margin-bottom: 10px; text-align: center; padding: 0 24px;
       opacity: 0; transform: scale(0.65);
       animation: ro-scale-in 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.38s forwards;
+    }
+    .rankup-quote {
+      position: relative; font-size: 12px; font-style: italic; color: #ccc;
+      text-align: center; max-width: 260px; line-height: 1.5; margin: 14px 20px 0;
+      opacity: 0; animation: ro-fadein 0.45s ease 0.72s forwards;
     }
     .rankup-tap-hint {
       position: relative; font-size: 10px; color: var(--rankup-color); opacity: 0.4; margin-top: 32px;
@@ -1479,8 +1499,23 @@ function _connectGamifStream() {
         const evt = JSON.parse(e.data);
         if (!evt || evt.type !== 'gamif') return;
         const _onGamifTab = _currentTab === 'home' || _currentTab === 'stats';
-        if (['skill_complete','xp_grant','init'].includes(evt.event)) {
-          if (evt.event !== 'init') haptic('success');
+        if (evt.event === 'skill_complete') {
+          haptic('success');
+          // XP float bubble
+          if (evt.xp_granted > 0) {
+            const divColor = (_COMMANDER_DEF[evt.division] || {}).color || '#60a5fa';
+            showXpFloat(`+${evt.xp_granted} XP`, divColor);
+          }
+          // Occasional commander quote (1-in-4 chance)
+          if (evt.division && Math.random() < 0.25) {
+            setTimeout(() => showCommanderQuote(evt.division, 'skill_complete'), 600);
+          }
+          if (_onGamifTab) refreshCurrent();
+        } else if (evt.event === 'xp_grant') {
+          haptic('success');
+          if (evt.amount > 0) showXpFloat(`+${evt.amount} XP`, '#f59e0b');
+          if (_onGamifTab) refreshCurrent();
+        } else if (evt.event === 'init') {
           if (_onGamifTab) refreshCurrent();
         } else if (evt.event === 'rank_up') {
           showRankUpOverlay(evt);
@@ -1489,9 +1524,9 @@ function _connectGamifStream() {
           showAchievementOverlay(evt.achievement);
           if (_onGamifTab) refreshCurrent();
         } else if (evt.event === 'streak_milestone') {
-          showToast(`🔥 ${evt.division} streak: ${evt.streak} days!`);
           haptic('success');
           triggerSpriteAnim('power-surge');
+          showCommanderQuote(evt.division, 'streak_7');
         } else if (evt.event === 'prestige') {
           showRankUpOverlay({ new_rank: `PRESTIGE ${evt.prestige} · +${Math.round((evt.multiplier-1)*100)}% XP`, division: null, _prestige: true });
           if (_onGamifTab) refreshCurrent();
@@ -1563,15 +1598,23 @@ function showRankUpOverlay(evt) {
   }
   rankEl.textContent = evt.new_rank || '';
 
+  // Commander quote
+  const quoteEl = document.getElementById('rankup-quote');
+  if (quoteEl) {
+    const q = evt._prestige ? "The realm ascends. A new covenant is struck." : _getRandQuote(cmdKey, 'rank_up');
+    quoteEl.textContent = q ? `"${q}"` : '';
+  }
+
   // Set commander portrait
   if (portraitEl) {
     portraitEl.innerHTML = cmdKey === 'base'
-      ? `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="20" cy="20" r="16" fill="none" stroke="${color}" stroke-width="2"/><circle cx="20" cy="20" r="10" fill="${color}" opacity="0.25"/><circle cx="20" cy="20" r="5" fill="${color}"/></svg>`
-      : commanderPortraitSVG(cmdKey, color, 64);
+      ? `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="48" height="64"><rect width="60" height="80" fill="#040408"/><circle cx="30" cy="40" r="22" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.5"/><circle cx="30" cy="40" r="12" fill="${color}" opacity="0.18"/><circle cx="30" cy="40" r="5" fill="${color}" opacity="0.75"/></svg>`
+      : commanderFullPortraitSVG(cmdKey, color, 48, 64);
   }
 
   // Restart CSS animations by cloning the animated children
-  [labelEl, divEl, rankEl, portraitEl, cmdNameEl].filter(Boolean).forEach(el => {
+  const quoteEl2 = document.getElementById('rankup-quote');
+  [labelEl, divEl, rankEl, portraitEl, cmdNameEl, quoteEl2].filter(Boolean).forEach(el => {
     el.style.animation = 'none';
     void el.offsetWidth;
     el.style.animation = '';
@@ -1728,6 +1771,93 @@ function loadCommand(silent = false) {
   loadOps(true);
 }
 
+// ── Commander dialogue lines ──────────────────────────────────────────────────
+const _COMMANDER_DIALOGUE = {
+  opportunity: {
+    rank_up:       ["The quarry never escapes twice. Mark the next.", "Every rank is a new range. The hunt doesn't stop here.", "Forward. Always forward. The Dawnhunt never rests."],
+    streak_7:      ["Seven days without pause. The Dawnhunt respects only forward motion."],
+    skill_complete:["Target marked.", "The hunt advances.", "One more quarry down. Move."],
+    dormant:       ["The quarry moves while we don't. This ends tonight.", "Every idle day is ground given up. Unacceptable."],
+  },
+  trading: {
+    rank_up:       ["The pattern confirms. The Veil was right.", "Another frequency unlocked. The market speaks in layers.", "Silence is data. The Veil reads both."],
+    streak_7:      ["Consistency is the only true edge. The Veil has been consistent."],
+    skill_complete:["Signal logged.", "The runes are clear.", "The Veil watches."],
+    dormant:       ["Still water goes stagnant. The Veil needs motion.", "A pattern unread is a pattern missed."],
+  },
+  dev_automation: {
+    rank_up:       ["The Codex grows. What was weak is now load-bearing.", "The forge never stays cold. Neither does the build.", "Architecture is destiny. The Codex shapes it."],
+    streak_7:      ["Seven days of construction. The Iron Codex doesn't rest."],
+    skill_complete:["Inscribed.", "The forge holds.", "The Codex expands."],
+    dormant:       ["The build is rotting. Kaelen won't allow that.", "Entropy wins when the forge goes cold. Light it."],
+  },
+  personal: {
+    rank_up:       ["The flame burns brighter. The covenant holds.", "Vitality is strategy. The realm runs on this.", "When the keeper is strong, everything else can be strong."],
+    streak_7:      ["The flame has burned seven straight days. Lyrin is satisfied."],
+    skill_complete:["Tended.", "The flame holds.", "The covenant is kept."],
+    dormant:       ["A cold hearth cools everything above it. Tend the flame.", "The sovereign's edge dulls without rest. Lyrin will not allow it."],
+  },
+  op_sec: {
+    rank_up:       ["The perimeter holds. Nothing passed the veil.", "Another ward raised. The null expands.", "The unseen threat is the only real threat. We see it."],
+    streak_7:      ["Seven days on the perimeter. The Nullward Circle sees everything."],
+    skill_complete:["Perimeter clear.", "The null holds.", "The ward stands."],
+    dormant:       ["The perimeter goes dark when Zeth goes quiet. Move.", "Unseen doesn't mean absent. The threat is there. Watch."],
+  },
+};
+
+function _getRandQuote(divKey, type) {
+  const pool = (_COMMANDER_DIALOGUE[divKey] || {})[type] || [];
+  return pool[Math.floor(Math.random() * pool.length)] || '';
+}
+
+// ── XP Float bubbles ──────────────────────────────────────────────────────────
+function showXpFloat(text, color) {
+  const el = document.createElement('div');
+  el.className = 'xp-float';
+  el.style.color = color;
+  el.style.textShadow = `0 0 10px ${color}`;
+  el.style.left = Math.round(window.innerWidth * 0.5) + 'px';
+  el.style.top  = Math.round(window.innerHeight * 0.38) + 'px';
+  el.textContent = text;
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ── Commander quote toast ─────────────────────────────────────────────────────
+let _cmdQuoteTimer = null;
+function showCommanderQuote(divKey, type) {
+  const quote = _getRandQuote(divKey, type);
+  if (!quote) return;
+  const cmd = _COMMANDER_DEF[divKey];
+  if (!cmd) return;
+
+  // Remove any existing
+  const existing = document.getElementById('cmd-quote-toast');
+  if (existing) existing.remove();
+  clearTimeout(_cmdQuoteTimer);
+
+  const el = document.createElement('div');
+  el.id = 'cmd-quote-toast';
+  el.className = 'cmd-quote-toast';
+  el.innerHTML = `
+    <div class="cmd-quote-portrait" style="filter:drop-shadow(0 0 6px ${cmd.color});">${commanderPortraitSVG(divKey, cmd.color, 32)}</div>
+    <div>
+      <div class="cmd-quote-name" style="color:${cmd.color};">${cmd.name} · ${cmd.order}</div>
+      <div class="cmd-quote-text">"${quote}"</div>
+    </div>`;
+  document.body.appendChild(el);
+
+  requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.classList.add('visible');
+  });
+
+  _cmdQuoteTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 350);
+  }, 4500);
+}
+
 // ── Commander identity map (module-scope — used by overlays + party cards) ──
 const _COMMANDER_DEF = {
   opportunity:    { name:'VAEL',   order:'The Dawnhunt Order',   color:'#f59e0b' },
@@ -1776,6 +1906,124 @@ function commanderPortraitSVG(key, color, size) {
   };
   return portraits[key] || `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}"><circle cx="20" cy="20" r="14" fill="none" stroke="${c}" stroke-width="2"/></svg>`;
 }
+
+// ── Full character portrait SVGs (60×80 viewBox, pixel-art style) ─────────────
+function commanderFullPortraitSVG(key, color, w, h) {
+  const W = w || 56; const H = h || 75;
+  const portraits = {
+
+    // VAEL — hooded scout, amber bow over shoulder, slit eyes
+    opportunity: `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <path d="M5,62 L30,8 L55,62 Q50,74 30,79 Q10,74 5,62 Z" fill="#0b0800"/>
+      <path d="M9,60 L30,12 L51,60" fill="none" stroke="${color}" stroke-width="0.8" opacity="0.25"/>
+      <rect x="19" y="24" width="22" height="18" rx="1" fill="#080500"/>
+      <rect x="21" y="31" width="7" height="2" fill="${color}"/>
+      <rect x="32" y="31" width="7" height="2" fill="${color}"/>
+      <rect x="22" y="31" width="5" height="1" fill="#fde68a" opacity="0.7"/>
+      <rect x="33" y="31" width="5" height="1" fill="#fde68a" opacity="0.7"/>
+      <rect x="20" y="42" width="20" height="20" fill="#110c00"/>
+      <rect x="20" y="42" width="20" height="1" fill="${color}" opacity="0.55"/>
+      <rect x="20" y="42" width="1" height="20" fill="${color}" opacity="0.45"/>
+      <rect x="39" y="42" width="1" height="20" fill="${color}" opacity="0.45"/>
+      <path d="M24,42 L30,39 L36,42" fill="none" stroke="${color}" stroke-width="0.8" opacity="0.5"/>
+      <path d="M41,22 Q48,33 41,48" fill="none" stroke="${color}" stroke-width="1.4" opacity="0.65"/>
+      <line x1="41" y1="22" x2="41" y2="48" stroke="${color}" stroke-width="0.7" opacity="0.4"/>
+    </svg>`,
+
+    // SEREN — peaked oracle hat, flowing robes, staff with data-orb, almond eyes
+    trading: `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <polygon points="30,2 17,22 43,22" fill="#080f14"/>
+      <line x1="30" y1="2" x2="30" y2="22" stroke="${color}" stroke-width="0.6" opacity="0.35"/>
+      <rect x="13" y="22" width="34" height="3" fill="#0b1820"/>
+      <rect x="13" y="22" width="34" height="1" fill="${color}" opacity="0.35"/>
+      <rect x="17" y="24" width="26" height="15" fill="#060d12"/>
+      <ellipse cx="24" cy="32" rx="3.5" ry="2" fill="${color}"/>
+      <ellipse cx="36" cy="32" rx="3.5" ry="2" fill="${color}"/>
+      <ellipse cx="24" cy="32" rx="1.8" ry="0.9" fill="#a5f3fc" opacity="0.75"/>
+      <ellipse cx="36" cy="32" rx="1.8" ry="0.9" fill="#a5f3fc" opacity="0.75"/>
+      <path d="M17,39 Q12,52 13,74 Q30,80 47,74 Q48,52 43,39 Z" fill="#060d12"/>
+      <path d="M21,39 Q17,52 18,72 Q30,77 42,72 Q43,52 39,39 Z" fill="#0a1820" opacity="0.6"/>
+      <line x1="30" y1="39" x2="30" y2="74" stroke="${color}" stroke-width="0.6" opacity="0.35"/>
+      <path d="M17,39 L30,35 L43,39" fill="none" stroke="${color}" stroke-width="0.7" opacity="0.5"/>
+      <line x1="47" y1="39" x2="47" y2="76" stroke="${color}" stroke-width="1.4" opacity="0.65"/>
+      <circle cx="47" cy="35" r="5" fill="#060d12" stroke="${color}" stroke-width="1"/>
+      <circle cx="47" cy="35" r="3" fill="${color}" opacity="0.25"/>
+      <circle cx="47" cy="35" r="1.5" fill="${color}" opacity="0.7"/>
+    </svg>`,
+
+    // KAELEN — heavy forge plate, wide shoulders, industrial visor, circuit chest, wrench
+    dev_automation: `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <rect x="14" y="4" width="32" height="26" rx="2" fill="#100a20"/>
+      <rect x="22" y="4" width="16" height="3" fill="${color}" opacity="0.45"/>
+      <rect x="15" y="18" width="30" height="8" rx="2" fill="#080514"/>
+      <rect x="17" y="19" width="12" height="6" rx="1" fill="#130a28"/>
+      <rect x="31" y="19" width="12" height="6" rx="1" fill="#130a28"/>
+      <rect x="18" y="20" width="10" height="1" fill="${color}" opacity="0.65"/>
+      <rect x="32" y="20" width="10" height="1" fill="${color}" opacity="0.65"/>
+      <rect x="19" y="27" width="22" height="3" fill="#0c0618"/>
+      <rect x="5" y="30" width="50" height="36" fill="#0c0618"/>
+      <rect x="4" y="30" width="16" height="14" rx="2" fill="#100a20"/>
+      <rect x="40" y="30" width="16" height="14" rx="2" fill="#100a20"/>
+      <rect x="4" y="30" width="16" height="2" fill="${color}" opacity="0.45"/>
+      <rect x="40" y="30" width="16" height="2" fill="${color}" opacity="0.45"/>
+      <rect x="20" y="36" width="8" height="1" fill="${color}" opacity="0.5"/>
+      <rect x="20" y="36" width="1" height="8" fill="${color}" opacity="0.5"/>
+      <rect x="32" y="36" width="8" height="1" fill="${color}" opacity="0.5"/>
+      <rect x="39" y="36" width="1" height="8" fill="${color}" opacity="0.5"/>
+      <polygon points="30,39 34,42 34,49 30,52 26,49 26,42" fill="#160c30" stroke="${color}" stroke-width="0.9"/>
+      <circle cx="30" cy="46" r="2" fill="${color}" opacity="0.55"/>
+      <rect x="42" y="50" width="5" height="18" rx="2" fill="#100a20" stroke="${color}" stroke-width="0.7"/>
+      <rect x="40" y="50" width="9" height="5" rx="1" fill="#100a20" stroke="${color}" stroke-width="0.7"/>
+    </svg>`,
+
+    // LYRIN — leaf-crown, warm robe, healing orb, soft eyes
+    personal: `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <path d="M22,10 Q24,4 30,8 Q36,4 38,10" fill="#04200f" stroke="${color}" stroke-width="0.8"/>
+      <path d="M25,8 Q27,2 30,6 Q33,2 35,8" fill="#065f3a" stroke="${color}" stroke-width="0.6"/>
+      <circle cx="30" cy="8" r="2" fill="${color}" opacity="0.65"/>
+      <rect x="18" y="10" width="24" height="18" rx="3" fill="#040f08"/>
+      <rect x="20" y="15" width="20" height="11" rx="2" fill="#c08050" opacity="0.6"/>
+      <path d="M23,19 Q25,17 27,19" fill="none" stroke="${color}" stroke-width="1.1"/>
+      <path d="M33,19 Q35,17 37,19" fill="none" stroke="${color}" stroke-width="1.1"/>
+      <circle cx="25" cy="19" r="1" fill="${color}" opacity="0.8"/>
+      <circle cx="35" cy="19" r="1" fill="${color}" opacity="0.8"/>
+      <path d="M15,28 Q9,50 11,76 Q30,81 49,76 Q51,50 45,28 Z" fill="#040f08"/>
+      <path d="M19,28 Q15,50 17,74 Q30,78 43,74 Q45,50 41,28 Z" fill="#081a10" opacity="0.6"/>
+      <line x1="30" y1="28" x2="30" y2="75" stroke="${color}" stroke-width="0.5" opacity="0.35"/>
+      <circle cx="30" cy="40" r="2" fill="${color}" opacity="0.25"/>
+      <circle cx="16" cy="54" r="7" fill="#040f08" stroke="${color}" stroke-width="1"/>
+      <circle cx="16" cy="54" r="4" fill="${color}" opacity="0.2"/>
+      <circle cx="16" cy="54" r="2" fill="#34d399" opacity="0.75"/>
+      <line x1="16" y1="47" x2="16" y2="49" stroke="#34d399" stroke-width="0.8" opacity="0.6"/>
+      <line x1="16" y1="59" x2="16" y2="61" stroke="#34d399" stroke-width="0.8" opacity="0.6"/>
+      <line x1="9" y1="54" x2="11" y2="54" stroke="#34d399" stroke-width="0.8" opacity="0.6"/>
+      <line x1="21" y1="54" x2="23" y2="54" stroke="#34d399" stroke-width="0.8" opacity="0.6"/>
+    </svg>`,
+
+    // ZETH — deep shadow cloak, no face, only red glowing eyes, blade hint
+    op_sec: `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <path d="M6,22 L30,4 L54,22 L58,76 Q30,83 2,76 Z" fill="#080000"/>
+      <path d="M10,24 L30,7 L50,24 L54,74 Q30,80 6,74 Z" fill="#100000" opacity="0.65"/>
+      <path d="M10,24 L30,7 L50,24" fill="none" stroke="${color}" stroke-width="0.5" opacity="0.2"/>
+      <ellipse cx="30" cy="30" rx="13" ry="15" fill="#040000"/>
+      <ellipse cx="24" cy="28" rx="4" ry="2.2" fill="${color}"/>
+      <ellipse cx="36" cy="28" rx="4" ry="2.2" fill="${color}"/>
+      <ellipse cx="24" cy="28" rx="2.2" ry="1.1" fill="#fca5a5" opacity="0.75"/>
+      <ellipse cx="36" cy="28" rx="2.2" ry="1.1" fill="#fca5a5" opacity="0.75"/>
+      <ellipse cx="24" cy="28" rx="5.5" ry="3" fill="${color}" opacity="0.12"/>
+      <ellipse cx="36" cy="28" rx="5.5" ry="3" fill="${color}" opacity="0.12"/>
+      <path d="M46,40 L51,73" stroke="${color}" stroke-width="1.2" opacity="0.38"/>
+      <line x1="46" y1="40" x2="43" y2="44" stroke="${color}" stroke-width="0.8" opacity="0.28"/>
+      <path d="M6,66 Q9,76 11,79" fill="none" stroke="#100000" stroke-width="2"/>
+      <path d="M54,66 Q51,76 49,79" fill="none" stroke="#100000" stroke-width="2"/>
+    </svg>`,
+  };
+  // Fallback: large symbolic portrait
+  const fallback = _COMMANDER_DEF[key];
+  const fc = fallback?.color || color;
+  return portraits[key] || `<svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="60" height="80" fill="#0a0a0a"/><circle cx="30" cy="40" r="22" fill="none" stroke="${fc}" stroke-width="2" opacity="0.5"/><circle cx="30" cy="40" r="8" fill="${fc}" opacity="0.3"/></svg>`;
+}
+
 
 async function loadStatsTab() {
   const el = document.getElementById('stats-content');
@@ -3982,7 +4230,7 @@ function openCharSheet(key) {
   el.innerHTML = `
     <div class="cs-handle"></div>
     <div class="cs-header">
-      <div class="cs-portrait" style="filter:drop-shadow(0 0 16px ${char.color});">${commanderPortraitSVG(key, char.color, 60)}</div>
+      <div class="cs-portrait" style="filter:drop-shadow(0 0 16px ${char.color});">${commanderFullPortraitSVG(key, char.color)}</div>
       <div class="cs-meta">
         <div class="cs-name" style="color:${char.color};">${char.name}</div>
         <div style="font-size:8px;color:${char.color};opacity:0.7;letter-spacing:0.07em;margin-bottom:2px;text-transform:uppercase;">${escHtml(char.order||'')}</div>
@@ -4042,6 +4290,7 @@ checkSetup();
   <div id="rankup-label" class="rankup-label">⚔ RANK UP</div>
   <div id="rankup-division-name" class="rankup-division-name"></div>
   <div id="rankup-rank-text" class="rankup-rank-text"></div>
+  <div id="rankup-quote" class="rankup-quote"></div>
   <div class="rankup-tap-hint">TAP TO CONTINUE</div>
 </div>
 
