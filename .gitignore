@@ -76,3 +76,4 @@ state/trade-log.json
 state/applications.json
 state/intake-temp.json
 .env
+state/mobile-pin.json
