@@ -879,34 +879,79 @@
             <button id="an-btn-stop" onclick="agentNetworkStop()" style="font-size:6px;padding:1px 4px;background:var(--red);color:var(--base);border:none;border-radius:2px;cursor:pointer;display:none;">■ STOP</button>
           </span>
         </div>
-        <div class="div-row">CYCLE: <strong id="an-cycle">—</strong> &nbsp;|&nbsp; RISK: <strong id="an-risk">1.0x</strong> &nbsp;|&nbsp; <span id="an-age" style="font-size:7px;color:var(--subtext);">—</span></div>
-        <div class="div-row">STRATEGY: <strong id="an-strategy" style="color:var(--teal);font-size:7px;">—</strong></div>
-        <div class="div-row">BACKTEST: <strong id="an-winrate">—</strong>% WR &nbsp;|&nbsp; <strong id="an-sharpe">—</strong> SHARPE</div>
-        <!-- 4 agent-network agents (read-only) -->
-        <div style="margin-top:5px;border-top:1px solid var(--border);padding-top:4px;">
-          <div class="agent-row" style="opacity:0.8;">
-            <span class="agent-name" style="color:var(--subtext);">strategy-builder</span>
-            <span id="an-agent-builder" style="font-size:7px;color:var(--subtext);">—</span>
-            <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+        <!-- Page navigation dots -->
+        <div id="an-page-nav" style="display:flex;gap:4px;justify-content:center;margin-bottom:4px;">
+          <span class="an-dot" onclick="anSetPage(0)" style="cursor:pointer;width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;" title="Overview"></span>
+          <span class="an-dot" onclick="anSetPage(1)" style="cursor:pointer;width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;" title="Strategy Metrics"></span>
+          <span class="an-dot" onclick="anSetPage(2)" style="cursor:pointer;width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;" title="Trade History"></span>
+          <span class="an-dot" onclick="anSetPage(3)" style="cursor:pointer;width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;" title="Agents &amp; Reviews"></span>
+        </div>
+
+        <!-- Page 0: Overview -->
+        <div id="an-page-0">
+          <div class="div-row">CYCLE: <strong id="an-cycle">—</strong> &nbsp;|&nbsp; RISK: <strong id="an-risk">1.0x</strong> &nbsp;|&nbsp; <span id="an-age" style="font-size:7px;color:var(--subtext);">—</span></div>
+          <div class="div-row">STRATEGY: <strong id="an-strategy" style="color:var(--teal);font-size:7px;">—</strong></div>
+          <div class="div-row">
+            WIN: <strong id="an-winrate">—</strong>% &nbsp;|&nbsp;
+            SHARPE: <strong id="an-sharpe">—</strong> &nbsp;|&nbsp;
+            RR: <strong id="an-rr" style="color:var(--green);">—</strong>
           </div>
-          <div class="agent-row" style="opacity:0.8;">
-            <span class="agent-name" style="color:var(--subtext);">backtester</span>
-            <span id="an-agent-backtester" style="font-size:7px;color:var(--subtext);">—</span>
-            <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
-          </div>
-          <div class="agent-row" style="opacity:0.8;">
-            <span class="agent-name" style="color:var(--subtext);">trader</span>
-            <span id="an-agent-trader" style="font-size:7px;color:var(--subtext);">—</span>
-            <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
-          </div>
-          <div class="agent-row" style="opacity:0.8;">
-            <span class="agent-name" style="color:var(--subtext);">trading-coach</span>
-            <span id="an-agent-coach" style="font-size:7px;color:var(--subtext);">—</span>
-            <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+          <div class="div-row">
+            AVG WIN: <strong id="an-avg-win-r" style="color:var(--green);">—</strong>R &nbsp;|&nbsp;
+            AVG LOSS: <strong id="an-avg-loss-r" style="color:var(--red);">—</strong>R &nbsp;|&nbsp;
+            EV: <strong id="an-ev-r">—</strong>R
           </div>
         </div>
-        <div style="margin-top:4px;font-size:7px;color:var(--subtext);">RECENT TRADES</div>
-        <div id="an-trades" style="font-size:7px;color:var(--text);max-height:60px;overflow-y:auto;"></div>
+
+        <!-- Page 1: Strategy Metrics -->
+        <div id="an-page-1" style="display:none;">
+          <div class="div-row">SORTINO: <strong id="an-sortino">—</strong> &nbsp;|&nbsp; MAX DD: <strong id="an-maxdd" style="color:var(--red);">—</strong>%</div>
+          <div class="div-row">PROFIT FACTOR: <strong id="an-pf">—</strong> &nbsp;|&nbsp; TRADES: <strong id="an-trades-count">—</strong></div>
+          <div class="div-row">OOS SHARPE: <strong id="an-oos-sharpe">—</strong> &nbsp;|&nbsp; OOS WR: <strong id="an-oos-wr">—</strong>%</div>
+          <div class="div-row" style="font-size:6px;color:var(--subtext);">THEORETICAL EV: <strong id="an-theo-ev">—</strong>R &nbsp;|&nbsp; EMPIRICAL EV: <strong id="an-emp-ev">—</strong>R</div>
+          <div class="div-row">TOTAL TRADES LOGGED: <strong id="an-total-trades">—</strong></div>
+        </div>
+
+        <!-- Page 2: Trade History -->
+        <div id="an-page-2" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+            <span style="font-size:7px;color:var(--subtext);">TRADE HISTORY</span>
+            <span style="font-size:6px;color:var(--subtext);" id="an-trade-page-info">page 1</span>
+          </div>
+          <div style="display:flex;gap:3px;margin-bottom:3px;">
+            <button onclick="anTradePrev()" style="font-size:6px;padding:1px 3px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);border-radius:2px;cursor:pointer;">&#9664;</button>
+            <button onclick="anTradeNext()" style="font-size:6px;padding:1px 3px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);border-radius:2px;cursor:pointer;">&#9654;</button>
+          </div>
+          <div id="an-trades" style="font-size:7px;color:var(--text);max-height:90px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Page 3: Agents & Weekly Reviews -->
+        <div id="an-page-3" style="display:none;">
+          <div style="border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:4px;">
+            <div class="agent-row" style="opacity:0.8;">
+              <span class="agent-name" style="color:var(--subtext);">strategy-builder</span>
+              <span id="an-agent-builder" style="font-size:7px;color:var(--subtext);">—</span>
+              <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+            </div>
+            <div class="agent-row" style="opacity:0.8;">
+              <span class="agent-name" style="color:var(--subtext);">backtester</span>
+              <span id="an-agent-backtester" style="font-size:7px;color:var(--subtext);">—</span>
+              <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+            </div>
+            <div class="agent-row" style="opacity:0.8;">
+              <span class="agent-name" style="color:var(--subtext);">trader</span>
+              <span id="an-agent-trader" style="font-size:7px;color:var(--subtext);">—</span>
+              <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+            </div>
+            <div class="agent-row" style="opacity:0.8;">
+              <span class="agent-name" style="color:var(--subtext);">trading-coach</span>
+              <span id="an-agent-coach" style="font-size:7px;color:var(--subtext);">—</span>
+              <span class="tag" style="font-size:5px;background:var(--surface);color:var(--subtext);border:1px solid var(--border);">AUTO</span>
+            </div>
+          </div>
+          <div style="font-size:7px;color:var(--subtext);margin-bottom:2px;">WEEKLY REVIEWS</div>
+          <div id="an-weekly" style="font-size:7px;color:var(--text);max-height:60px;overflow-y:auto;"></div>
+        </div>
       </div>
       <button class="run-btn" id="run-trading" onclick="runSkill('trading-report','trading')">▶ RUN</button>
       <div class="agent-list">
@@ -1312,6 +1357,53 @@ Hit ⚡ GENERATE NOW to compile immediately.
       } catch(e) {}
     }
 
+    // ── Agent-network page navigation ──
+    let _anPage = 0;
+    let _anTradePage = 0;
+    let _anAllTrades = [];
+    const AN_TRADES_PER_PAGE = 8;
+
+    function anSetPage(n) {
+      _anPage = n;
+      [0,1,2,3].forEach(i => {
+        const el = document.getElementById('an-page-'+i);
+        if (el) el.style.display = i === n ? '' : 'none';
+      });
+      document.querySelectorAll('.an-dot').forEach((d,i) => {
+        d.style.background = i === n ? 'var(--teal)' : 'var(--border)';
+      });
+    }
+
+    function anRenderTrades() {
+      const start = _anTradePage * AN_TRADES_PER_PAGE;
+      const page = _anAllTrades.slice(start, start + AN_TRADES_PER_PAGE);
+      const total = Math.ceil(_anAllTrades.length / AN_TRADES_PER_PAGE);
+      const infoEl = document.getElementById('an-trade-page-info');
+      if (infoEl) infoEl.textContent = `page ${_anTradePage+1}/${total||1} (${_anAllTrades.length} total)`;
+      const el = document.getElementById('an-trades');
+      if (!el) return;
+      el.innerHTML = page.length ? page.map(t => {
+        const pnl = t.pnl != null ? (t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2) : '—';
+        const r = t.r_multiple != null ? (t.r_multiple >= 0 ? '+' : '') + t.r_multiple.toFixed(2) + 'R' : '';
+        const color = t.pnl != null && t.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<div style="border-bottom:1px solid var(--border);padding:1px 0;">` +
+          `<strong>${t.symbol||'?'}</strong> ` +
+          `<span style="color:${color};">${pnl}</span> ` +
+          `<span style="color:${color};">${r}</span> ` +
+          `<span style="color:var(--subtext);">${t.date||''}</span>` +
+          `</div>`;
+      }).join('') : '<div style="color:var(--subtext);">No trades yet</div>';
+    }
+
+    function anTradePrev() {
+      if (_anTradePage > 0) { _anTradePage--; anRenderTrades(); }
+    }
+
+    function anTradeNext() {
+      const total = Math.ceil(_anAllTrades.length / AN_TRADES_PER_PAGE);
+      if (_anTradePage < total - 1) { _anTradePage++; anRenderTrades(); }
+    }
+
     async function loadTradingCycle() {
       await loadTradingCycleStatus();
       try {
@@ -1329,6 +1421,23 @@ Hit ⚡ GENERATE NOW to compile immediately.
         document.getElementById('an-winrate').textContent  = d.active_strategy?.win_rate ?? '—';
         document.getElementById('an-sharpe').textContent   = d.active_strategy?.sharpe ?? '—';
 
+        // Page 0 — RR / EV row
+        document.getElementById('an-rr').textContent       = d.active_strategy?.rr_display || (d.active_strategy?.rr_ratio ? d.active_strategy.rr_ratio.toFixed(2)+':1' : '—');
+        document.getElementById('an-avg-win-r').textContent  = d.active_strategy?.avg_win_r ? d.active_strategy.avg_win_r.toFixed(2) : '—';
+        document.getElementById('an-avg-loss-r').textContent = d.active_strategy?.avg_loss_r ? d.active_strategy.avg_loss_r.toFixed(2) : '—';
+        document.getElementById('an-ev-r').textContent       = d.active_strategy?.empirical_ev_r ? d.active_strategy.empirical_ev_r.toFixed(3) : '—';
+
+        // Page 1 — Strategy Metrics
+        document.getElementById('an-sortino').textContent     = d.active_strategy?.sortino ? d.active_strategy.sortino.toFixed(3) : '—';
+        document.getElementById('an-maxdd').textContent       = d.active_strategy?.max_drawdown_pct ? d.active_strategy.max_drawdown_pct.toFixed(2) : '—';
+        document.getElementById('an-pf').textContent          = d.active_strategy?.profit_factor ? d.active_strategy.profit_factor.toFixed(3) : '—';
+        document.getElementById('an-trades-count').textContent = d.active_strategy?.trade_count || '—';
+        document.getElementById('an-oos-sharpe').textContent  = d.active_strategy?.oos_sharpe ? d.active_strategy.oos_sharpe.toFixed(3) : '—';
+        document.getElementById('an-oos-wr').textContent      = d.active_strategy?.oos_win_rate || '—';
+        document.getElementById('an-theo-ev').textContent     = d.active_strategy?.theoretical_ev_r ? d.active_strategy.theoretical_ev_r.toFixed(3) : '—';
+        document.getElementById('an-emp-ev').textContent      = d.active_strategy?.empirical_ev_r ? d.active_strategy.empirical_ev_r.toFixed(3) : '—';
+        document.getElementById('an-total-trades').textContent = d.performance_summary ? d.performance_summary.total_trades : '—';
+
         // Staleness
         const staleBadge = document.getElementById('an-stale-badge');
         const ageEl      = document.getElementById('an-age');
@@ -1342,7 +1451,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
           ageEl.style.color = 'var(--subtext)';
         }
 
-        // 4 agent-network agents (read-only status)
+        // Page 3 — 4 agent-network agents (read-only status)
         if (d.agents) {
           document.getElementById('an-agent-builder').textContent   = d.agents.strategy_builder?.last_output || '—';
           document.getElementById('an-agent-backtester').textContent = d.agents.backtester?.last_output || '—';
@@ -1350,21 +1459,24 @@ Hit ⚡ GENERATE NOW to compile immediately.
           document.getElementById('an-agent-coach').textContent     = d.agents.trading_coach?.last_output || '—';
         }
 
-        // Recent trades
-        const tradesEl = document.getElementById('an-trades');
-        if (d.recent_trades && d.recent_trades.length) {
-          tradesEl.innerHTML = d.recent_trades.slice(0,5).map(t => {
-            const pnl = t.pnl != null ? (t.pnl >= 0 ? `+$${t.pnl.toFixed(0)}` : `-$${Math.abs(t.pnl).toFixed(0)}`) : '—';
-            const col = t.pnl >= 0 ? 'var(--green)' : 'var(--red)';
-            return `<div style="display:flex;justify-content:space-between;padding:1px 0;border-bottom:1px solid var(--border);">
-              <span>${t.symbol || '—'}</span>
-              <span style="color:${col};">${pnl}</span>
-              <span style="color:var(--subtext);">${t.date || ''}</span>
-            </div>`;
-          }).join('');
-        } else {
-          tradesEl.textContent = 'No recent trades';
+        // Page 3 — Weekly reviews
+        const weeklyEl = document.getElementById('an-weekly');
+        if (weeklyEl) {
+          const reviews = d.weekly_reviews || [];
+          weeklyEl.innerHTML = reviews.length ? reviews.slice(-4).reverse().map(w =>
+            `<div style="border-bottom:1px solid var(--border);padding:1px 0;">` +
+            `<span style="color:var(--subtext);">${w.week||'?'}</span> ` +
+            `<span class="tag tag-${w.health_tier==='green'?'green':w.health_tier==='yellow'?'yellow':'red'}" style="font-size:5px;">${(w.health_tier||'?').toUpperCase()}</span> ` +
+            `PnL: <strong>${w.pnl_pct!=null?w.pnl_pct.toFixed(2)+'%':'—'}</strong> ` +
+            `WR: ${w.win_rate!=null?Math.round(w.win_rate*100)+'%':'—'}` +
+            `</div>`
+          ).join('') : '<div style="color:var(--subtext);">No reviews yet</div>';
         }
+
+        // Page 2 — Trade history (paginated)
+        _anAllTrades = d.recent_trades || [];
+        _anTradePage = 0;
+        anRenderTrades();
       } catch(e) {}
     }
 

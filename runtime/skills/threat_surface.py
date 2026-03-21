@@ -62,6 +62,20 @@ def run() -> dict:
         f"RUNNING PROCESSES:\n{surface['running_processes'][:1500]}"
     )
 
+    # Known-safe ports and tasks for this machine — suppress false positives
+    whitelist_note = (
+        "KNOWN-SAFE WHITELIST for this machine — do NOT flag these:\n"
+        "PORTS: 17500 (Dropbox LAN sync), 27036 (Steam Remote Play), "
+        "27015-27030 (Steam game servers), 1900 (SSDP/UPnP), "
+        "5353 (mDNS), 7680 (Windows Update delivery), "
+        "49152-65535 (Windows ephemeral/RPC ports — normal), "
+        "5040 (Windows runtime broker), 3702 (WSD), 5357 (WSDAPI).\n"
+        "TASKS: AMDRyzenMasterSDKTask / cpumetricsserver.exe (AMD Adrenalin GPU software — legitimate), "
+        "any task under AMD\\, NVIDIA\\, Intel\\, Microsoft\\, or standard vendor paths.\n"
+        "PROCESSES: Steam.exe, Dropbox.exe, Discord.exe, chrome.exe, node.exe, python.exe, "
+        "ollama.exe, pm2, cpumetricsserver.exe, RadeonSoftware.exe — all expected.\n"
+    )
+
     messages = [
         {
             "role": "system",
@@ -70,7 +84,8 @@ def run() -> dict:
                 "Review Windows 11 system data from a personal gaming/dev machine. "
                 "Flag anything suspicious: unexpected listening ports, scheduled tasks "
                 "that look like persistence mechanisms, or unknown processes. "
-                "Ignore standard Windows system processes and known gaming/dev tools. "
+                f"{whitelist_note}"
+                "Only flag items NOT on the whitelist that are genuinely anomalous. "
                 'Return JSON: {"summary": "1-2 sentences", "anomalies": ['
                 '{"type": "port|task|process", "detail": "", '
                 '"severity": "HIGH|MEDIUM|LOW", "recommendation": ""}], '

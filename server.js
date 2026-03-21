@@ -407,8 +407,8 @@ function handleGetTradingCycle(res) {
     if (!cycleData) return jsonOk(res, { available: false });
 
     const strat = cycleData.active_strategy || {};
-    const recentTrades = (cycleData.trade_log || []).slice(-10).reverse();
-    const weekly = (cycleData.weekly_reviews || []).slice(-3);
+    const recentTrades = (cycleData.trade_log || []).slice(-50).reverse();
+    const weekly = (cycleData.weekly_reviews || []);
     const lastWeekly = weekly[weekly.length - 1] || {};
 
     // Staleness check
@@ -432,10 +432,22 @@ function handleGetTradingCycle(res) {
       hours_since_update: Math.round(hoursSince * 10) / 10,
       last_modified: new Date(mtimeMs).toISOString(),
       active_strategy: {
-        name:      strat.strategy_name || 'None',
-        sharpe:    strat.sharpe,
-        win_rate:  strat.win_rate ? Math.round(strat.win_rate * 100) : null,
-        avg_r:     strat.avg_r,
+        name:           strat.strategy_name || 'None',
+        sharpe:         strat.sharpe,
+        sortino:        strat.sortino,
+        win_rate:       strat.win_rate ? Math.round(strat.win_rate * 100) : null,
+        avg_r:          strat.avg_r,
+        avg_win_r:      strat.avg_win_r,
+        avg_loss_r:     strat.avg_loss_r,
+        rr_ratio:       strat.rr_ratio,
+        rr_display:     strat.rr_display,
+        profit_factor:  strat.profit_factor,
+        max_drawdown_pct: strat.max_drawdown_pct,
+        trade_count:    strat.trade_count,
+        oos_sharpe:     strat.oos_sharpe,
+        oos_win_rate:   strat.oos_win_rate ? Math.round(strat.oos_win_rate * 100) : null,
+        theoretical_ev_r: strat.theoretical_ev_r,
+        empirical_ev_r:   strat.empirical_ev_r,
       },
       agents: {
         strategy_builder: { role: 'Generates 100 strategies/cycle',      last_output: `Cycle ${cycleData.cycle_number}` },
@@ -447,10 +459,20 @@ function handleGetTradingCycle(res) {
         symbol:     t.symbol,
         pnl:        t.pnl,
         r_multiple: t.r_multiple,
+        result:     t.result,
         reason:     t.reason,
+        entry_price: t.entry_price,
+        exit_price:  t.exit_price,
+        risk_usd:    t.risk_usd,
         date: t.timestamp ? new Date(t.timestamp).toISOString().slice(0,10) : null,
       })),
       weekly_reviews: weekly,
+      performance_summary: {
+        total_trades: (cycleData.trade_log || []).length,
+        cycle_number: cycleData.cycle_number,
+        asset_key:    cycleData.asset_key,
+        risk_multiplier: cycleData.risk_multiplier,
+      },
     });
   } catch(e) {
     jsonOk(res, { available: false, error: e.message });
