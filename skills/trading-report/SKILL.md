@@ -1,26 +1,36 @@
 ---
 name: trading-report
-description: Read today's closed trades from virtual_account.json, calculate daily session stats, save to state/trade-log.json, and compile an executive packet for the trading division chief. Run by division-chief-trading at 18:00 daily.
+description: Read today's closed trades from virtual_account.json (or live broker state if available), calculate daily session stats, append to trade-log.json, and compile an executive packet for the trading division chief. Run by division-chief-trading at 18:00 daily.
 schedule: daily 18:00
 division: trading
 runner: division-chief-trading
 ---
 
 ## Trigger
-Called by division-chief-trading at 18:00 daily. Also runs on manual invocation.
+Called by division-chief-trading at 18:00 daily, after virtual-trader completes.
 Do NOT call Claude directly — this skill runs under the local GGUF division orchestrator.
 
 ## Prerequisites
-- If state file is missing: return `status: partial` packet with note "trading system not yet activated" — do not send Telegram
-- If state file exists but has no trades for today: return packet noting "no trades logged today"
+- `virtual_account.json` must exist at path listed below (written by virtual-trader earlier in the sequence)
+- If ALL state files are missing: return `status: partial` packet with note "trading system not yet activated" — do not send Telegram
+- If state files exist but are empty or have no trades for today: return packet noting "no trades logged today"
 
 ## Data Sources
 
-### Primary: Virtual paper trading
+### Priority 1: Live broker (future OANDA or equivalent)
+```
+C:\Users\Tyler\agent-network\state\oanda_demo_state.json
+```
+Only used when a live broker integration is configured. Check existence first.
+
+### Priority 2: Dry run mode (current default)
 ```
 C:\Users\Tyler\agent-network\state\virtual_account.json
 ```
-Contains a `trade_log` array. Each record:
+Written by virtual-trader at 18:00 before this skill runs.
+Contains `trade_log` array and `open_positions` array.
+
+Each trade_log record:
 ```json
 {
   "order_id": "",
@@ -38,16 +48,17 @@ Contains a `trade_log` array. Each record:
 }
 ```
 
-**Which to use:** `virtual_account.json` is the sole data source. If a live CFD broker
-integration is added in future, it will be checked first and virtual_account used as fallback.
+**Which to use:** Check if `oanda_demo_state.json` exists and has entries for today. If yes, use it (source: `oanda_demo`).
+Otherwise fall back to `virtual_account.json` (source: `dry_run`).
 
 ## Steps
 
 1. **Load state file**
-   - Read appropriate state file (live or dry run)
+   - Read appropriate state file per priority order above
    - Parse `trade_log` array
    - Filter to records where `timestamp` date matches today (YYYY-MM-DD)
-   - Separate into entry records and exit records
+   - Separate into entry records (`type: entry`) and exit records (`type: exit`)
+   - Also read `open_positions` array for count of currently held positions
 
 2. **Pair trades**
    Match each exit to its entry by `strategy_id` + `symbol` (closest prior entry timestamp).
@@ -81,15 +92,18 @@ integration is added in future, it will be checked first and virtual_account use
    - Best trade: symbol + r_multiple (highest)
    - Worst trade: symbol + r_multiple (lowest)
    - Total PnL: sum of all `pnl` values
+   - Open positions count: from `open_positions` array length
 
 4. **Save to state**
-   Read `state/trade-log.json`. Append today's session:
+   Read `C:\Users\Tyler\agent-network\state\trade-log.json` (create if missing).
+   Append today's session:
    ```json
    {
      "date": "YYYY-MM-DD",
      "logged_at": "<ISO timestamp>",
-     "source": "virtual_paper | cfd_demo",
+     "source": "oanda_demo | dry_run",
      "trades": [],
+     "open_positions_count": 0,
      "stats": {
        "total_trades": 0,
        "wins": 0,
@@ -117,14 +131,17 @@ trading-report contributes to division-chief-trading packet:
 {
   "metrics": {
     "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
     "win_rate": null,
     "avg_r": null,
     "total_pnl": null,
     "best_r": null,
     "worst_r": null,
-    "source": "virtual_paper | cfd_demo"
+    "open_positions_count": 0,
+    "source": "oanda_demo | dry_run"
   },
-  "summary": "Trades: {n} | W/L: {w}/{l} | Win Rate: {%} | Avg R: {r} | PnL: ${pnl}",
+  "summary": "Trades: {n} | W/L: {w}/{l} | Win Rate: {%} | Avg R: {r} | PnL: ${pnl} | Open: {o}",
   "artifact_refs": [{ "bundle_id": "trade-session-{date}", "location": "hot" }]
 }
 ```
@@ -134,8 +151,8 @@ Escalation triggers (set in division chief packet):
 - Single trade loss exceeds 2× expected max risk
 
 ## Error Handling
-- Both state files missing: return `status: partial`, note "trading system not yet activated"
-- No trades today: return `status: success`, metrics all zero, summary "No trades logged today"
-- All open positions, no exits: summary "No closed trades today. {N} positions still open"
+- All state files missing: return `status: partial`, note "trading system not yet activated"
+- No trades today but positions open: return `status: success`, summary "No closed trades today. {N} positions still open"
+- No trades and no positions: return `status: success`, summary "No trades logged today"
 - Telegram fallback (handled by J_Claw on packet receipt): save to `reports/trade-report-{date}.md`
 - Never fabricate or estimate trade data
