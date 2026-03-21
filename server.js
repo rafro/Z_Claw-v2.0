@@ -1491,6 +1491,9 @@ async function handleMobileChatCoding(body, res) {
       if (!line.trim()) continue;
       try {
         const evt = JSON.parse(line);
+        if (evt.type === 'stream_event' && evt.event?.type === 'content_block_start' && evt.event.content_block?.type === 'tool_use') {
+          res.write(`data: ${JSON.stringify({ type: 'thinking', tool: evt.event.content_block.name })}\n\n`);
+        }
         if (evt.type === 'stream_event' && evt.event?.type === 'content_block_delta' && evt.event.delta?.type === 'text_delta') {
           const text = evt.event.delta.text;
           fullResponse += text;

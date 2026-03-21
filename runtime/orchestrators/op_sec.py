@@ -191,9 +191,11 @@ def run_privacy_scan() -> dict:
 
 def run_security_scan() -> dict:
     log.info("=== OP-Sec Division: security-scan run ===")
-    result     = security_scan.run()
-    findings   = result.get("findings", [])
-    high_count = sum(1 for f in findings if f.get("severity") == "HIGH")
+    result      = security_scan.run()
+    findings    = result.get("findings", [])
+    fp_count    = result.get("false_positive_count", 0)
+    real        = [f for f in findings if not f.get("false_positive")]
+    high_count  = sum(1 for f in real if f.get("severity") == "HIGH")
     action_items = [
         packet.action_item(
             f"[{f.get('severity','?')}] {f.get('file','?')}:{f.get('line','?')} — "
@@ -201,7 +203,7 @@ def run_security_scan() -> dict:
             priority="high" if f.get("severity") == "HIGH" else "normal",
             requires_matthew=f.get("severity") == "HIGH",
         )
-        for f in findings[:8]
+        for f in real[:8]
     ]
     pkt = packet.build(
         division="op-sec",
@@ -211,11 +213,16 @@ def run_security_scan() -> dict:
         action_items=action_items,
         escalate=result.get("escalate", False),
         escalation_reason=result.get("escalation_reason", ""),
-        metrics={"findings": len(findings), "high": high_count},
+        metrics={
+            "findings":         len(real),
+            "high":             high_count,
+            "false_positives":  fp_count,
+            "total_scanned":    len(findings),
+        },
     )
     packet.write(pkt)
     grant_skill_xp("security-scan")
-    log.info("Security-scan packet written. High=%s", high_count)
+    log.info("Security-scan packet written. Real=%s High=%s FalsePositives=%s", len(real), high_count, fp_count)
     return pkt
 
 

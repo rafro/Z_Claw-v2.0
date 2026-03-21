@@ -518,16 +518,11 @@
     .chat-msg.assistant .chat-bubble { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
     .chat-msg.assistant .chat-bubble code { background: var(--overlay); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; }
     .chat-sender { font-size: 10px; color: var(--subtext); margin-bottom: 3px; letter-spacing: 0.04em; }
-    .chat-typing { display: flex; gap: 4px; padding: 10px 14px; }
-    .chat-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--subtext); animation: typing-dot 1.2s ease-in-out infinite; }
-    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-    .chat-thinking { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
-    .chat-thinking-icon { font-size: 17px; display: inline-block; animation: thinking-pulse 1.8s ease-in-out infinite; }
-    .chat-thinking-text { font-size: 13px; color: var(--subtext); animation: thinking-fade 1.8s ease-in-out infinite; }
-    @keyframes thinking-pulse { 0%,100%{transform:scale(1) rotate(-5deg);opacity:0.65} 50%{transform:scale(1.25) rotate(5deg);opacity:1} }
-    @keyframes thinking-fade { 0%,100%{opacity:0.45} 50%{opacity:1} }
-    @keyframes typing-dot { 0%,80%,100%{opacity:.3;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+    .chat-loading-bubble { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+    .chat-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--purple); animation: spin 0.75s linear infinite; flex-shrink: 0; }
+    .chat-spinner.blue { border-top-color: var(--blue); }
+    .chat-thinking-text { font-size: 13px; color: var(--subtext); }
+    @keyframes spin { to { transform: rotate(360deg); } }
     #screen-chat.active { display: flex !important; flex-direction: column; padding: 0; }
 
     /* ── Division detail overlay ── */
@@ -2240,6 +2235,7 @@ async function loadOps(silent = false) {
     const breachPill = breachStatus === 'skipped' ? 'pill-grey' : breachStatus === 'ok' ? 'pill-green' : 'pill-red';
     const secFindings = ssM.findings ?? 0;
     const secHigh     = ssM.high ?? 0;
+    const secFP       = ssM.false_positives ?? 0;
     html += `<div class="info-row">
       <span class="info-lbl">Breach Check</span>
       <span class="pill ${breachPill}">${escHtml(breachStatus.toUpperCase())}</span>
@@ -2248,9 +2244,15 @@ async function loadOps(silent = false) {
       html += `<div class="info-row"><span class="info-lbl">Emails Checked</span><span class="info-val">${bcM.emails_checked}</span></div>`;
     }
     html += `<div class="info-row">
-      <span class="info-lbl">Security Scan Findings</span>
-      <span class="info-val" ${secFindings > 0 ? 'style="color:var(--yellow)"' : ''}>${secFindings} (${secHigh} high)</span>
+      <span class="info-lbl">Security Findings</span>
+      <span class="info-val" ${secFindings > 0 ? 'style="color:var(--yellow)"' : 'style="color:var(--green)"'}>${secFindings} real${secHigh > 0 ? ` (${secHigh} high)` : ''}</span>
     </div>`;
+    if (secFP > 0) {
+      html += `<div class="info-row">
+        <span class="info-lbl" style="color:var(--subtext);">False Positives</span>
+        <span style="font-size:11px;color:var(--subtext);background:var(--overlay);padding:2px 8px;border-radius:10px;">${secFP} auto-suppressed</span>
+      </div>`;
+    }
     if (ss.summary) html += `<div style="font-size:12px;color:var(--subtext);margin-top:6px;line-height:1.4;">${escHtml(ss.summary)}</div>`;
     html += '</div>';
 
@@ -2820,11 +2822,8 @@ function showTypingIndicator() {
   div.id = 'chat-typing';
   const isCoding = _chatMode === 'coding';
   const senderName = isCoding ? 'Claude' : 'J_Claw';
-  const accentStyle = isCoding ? 'border-color:var(--blue)' : '';
-  const innerHtml = isCoding
-    ? `<div class="chat-bubble chat-thinking" style="${accentStyle}"><span class="chat-thinking-icon">🧠</span><span class="chat-thinking-text">Thinking…</span></div>`
-    : `<div class="chat-bubble chat-typing"><span></span><span></span><span></span></div>`;
-  div.innerHTML = `<div class="chat-sender">${senderName}</div>${innerHtml}`;
+  const spinnerClass = isCoding ? 'chat-spinner blue' : 'chat-spinner';
+  div.innerHTML = `<div class="chat-sender">${senderName}</div><div class="chat-bubble chat-loading-bubble"><div class="${spinnerClass}"></div><span class="chat-thinking-text">Thinking…</span></div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
