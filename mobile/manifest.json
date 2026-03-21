@@ -1,0 +1,12 @@
+{
+  "name": "Mission Control",
+  "short_name": "MC",
+  "description": "OpenClaw Mission Control Mobile — secure remote operator surface",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e1e2e",
+  "background_color": "#1e1e2e",
+  "start_url": "/mobile",
+  "scope": "/mobile",
+  "icons": []
+}

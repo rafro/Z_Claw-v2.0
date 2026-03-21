@@ -6,6 +6,7 @@ const https  = require('https');
 const fs     = require('fs');
 const path   = require('path');
 const url    = require('url');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const cron   = require('node-cron');
 
@@ -923,6 +924,309 @@ function jsonError(res, code, msg) {
   res.end(JSON.stringify({ error: msg }));
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MOBILE SECURITY LAYER ─────────────────────────────────────────────────────
+// Auth, challenge/response, policy enforcement, and audit logging for the
+// mobile extension. These functions are only called from /mobile/api/* routes.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Actions the mobile client is allowed to perform (Operator tier).
+// Admin-only actions (edit_prompt, write_memory, modify_SOUL, etc.) are
+// intentionally absent — they are never reachable from mobile.
+const MOBILE_ALLOWED_ACTIONS = new Set([
+  'approve_task',   // approve a pending task in approval-queue.json
+  'reject_task',    // reject a pending task
+  'ack_alert',      // acknowledge/dismiss an escalation alert
+  'pause_trading',  // pause the trading cycle via zenith orchestrator
+  'resume_trading', // resume the trading cycle
+  'pause_division', // disable a division agent via agent-overrides.json
+  'resume_division',// re-enable a division agent
+]);
+
+// In-memory challenge store: id → { action, expires, used }
+// Challenges expire in 30 seconds and are single-use.
+const _mobileChallenges = new Map();
+
+function issueMobileChallenge(action) {
+  const id      = crypto.randomBytes(16).toString('hex');
+  const expires = Date.now() + 30_000;
+  _mobileChallenges.set(id, { action, expires, used: false });
+  // Clean up expired entries (avoid unbounded growth)
+  for (const [k, v] of _mobileChallenges) {
+    if (v.expires < Date.now()) _mobileChallenges.delete(k);
+  }
+  return { challenge_id: id, expires_in: 30, action };
+}
+
+function consumeMobileChallenge(id, action) {
+  const ch = _mobileChallenges.get(id);
+  if (!ch)       return { ok: false, reason: 'Unknown or expired challenge' };
+  if (ch.used)   return { ok: false, reason: 'Challenge already used' };
+  if (ch.expires < Date.now()) return { ok: false, reason: 'Challenge expired (30s window)' };
+  if (ch.action !== action)    return { ok: false, reason: `Challenge is for "${ch.action}", not "${action}"` };
+  ch.used = true;
+  return { ok: true };
+}
+
+function mobileAuditLog(entry) {
+  try {
+    const logDir  = path.join(ROOT, 'logs');
+    const logFile = path.join(logDir, 'mobile-audit.jsonl');
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const line = JSON.stringify({
+      timestamp:    new Date().toISOString(),
+      device_class: 'mobile',
+      ...entry,
+    }) + '\n';
+    fs.appendFileSync(logFile, line);
+  } catch(e) {
+    // Audit log write failure is non-fatal — log to stderr only
+    process.stderr.write('[mobile-audit] write failed: ' + e.message + '\n');
+  }
+}
+
+// ── Mobile action dispatcher ──────────────────────────────────────────────────
+async function handleMobileAction(body, req, res) {
+  const action     = (body.action || '').trim();
+  const challengeId = (body.challenge_id || '').trim();
+  const targetId   = (body.target_id || '').trim();
+  const division   = (body.division  || '').trim();
+  const clientIP   = req.socket.remoteAddress || 'unknown';
+
+  // 1. Validate action is on the allowed list
+  if (!MOBILE_ALLOWED_ACTIONS.has(action)) {
+    mobileAuditLog({ action, actor: 'mobile-operator', target: targetId, result: 'denied', reason: 'action not on mobile allowlist', ip: clientIP });
+    return jsonError(res, 403, `Action "${action}" is not permitted from mobile. Admin-level actions require desktop access.`);
+  }
+
+  // 2. Validate and consume the challenge (prevents replay attacks)
+  const ch = consumeMobileChallenge(challengeId, action);
+  if (!ch.ok) {
+    mobileAuditLog({ action, actor: 'mobile-operator', target: targetId, result: 'denied', reason: ch.reason, ip: clientIP });
+    return jsonError(res, 403, ch.reason);
+  }
+
+  // 3. Execute the action and audit the result
+  try {
+    let result;
+    switch (action) {
+      case 'approve_task':
+        result = await mobileApproveTask(targetId, 'approve'); break;
+      case 'reject_task':
+        result = await mobileApproveTask(targetId, 'reject'); break;
+      case 'ack_alert':
+        result = mobileAckAlert(targetId, division); break;
+      case 'pause_trading':
+        result = await mobileTradingControl('stop'); break;
+      case 'resume_trading':
+        result = await mobileTradingControl('run'); break;
+      case 'pause_division':
+        result = mobileDivisionControl(division, false); break;
+      case 'resume_division':
+        result = mobileDivisionControl(division, true); break;
+      default:
+        result = { ok: false, message: 'Unhandled action' };
+    }
+    mobileAuditLog({ action, actor: 'mobile-operator', target: targetId || division, result: result.ok ? 'succeeded' : 'failed', reason: result.message || '', ip: clientIP });
+    return jsonOk(res, result);
+  } catch(e) {
+    mobileAuditLog({ action, actor: 'mobile-operator', target: targetId, result: 'error', reason: e.message, ip: clientIP });
+    return jsonError(res, 500, e.message);
+  }
+}
+
+function mobileApproveTask(approvalId, decision) {
+  return new Promise(resolve => {
+    try {
+      const af   = path.join(STATE_DIR, 'approval-queue.json');
+      const data = fs.existsSync(af) ? JSON.parse(fs.readFileSync(af, 'utf8')) : { approvals: [] };
+      const idx  = (data.approvals || []).findIndex(a => a.id === approvalId);
+      if (idx === -1) return resolve({ ok: false, message: `Approval ${approvalId} not found` });
+      data.approvals[idx].status      = decision === 'approve' ? 'approved' : 'rejected';
+      data.approvals[idx].actioned_at = new Date().toISOString();
+      data.approvals[idx].actioned_by = 'mobile-operator';
+      fs.writeFileSync(af, JSON.stringify(data, null, 2));
+      logActivity('SYS', `[MOBILE] Task ${approvalId} ${decision}d via mobile`, decision === 'approve' ? 'green' : 'red');
+      resolve({ ok: true, message: `Task ${decision}d` });
+    } catch(e) {
+      resolve({ ok: false, message: e.message });
+    }
+  });
+}
+
+function mobileAckAlert(alertId, division) {
+  // Alerts are ephemeral (derived from packets). Log the ack; dashboard
+  // suppresses ack'd alerts via the dismissedAlerts client-side set.
+  // Here we record the ack in the activity log so desktop also sees it.
+  logActivity(division || 'SYS', `[MOBILE] Alert ack'd: ${alertId}`, 'yellow');
+  return { ok: true, message: 'Alert acknowledged' };
+}
+
+async function mobileTradingControl(cmd) {
+  return new Promise(resolve => {
+    const endpoint = cmd === 'stop' ? '/stop' : '/run';
+    const payload  = cmd === 'run' ? JSON.stringify({ auto: true, cycles: 0 }) : null;
+    const zenithHost = '127.0.0.1';
+    const zenithPort = 8000;
+    const options = {
+      hostname: zenithHost,
+      port:     zenithPort,
+      path:     endpoint,
+      method:   payload ? 'POST' : 'POST',
+      headers:  payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {},
+    };
+    const r = http.request(options, resp => {
+      let body = '';
+      resp.on('data', c => { body += c; });
+      resp.on('end', () => {
+        logActivity('TRADING', `[MOBILE] Trading ${cmd} command sent`, 'yellow');
+        resolve({ ok: true, message: `Trading ${cmd} sent`, response: body.slice(0, 100) });
+      });
+    });
+    r.on('error', e => resolve({ ok: false, message: e.message }));
+    if (payload) r.write(payload);
+    r.end();
+  });
+}
+
+function mobileDivisionControl(division, enable) {
+  try {
+    if (!division) return { ok: false, message: 'division required' };
+    const overridesPath = path.join(STATE_DIR, 'agent-overrides.json');
+    const data = fs.existsSync(overridesPath) ? JSON.parse(fs.readFileSync(overridesPath, 'utf8')) : {};
+    if (!data[division]) data[division] = {};
+    // Disable/enable all agents in the division
+    data[division]._mobile_paused = !enable;
+    data[division]._mobile_actioned_at = new Date().toISOString();
+    fs.writeFileSync(overridesPath, JSON.stringify(data, null, 2));
+    logActivity(division.toUpperCase(), `[MOBILE] Division ${enable ? 'resumed' : 'paused'} via mobile`, enable ? 'green' : 'yellow');
+    return { ok: true, message: `Division ${division} ${enable ? 'resumed' : 'paused'}` };
+  } catch(e) {
+    return { ok: false, message: e.message };
+  }
+}
+
+// ── Mobile read endpoints ─────────────────────────────────────────────────────
+
+function handleMobileOverview(res) {
+  try {
+    const orchState = readState('orchestrator-state.json') || {};
+    const stats     = readState('jclaw-stats.json')        || {};
+    const apps      = readState('applications.json')       || { applications: [] };
+    const briefing  = readState('briefing.json')           || {};
+
+    // Division health
+    const divisions = {};
+    for (const [key, val] of Object.entries(orchState)) {
+      if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+        divisions[key] = { status: val.status || 'unknown', last_run: val.last_run || null };
+      }
+    }
+
+    // Active alerts from escalated packets
+    const alerts = _collectMobileAlerts();
+
+    // Approval count
+    const af          = path.join(STATE_DIR, 'approval-queue.json');
+    const approvalData = fs.existsSync(af) ? JSON.parse(fs.readFileSync(af, 'utf8')) : { approvals: [] };
+    const pendingApprovals = (approvalData.approvals || []).filter(a => a.status === 'pending').length;
+
+    // Pending jobs
+    const pendingJobs = (apps.applications || []).filter(a => a.status === 'pending_review').length;
+
+    // Sentinel health
+    const sentinelPkt = path.join(ROOT, 'divisions', 'sentinel', 'packets', 'provider-health.json');
+    let system = {};
+    if (fs.existsSync(sentinelPkt)) {
+      const s = JSON.parse(fs.readFileSync(sentinelPkt, 'utf8'));
+      const providers = (s.metrics || {}).providers || {};
+      for (const [k, v] of Object.entries(providers)) {
+        system[k.replace('ollama:', 'ollama/')] = v.status;
+      }
+    }
+
+    return jsonOk(res, {
+      divisions,
+      alerts:    alerts.slice(0, 5),
+      stats:     { pending_jobs: pendingJobs, active_alerts: alerts.length, pending_approvals: pendingApprovals },
+      approvals: pendingApprovals,
+      system,
+      briefing:  briefing.content ? briefing.content.slice(0, 400) : null,
+    });
+  } catch(e) {
+    return jsonError(res, 500, e.message);
+  }
+}
+
+function handleMobileAlerts(res) {
+  try {
+    return jsonOk(res, { alerts: _collectMobileAlerts() });
+  } catch(e) {
+    return jsonError(res, 500, e.message);
+  }
+}
+
+function _collectMobileAlerts() {
+  const alerts = [];
+  const packetDirs = ['op-sec', 'trading', 'opportunity', 'dev-automation', 'personal', 'sentinel'];
+  for (const div of packetDirs) {
+    const pktDir = path.join(ROOT, 'divisions', div, 'packets');
+    if (!fs.existsSync(pktDir)) continue;
+    for (const file of fs.readdirSync(pktDir)) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const pkt = JSON.parse(fs.readFileSync(path.join(pktDir, file), 'utf8'));
+        if (pkt.escalate && pkt.escalation_reason) {
+          alerts.push({
+            id:               pkt.skill || file.replace('.json', ''),
+            division:         div,
+            skill:            pkt.skill || file.replace('.json', ''),
+            message:          pkt.escalation_reason,
+            severity:         'HIGH',
+            generated_at:     pkt.generated_at || null,
+          });
+        }
+      } catch { /* skip malformed packets */ }
+    }
+  }
+  return alerts;
+}
+
+function handleMobileApprovals(res) {
+  try {
+    const af   = path.join(STATE_DIR, 'approval-queue.json');
+    const data = fs.existsSync(af) ? JSON.parse(fs.readFileSync(af, 'utf8')) : { approvals: [] };
+    const pending = (data.approvals || []).filter(a => a.status === 'pending');
+    return jsonOk(res, { approvals: pending });
+  } catch(e) {
+    return jsonError(res, 500, e.message);
+  }
+}
+
+function handleMobileTasks(req, res) {
+  try {
+    const qf   = path.join(STATE_DIR, 'task-queue.json');
+    const data = fs.existsSync(qf) ? JSON.parse(fs.readFileSync(qf, 'utf8')) : { tasks: [] };
+    const params = new url.URL('http://x' + req.url).searchParams;
+    const status = params.get('status');
+    let tasks = (data.tasks || []).slice(-50);
+    if (status) tasks = tasks.filter(t => t.status === status);
+    return jsonOk(res, { tasks: tasks.reverse() });
+  } catch(e) {
+    return jsonError(res, 500, e.message);
+  }
+}
+
+function handleMobileTrading(res) {
+  // Reuse the existing desktop trading handler — same data, mobile just
+  // reads fewer fields. The handler already returns structured JSON.
+  try {
+    return handleGetTradingCycle(res);
+  } catch(e) {
+    return jsonError(res, 500, e.message);
+  }
+}
+
 // ── Parse body ──
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -967,7 +1271,7 @@ const server = http.createServer(async (req, res) => {
   const method  = req.method.toUpperCase();
 
   if (method === 'OPTIONS') {
-    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST', 'Access-Control-Allow-Headers': 'Content-Type' });
+    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST', 'Access-Control-Allow-Headers': 'Content-Type,Authorization' });
     res.end(); return;
   }
 
@@ -1140,6 +1444,101 @@ const server = http.createServer(async (req, res) => {
       }
       return jsonError(res, 404, 'unknown endpoint');
     } catch (e) {
+      return jsonError(res, 500, e.message);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── MOBILE EXTENSION — /mobile/* routes ──────────────────────────────────
+  //
+  // Trust model: mobile is an UNTRUSTED thin client. Every /mobile/api/*
+  // request must carry a valid Bearer token (MOBILE_TOKEN in .env).
+  // Desktop (localhost) is bypassed — it never sends a token.
+  //
+  // Permission tiers:
+  //   Observer  — read-only endpoints — token only
+  //   Operator  — structured actions  — token + fresh 30s challenge
+  //   Admin     — desktop-only, BLOCKED from mobile entirely
+  //
+  // Mobile CANNOT: edit_prompt, write_memory, modify_SOUL/BOOT, change_model,
+  //   run_arbitrary_command, access /api/chat, or inject free text into agents.
+  // ══════════════════════════════════════════════════════════════════════════
+  if (reqPath === '/mobile' || reqPath === '/mobile/') {
+    return serveStatic('/mobile/index.html', res);
+  }
+  if (reqPath === '/mobile/manifest.json') {
+    return serveStatic('/mobile/manifest.json', res);
+  }
+
+  if (reqPath.startsWith('/mobile/api/')) {
+    try {
+      // ── Auth: require Bearer token for all /mobile/api/* ──────────────────
+      // Desktop (localhost) is exempt since it never sends a token.
+      const clientIP = req.socket.remoteAddress || '';
+      const isLocalhost = clientIP === '::1' || clientIP === '127.0.0.1' || clientIP === '::ffff:127.0.0.1';
+      const mobileToken = process.env.MOBILE_TOKEN || '';
+
+      if (!isLocalhost) {
+        if (!mobileToken) {
+          return jsonError(res, 503, 'Mobile access not configured — set MOBILE_TOKEN in .env');
+        }
+        const authHeader = req.headers['authorization'] || '';
+        const provided   = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+        if (!provided || !crypto.timingSafeEqual(
+          Buffer.from(provided.padEnd(64, '\0')),
+          Buffer.from(mobileToken.padEnd(64, '\0'))
+        )) {
+          mobileAuditLog({ action: 'auth_failed', actor: 'unknown', result: 'denied', reason: 'invalid token', ip: clientIP });
+          return jsonError(res, 401, 'Unauthorized');
+        }
+      }
+
+      // ── OPTIONS preflight (mobile clients on HTTPS may send this) ─────────
+      if (method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin':  '*',
+          'Access-Control-Allow-Methods': 'GET,POST',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        });
+        return res.end();
+      }
+
+      // ── Observer endpoints (read-only, token sufficient) ──────────────────
+
+      if (method === 'GET' && reqPath === '/mobile/api/overview') {
+        return handleMobileOverview(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/alerts') {
+        return handleMobileAlerts(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/approvals') {
+        return handleMobileApprovals(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/tasks') {
+        return handleMobileTasks(req, res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/trading') {
+        return handleMobileTrading(res);
+      }
+
+      // ── Challenge: issue a 30s single-use token for Operator actions ───────
+      if (method === 'GET' && reqPath === '/mobile/api/challenge') {
+        const params  = new url.URL('http://x' + req.url).searchParams;
+        const action  = params.get('action') || '';
+        if (!MOBILE_ALLOWED_ACTIONS.has(action)) {
+          return jsonError(res, 400, `Action "${action}" not allowed from mobile`);
+        }
+        return jsonOk(res, issueMobileChallenge(action));
+      }
+
+      // ── Action: Operator-tier structured commands (token + challenge) ───────
+      if (method === 'POST' && reqPath === '/mobile/api/action') {
+        const body = await parseBody(req);
+        return handleMobileAction(body, req, res);
+      }
+
+      return jsonError(res, 404, 'Unknown mobile endpoint');
+    } catch(e) {
       return jsonError(res, 500, e.message);
     }
   }
