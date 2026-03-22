@@ -50,9 +50,10 @@
       "schedule": "daily 18:00",
       "run_order": "last",
       "skill": "archive-hot",
-      "enabled": true,
+      "enabled": false,
       "last_run": null,
-      "status": "idle"
+      "status": "idle",
+      "note": "Placeholder — artifact-manager already handles trading hot/cold archiving"
     }
   }
 }

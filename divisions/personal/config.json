@@ -39,8 +39,8 @@
       "status": "idle"
     },
     "burnout-monitor": {
-      "schedule": "daily",
-      "time": "09:00",
+      "schedule": "daily 09:00",
+      "skill": "burnout-monitor",
       "enabled": true,
       "last_run": null,
       "status": "idle"

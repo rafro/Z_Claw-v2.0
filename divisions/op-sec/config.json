@@ -16,18 +16,21 @@
   "agents": {
     "device-posture": {
       "schedule": "daily 08:00",
+      "skill": "device-posture",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "threat-surface": {
       "schedule": "daily 19:00",
+      "skill": "threat-surface",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "breach-check": {
       "schedule": "weekly sunday 13:00",
+      "skill": "breach-check",
       "enabled": true,
       "last_run": null,
       "status": "idle",
@@ -35,24 +38,28 @@
     },
     "cred-audit": {
       "schedule": "weekly sunday 14:00",
+      "skill": "cred-audit",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "privacy-scan": {
       "schedule": "weekly sunday 15:00",
+      "skill": "privacy-scan",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "security-scan": {
       "schedule": "weekly sunday 11:00",
+      "skill": "security-scan",
       "enabled": true,
       "last_run": null,
       "status": "idle"
     },
     "opsec-digest": {
       "schedule": "weekly sunday 16:00",
+      "skill": "opsec-digest",
       "enabled": true,
       "last_run": null,
       "status": "idle"

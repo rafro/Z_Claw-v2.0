@@ -38,9 +38,11 @@
     },
     "tier-report": {
       "schedule": "after each intake run",
-      "enabled": true,
+      "skill": "tier-report",
+      "enabled": false,
       "last_run": null,
-      "status": "idle"
+      "status": "idle",
+      "note": "Placeholder — skill and orchestrator not yet implemented"
     }
   }
 }
