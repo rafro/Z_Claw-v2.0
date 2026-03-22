@@ -792,5 +792,26 @@
     },
     "total_event": 38,
     "ts": "2026-03-22T15:07:23.457202+00:00"
+  },
+  {
+    "id": "7721db33",
+    "type": "skill_complete",
+    "division": "trading",
+    "skill": "trading-report",
+    "commander": "SEREN",
+    "color": "#06b6d4",
+    "enemy": "market_noise",
+    "enemy_name": "Market Noise",
+    "xp": 15,
+    "multiplier": 1.0,
+    "rank_up": false,
+    "rank_up_msg": "",
+    "new_rank": "Pattern Seer",
+    "chapter": {
+      "title": "Chapter IV \u2014 The Iron Pact",
+      "narration": "All five orders stand united. An ancient darkness gathers on the horizon. J_Claw must forge the pact before the veil breaks."
+    },
+    "total_event": 39,
+    "ts": "2026-03-22T15:24:43.093973+00:00"
   }
 ]

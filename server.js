@@ -2484,6 +2484,138 @@ function handleMobileTrading(res) {
   }
 }
 
+// ── New mobile API handlers ───────────────────────────────────────────────────
+
+// GET /mobile/api/briefing
+function handleMobileBriefing(res) {
+  const f = path.join(STATE_DIR, 'briefing.json');
+  if (!fs.existsSync(f)) return jsonOk(res, { content: null, type: null, last_generated: null });
+  try { jsonOk(res, JSON.parse(fs.readFileSync(f, 'utf8'))); } catch(e) { jsonOk(res, { content: null }); }
+}
+
+// POST /mobile/api/health-checkin
+function handleHealthCheckin(req, res, body) {
+  try {
+    const logFile = path.join(STATE_DIR, 'health-log.json');
+    let log = [];
+    if (fs.existsSync(logFile)) { try { log = JSON.parse(fs.readFileSync(logFile, 'utf8')); } catch(e) {} }
+    const entry = { date: new Date().toISOString().split('T')[0], ts: new Date().toISOString(), ...body, source: 'mobile' };
+    log.push(entry);
+    fs.writeFileSync(logFile, JSON.stringify(log, null, 2));
+    jsonOk(res, { ok: true, entry });
+  } catch(e) { jsonError(res, 400, e.message); }
+}
+
+// GET /mobile/api/jobs
+function handleMobileJobs(req, res) {
+  const f = path.join(STATE_DIR, 'applications.json');
+  if (!fs.existsSync(f)) return jsonOk(res, { jobs: [], total: 0 });
+  try {
+    const parsedUrl = new url.URL('http://x' + req.url);
+    const apps = JSON.parse(fs.readFileSync(f, 'utf8'));
+    const status = parsedUrl.searchParams.get('status') || 'pending_review';
+    const limit = parseInt(parsedUrl.searchParams.get('limit')) || 50;
+    const filtered = Array.isArray(apps) ? apps.filter(j => (j.status || 'pending_review') === status).slice(0, limit) : [];
+    jsonOk(res, { jobs: filtered, total: filtered.length, status });
+  } catch(e) { jsonOk(res, { jobs: [], total: 0, error: e.message }); }
+}
+
+// POST /mobile/api/jobs/:id/action
+function handleJobAction(req, res, jobId, body) {
+  try {
+    const { action } = body;
+    const f = path.join(STATE_DIR, 'applications.json');
+    if (!fs.existsSync(f)) return jsonError(res, 404, 'No applications file');
+    let apps = JSON.parse(fs.readFileSync(f, 'utf8'));
+    const idx = apps.findIndex(j => (j.id || j.job_id || j.url) === jobId);
+    if (idx === -1) return jsonError(res, 404, 'Job not found');
+    if (action === 'apply') apps[idx].status = 'applied';
+    else if (action === 'archive') apps[idx].status = 'archived';
+    else if (action === 'snooze') { apps[idx].status = 'snoozed'; apps[idx].snooze_until = new Date(Date.now() + 7*24*60*60*1000).toISOString(); }
+    apps[idx].action_ts = new Date().toISOString();
+    fs.writeFileSync(f, JSON.stringify(apps, null, 2));
+    jsonOk(res, { ok: true, job: apps[idx] });
+  } catch(e) { jsonError(res, 400, e.message); }
+}
+
+// GET /mobile/api/coding-history
+function handleCodingHistory(res) {
+  const f = path.join(STATE_DIR, 'coding-history.json');
+  if (!fs.existsSync(f)) return jsonOk(res, { sessions: [] });
+  try {
+    const data = JSON.parse(fs.readFileSync(f, 'utf8'));
+    const sessions = Array.isArray(data) ? data.slice(-30).reverse() : [];
+    jsonOk(res, { sessions });
+  } catch(e) { jsonOk(res, { sessions: [] }); }
+}
+
+// GET /mobile/api/trading/signals
+function handleTradingSignals(res) {
+  const marketDir = path.join(ROOT, 'divisions', 'trading', 'hot');
+  let signals = [];
+  try {
+    if (fs.existsSync(marketDir)) {
+      const files = fs.readdirSync(marketDir).filter(f => f.startsWith('market-') && f.endsWith('.json')).sort().reverse();
+      for (const file of files.slice(0, 5)) {
+        try {
+          const d = JSON.parse(fs.readFileSync(path.join(marketDir, file), 'utf8'));
+          if (d.signals) signals.push(...d.signals);
+        } catch(e) {}
+      }
+    }
+  } catch(e) {}
+  jsonOk(res, { signals: signals.slice(0, 20), total: signals.length });
+}
+
+// GET /mobile/api/achievements
+function handleAchievements(res) {
+  const f = path.join(STATE_DIR, 'jclaw-stats.json');
+  let earned = [];
+  if (fs.existsSync(f)) { try { const s = JSON.parse(fs.readFileSync(f, 'utf8')); earned = s.achievements || []; } catch(e) {} }
+  const ALL_ACHIEVEMENTS = [
+    { id: 'first_blood', name: 'First Blood', icon: '⚔️', desc: 'Complete your first skill run', lore: 'The blade was drawn. The hunt began.' },
+    { id: 'five_orders', name: 'Five Orders', icon: '🏰', desc: 'Have all five divisions active', lore: 'The realm stands complete. All orders march.' },
+    { id: 'market_watcher', name: 'Market Watcher', icon: '📈', desc: 'Run market-scan 10 times', lore: 'The runes have been read. Patterns emerge from chaos.' },
+    { id: 'first_hunt', name: 'First Hunt', icon: '🎯', desc: 'Find your first job opportunity', lore: 'VANCE drew the map. The first target was marked.' },
+    { id: 'covenant_keeper', name: 'Covenant Keeper', icon: '🔥', desc: 'Maintain a 7-day streak', lore: 'The flame was kept alive. The pact holds.' },
+    { id: 'code_warden', name: 'Code Warden', icon: '🛡️', desc: 'Run a security scan', lore: 'FORGE swept the fortress. No breach went unseen.' },
+    { id: 'division_master', name: 'Division Master', icon: '👑', desc: 'Reach rank 3 in any division', lore: 'A commander ascended. The order grows mighty.' },
+    { id: 'veil_opened', name: 'Veil Opened', icon: '👁️', desc: 'Complete an op-sec scan', lore: 'WRAITH lifted the shroud. What was hidden is now known.' },
+    { id: 'rulers_blessing', name: "Ruler's Blessing", icon: '✨', desc: 'Receive a bestow XP event', lore: 'The sovereign smiled upon the realm.' },
+    { id: 'ember_lit', name: 'Ember Lit', icon: '🌿', desc: 'Log health data for 3 consecutive days', lore: 'EMBER tended the flame. Life sustained life.' },
+    { id: 'oracle_speaks', name: 'Oracle Speaks', icon: '🔮', desc: 'Generate a trading strategy', lore: 'ORACLE spoke truth. The market had no secrets left.' },
+    { id: 'iron_forged', name: 'Iron Forged', icon: '⚙️', desc: 'Complete 5 dev automation tasks', lore: 'The forge ran hot. Code became stronger.' },
+    { id: 'sovereign_path', name: 'Sovereign Path', icon: '🌟', desc: 'Reach level 5 overall', lore: 'J_Claw ascended. The realm trembled with power.' },
+  ];
+  const result = ALL_ACHIEVEMENTS.map(a => ({ ...a, unlocked: earned.includes(a.id), unlock_date: null }));
+  jsonOk(res, { achievements: result, earned_count: earned.length, total: result.length });
+}
+
+// GET /mobile/api/division/:id/report
+function handleDivisionReport(req, res, divId) {
+  const packetPaths = [
+    path.join(ROOT, 'divisions', divId, 'hot', 'packet.json'),
+    path.join(ROOT, 'divisions', divId.replace('-', '_'), 'hot', 'packet.json'),
+    path.join(STATE_DIR, `${divId}-last-packet.json`),
+    path.join(STATE_DIR, `${divId.replace('-','_')}-last-packet.json`),
+  ];
+  for (const p of packetPaths) {
+    if (fs.existsSync(p)) {
+      try { return jsonOk(res, { ok: true, report: JSON.parse(fs.readFileSync(p, 'utf8')), path: p }); } catch(e) {}
+    }
+  }
+  const actFile = path.join(STATE_DIR, 'activity-log.json');
+  if (fs.existsSync(actFile)) {
+    try {
+      const log = JSON.parse(fs.readFileSync(actFile, 'utf8'));
+      const entries = log.entries || log;
+      const divEntries = (Array.isArray(entries) ? entries : []).filter(e => (e.division || '').toLowerCase().includes(divId.replace('-','_').split('_')[0])).slice(-5);
+      if (divEntries.length) return jsonOk(res, { ok: true, report: null, recent_activity: divEntries });
+    } catch(e) {}
+  }
+  jsonError(res, 404, 'No report found');
+}
+
 // ── Realm Layer endpoints ─────────────────────────────────────────────────────
 
 // GET /mobile/api/realm/config
@@ -3022,6 +3154,35 @@ const server = http.createServer(async (req, res) => {
       }
       if (method === 'GET' && reqPath === '/mobile/api/battles/week') {
         return handleMobileBattlesWeek(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/briefing') {
+        return handleMobileBriefing(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/jobs') {
+        return handleMobileJobs(req, res);
+      }
+      if (method === 'POST' && reqPath === '/mobile/api/health-checkin') {
+        const body = await parseBody(req);
+        return handleHealthCheckin(req, res, body);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/coding-history') {
+        return handleCodingHistory(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/trading/signals') {
+        return handleTradingSignals(res);
+      }
+      if (method === 'GET' && reqPath === '/mobile/api/achievements') {
+        return handleAchievements(res);
+      }
+      {
+        let _m;
+        if (method === 'POST' && (_m = reqPath.match(/^\/mobile\/api\/jobs\/(.+)\/action$/))) {
+          const body = await parseBody(req);
+          return handleJobAction(req, res, decodeURIComponent(_m[1]), body);
+        }
+        if (method === 'GET' && (_m = reqPath.match(/^\/mobile\/api\/division\/(.+)\/report$/))) {
+          return handleDivisionReport(req, res, decodeURIComponent(_m[1]));
+        }
       }
 
       // ── PIN: server-side PIN storage (works over plain HTTP, no crypto.subtle needed) ──

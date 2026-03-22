@@ -1054,7 +1054,7 @@
     .chat-spinner.blue { border-top-color: var(--blue); }
     .chat-thinking-text { font-size: 13px; color: var(--subtext); }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #screen-chat.active { display: flex !important; flex-direction: column; padding: 0; }
+    #screen-chat.active, #screen-command.active { display: flex !important; flex-direction: column; padding: 0; }
 
     /* ── Division detail overlay ── */
     #div-detail-backdrop {
@@ -1294,6 +1294,244 @@
     .pin-key.pin-del { color: var(--subtext); font-size: 18px; }
     .pin-key.pin-ok  { background: var(--purple); color: var(--bg); }
     .pin-cancel { display: block; text-align: center; font-size: 13px; color: var(--subtext); margin-top: 14px; cursor: pointer; padding: 4px; }
+
+    /* ── Briefing card ── */
+    .briefing-card {
+      background: var(--surface); border: 1px solid var(--purple);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(203,166,247,0.06) 0%, var(--surface) 100%);
+    }
+    .briefing-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .briefing-icon { font-size: 16px; flex-shrink: 0; }
+    .briefing-title { font-size: 11px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.1em; flex: 1; }
+    .briefing-time { font-size: 10px; color: var(--subtext); flex-shrink: 0; }
+    .briefing-dismiss {
+      background: none; border: none; color: var(--subtext); font-size: 14px;
+      cursor: pointer; padding: 2px 4px; flex-shrink: 0; line-height: 1;
+    }
+    .briefing-content { font-size: 12px; color: var(--text); line-height: 1.65; }
+
+    /* ── Bottom sheet (generic) ── */
+    .bottom-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 0 0 calc(var(--safe-bottom) + 12px);
+      z-index: 500; transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+      max-height: 82dvh; overflow-y: auto;
+    }
+    .bottom-sheet.open { transform: translateY(0); }
+    .sheet-handle {
+      width: 40px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 0;
+    }
+    .sheet-content { padding: 16px 20px 8px; }
+    .sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .sheet-subtitle { font-size: 13px; color: var(--subtext); margin-bottom: 16px; }
+    .sheet-backdrop-generic {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 499; display: none; backdrop-filter: blur(3px);
+    }
+    .sheet-backdrop-generic.open { display: block; }
+
+    /* ── Health check-in ── */
+    .health-section { margin-bottom: 16px; }
+    .health-label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 8px; }
+    .health-slider-row { display: flex; align-items: center; gap: 12px; }
+    .health-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--overlay); outline: none; }
+    .health-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--purple); cursor: pointer; }
+    .health-val { font-size: 15px; font-weight: 700; color: var(--purple); min-width: 30px; text-align: right; }
+    .health-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .health-opt {
+      padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 13px;
+      cursor: pointer; -webkit-appearance: none; transition: all 0.15s;
+    }
+    .health-opt.selected { background: var(--purple); border-color: var(--purple); color: #1e1e2e; }
+    .health-opt:active { transform: scale(0.95); }
+    .health-textarea {
+      width: 100%; background: var(--overlay); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 14px; padding: 10px 12px;
+      resize: none; -webkit-appearance: none; font-family: inherit; line-height: 1.5;
+    }
+    .health-textarea:focus { outline: none; border-color: var(--purple); }
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center;
+      height: 48px; border-radius: 12px; border: none;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      background: var(--purple); color: #1e1e2e;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn-primary:active { transform: scale(0.96); opacity: 0.9; }
+
+    /* ── Story modal ── */
+    #story-modal {
+      position: fixed; inset: 0; z-index: 8000;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .story-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .story-panel {
+      position: relative; background: var(--surface);
+      border-radius: 20px 20px 0 0; border-top: 1px solid var(--border);
+      padding: 20px 20px calc(var(--safe-bottom) + 24px);
+      width: 100%; max-height: 80dvh; overflow-y: auto;
+      animation: fadeUp 0.3s ease;
+    }
+    .story-header { margin-bottom: 12px; }
+    .story-chapter-label { font-size: 9px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.12em; display: block; margin-bottom: 4px; }
+    .story-title { font-size: 20px; font-weight: 800; color: var(--text); }
+    .story-narrative { font-size: 13px; color: var(--subtext); line-height: 1.7; font-style: italic; margin-bottom: 20px; padding: 10px 12px; background: var(--overlay); border-radius: 8px; border-left: 2px solid var(--purple); }
+    .story-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .story-choice-btn {
+      background: var(--overlay); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left;
+      transition: all 0.15s ease; -webkit-tap-highlight-color: transparent;
+    }
+    .story-choice-btn:active { transform: scale(0.97); background: var(--surface); }
+    .story-skip { display: block; text-align: center; font-size: 12px; color: var(--subtext); padding: 8px; cursor: pointer; width: 100%; background: none; border: none; }
+
+    /* ── Intel tab sub-navigation ── */
+    .intel-subnav {
+      display: flex; gap: 0; background: var(--overlay); border-radius: 10px;
+      padding: 3px; margin-bottom: 16px; flex-shrink: 0;
+    }
+    .intel-subnav-btn {
+      flex: 1; padding: 8px 6px; border: none;
+      background: transparent; color: var(--subtext);
+      font-size: 12px; font-weight: 600; border-radius: 8px;
+      cursor: pointer; -webkit-appearance: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .intel-subnav-btn.active { background: var(--surface); color: var(--text); }
+    .intel-sub-pane { overflow-y: auto; flex: 1; }
+
+    /* ── Jobs list ── */
+    .jobs-list { display: flex; flex-direction: column; gap: 10px; }
+    .job-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .job-card-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .job-card-info { flex: 1; min-width: 0; }
+    .job-company { font-size: 10px; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .job-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .job-pay { font-size: 11px; color: var(--green); margin-top: 3px; }
+    .tier-badge { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
+    .tier-A { background: rgba(249,226,175,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+    .tier-B { background: rgba(166,227,161,0.15); color: var(--green); border: 1px solid var(--green); }
+    .tier-C { background: rgba(137,180,250,0.15); color: var(--blue); border: 1px solid var(--blue); }
+    .tier-D { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
+    .job-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .job-action-btn {
+      flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 12px; font-weight: 600;
+      cursor: pointer; -webkit-appearance: none; text-align: center;
+      transition: all 0.15s;
+    }
+    .job-action-btn:active { transform: scale(0.95); }
+    .job-action-apply { border-color: var(--green); color: var(--green); }
+    .job-action-snooze { border-color: var(--yellow); color: var(--yellow); }
+    .job-action-archive { border-color: var(--red); color: var(--red); }
+    .pill-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .pill-tab {
+      padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 11px; font-weight: 600;
+      cursor: pointer; -webkit-appearance: none;
+    }
+    .pill-tab.active { background: var(--purple); border-color: var(--purple); color: #1e1e2e; }
+
+    /* ── Coding history sheet ── */
+    .coding-session-card {
+      background: var(--overlay); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    }
+    .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .session-id { font-size: 10px; font-weight: 700; color: var(--purple); font-family: monospace; }
+    .session-status { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+    .session-approved { background: rgba(166,227,161,0.15); color: var(--green); }
+    .session-rejected { background: rgba(243,139,168,0.15); color: var(--red); }
+    .session-pending { background: rgba(249,226,175,0.15); color: var(--yellow); }
+    .session-time { font-size: 11px; color: var(--subtext); }
+    .session-files { font-size: 11px; color: var(--subtext); margin-top: 3px; }
+
+    /* ── Achievements sheet ── */
+    .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ach-card {
+      background: var(--overlay); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 10px; text-align: center;
+      transition: all 0.2s;
+    }
+    .ach-card.unlocked { background: #1a0a2e; border-color: var(--purple); }
+    .ach-card.locked { opacity: 0.4; }
+    .ach-card-icon { font-size: 22px; margin-bottom: 6px; }
+    .ach-card-name { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
+    .ach-card-desc { font-size: 9px; color: var(--subtext); line-height: 1.4; }
+    .ach-card-lore { font-size: 9px; color: var(--purple); font-style: italic; margin-top: 4px; line-height: 1.3; }
+
+    /* ── Trading signals ── */
+    .signal-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+    }
+    .signal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .signal-symbol { font-size: 14px; font-weight: 700; color: var(--teal); }
+    .signal-dir { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+    .signal-long { background: rgba(166,227,161,0.15); color: var(--green); }
+    .signal-short { background: rgba(243,139,168,0.15); color: var(--red); }
+    .signal-meta { font-size: 11px; color: var(--subtext); }
+
+    /* ── Division report sheet ── */
+    #div-report-sheet .report-json {
+      background: var(--overlay); border-radius: 8px; padding: 12px;
+      font-family: monospace; font-size: 11px; color: var(--teal);
+      white-space: pre-wrap; word-break: break-all; max-height: 300px;
+      overflow-y: auto; margin-top: 10px;
+    }
+
+    /* ── LLM provider badge ── */
+    .llm-badge {
+      font-size: 9px; font-weight: 600; color: var(--border);
+      background: var(--overlay); border-radius: 4px; padding: 1px 5px;
+      margin-left: 4px; font-family: monospace;
+    }
+
+    /* ── New Chat button ── */
+    .new-chat-btn {
+      padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 11px;
+      font-weight: 600; cursor: pointer; -webkit-appearance: none;
+    }
+    .new-chat-btn:active { background: var(--border); }
+
+    /* ── History button in chat ── */
+    .chat-history-btn {
+      padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 11px;
+      font-weight: 600; cursor: pointer; -webkit-appearance: none; white-space: nowrap;
+    }
+
+    /* ── Chronicles button on J_Claw tab ── */
+    .chronicles-btn {
+      width: 100%; padding: 13px; border-radius: 12px; border: 1px solid var(--purple);
+      background: rgba(203,166,247,0.08); color: var(--purple);
+      font-size: 14px; font-weight: 700; cursor: pointer; -webkit-appearance: none;
+      text-align: center; margin-top: 8px; transition: all 0.15s;
+    }
+    .chronicles-btn:active { transform: scale(0.97); }
+
+    /* ── View report btn on div cards ── */
+    .div-report-btn {
+      padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--overlay); color: var(--subtext); font-size: 9px;
+      font-weight: 600; cursor: pointer; -webkit-appearance: none;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .div-report-btn:active { color: var(--text); background: var(--border); }
+
+    /* ── Skeleton list ── */
+    .skeleton-list .skeleton { height: 60px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -1355,50 +1593,95 @@
 <!-- Screens -->
 <div id="screens">
 
-  <!-- ── HOME (Divisions — operational default) ── -->
-  <div id="screen-home" class="screen active">
+  <!-- ── HOME (Divisions — operational overview) ── -->
+  <div id="screen-home" class="screen">
+    <!-- Morning Briefing card (injected by loadBriefing) -->
+    <div id="briefing-card-wrap"></div>
     <div id="home-content"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- ── INTEL (Jobs, Trading, Health, Reports — live data hub) ── -->
+  <div id="screen-intel" class="screen" style="padding:0;">
+    <div class="intel-subnav" id="intel-subnav" style="margin:16px 16px 0;">
+      <button class="intel-subnav-btn active" id="isnav-jobs"    onclick="switchIntelSub('jobs')">Jobs</button>
+      <button class="intel-subnav-btn"        id="isnav-trading" onclick="switchIntelSub('trading')">Trading</button>
+      <button class="intel-subnav-btn"        id="isnav-health"  onclick="switchIntelSub('health')">Health</button>
+      <button class="intel-subnav-btn"        id="isnav-reports" onclick="switchIntelSub('reports')">Reports</button>
+    </div>
+
+    <!-- Jobs sub-tab -->
+    <div id="intel-sub-jobs" class="intel-sub-pane" style="padding:0 16px 24px;">
+      <div style="margin-bottom:10px;">
+        <div class="pill-tabs" id="jobs-pill-tabs">
+          <button class="pill-tab active" onclick="loadJobs('pending_review')">New</button>
+          <button class="pill-tab" onclick="loadJobs('applied')">Applied</button>
+          <button class="pill-tab" onclick="loadJobs('snoozed')">Snoozed</button>
+          <button class="pill-tab" onclick="loadJobs('archived')">Archived</button>
+        </div>
+      </div>
+      <div class="jobs-list" id="jobs-list-content">
+        <div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+      </div>
+    </div>
+
+    <!-- Trading sub-tab -->
+    <div id="intel-sub-trading" class="intel-sub-pane" style="padding:0 16px 24px;display:none;">
+      <div class="pill-tabs">
+        <button class="pill-tab active" onclick="switchTradingPill('overview',this)">Overview</button>
+        <button class="pill-tab" onclick="switchTradingPill('signals',this)">Signals</button>
+        <button class="pill-tab" onclick="switchTradingPill('history',this)">History</button>
+      </div>
+      <div id="trading-pill-overview">
+        <div id="trading-content"><div class="loading">Loading...</div></div>
+      </div>
+      <div id="trading-pill-signals" style="display:none;">
+        <div id="trading-signals-content"><div class="loading">Loading...</div></div>
+      </div>
+      <div id="trading-pill-history" style="display:none;">
+        <div id="trading-history-content"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- Health sub-tab -->
+    <div id="intel-sub-health" class="intel-sub-pane" style="padding:0 16px 24px;display:none;">
+      <div class="section-title">Health Check-in</div>
+      <button class="btn-primary" style="width:100%;margin-bottom:16px;" onclick="openHealthSheet()">Log Today's Check-in</button>
+      <div id="health-history-content"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- Reports sub-tab -->
+    <div id="intel-sub-reports" class="intel-sub-pane" style="padding:0;display:none;">
+      <div class="segment-control">
+        <button class="seg-btn active" id="seg-reports-intel" onclick="switchReportsSeg('intel')">Opp / Pers</button>
+        <button class="seg-btn" id="seg-reports-ops" onclick="switchReportsSeg('ops')">Dev / Sec</button>
+      </div>
+      <div id="reports-intel-wrap" style="padding:0 16px 24px;">
+        <div id="intel-reports-content"><div class="loading">Loading...</div></div>
+      </div>
+      <div id="reports-ops-wrap" style="padding:0 16px 24px;display:none;">
+        <div id="ops-content"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── J_CLAW (Game: party, achievements, prestige, streaks) ── -->
-  <div id="screen-jclaw" class="screen">
+  <div id="screen-jclaw" class="screen active">
     <div id="stats-content"><div class="loading">Loading...</div></div>
   </div>
 
-  <!-- ── REPORTS (Division report packets: Opportunity, Personal, Dev, Op-Sec) ── -->
-  <div id="screen-reports" class="screen" style="padding:0;">
-    <div class="segment-control">
-      <button class="seg-btn active" id="seg-reports-intel" onclick="switchReportsSeg('intel')">Opp / Pers</button>
-      <button class="seg-btn" id="seg-reports-ops" onclick="switchReportsSeg('ops')">Dev / Sec</button>
-    </div>
-    <div id="reports-intel-wrap" style="padding:0 16px 24px;">
-      <div id="intel-content"><div class="loading">Loading...</div></div>
-    </div>
-    <div id="reports-ops-wrap" style="padding:0 16px 24px;display:none;">
-      <div id="ops-content"><div class="loading">Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- ── INTEL (Static reference guide) ── -->
-  <div id="screen-intel" class="screen">
-    <div id="intel-ref-content"></div>
-  </div>
-
-  <!-- ── LOG (Live activity log feed) ── -->
-  <div id="screen-log" class="screen">
-    <div id="log-content"><div class="loading">Loading...</div></div>
-  </div>
-
-  <!-- ── CHAT ── -->
-  <div id="screen-chat" class="screen" style="padding:0;height:100%;flex-direction:column;">
-    <!-- Mode toggle -->
-    <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);">
+  <!-- ── COMMAND (Chat + mission log) ── -->
+  <div id="screen-command" class="screen" style="padding:0;height:100%;flex-direction:column;">
+    <!-- Header with mode + history controls -->
+    <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);align-items:center;">
       <button id="chat-mode-jclaw" class="mode-btn mode-active" onclick="setChatMode('jclaw')">
         J_Claw
       </button>
       <button id="chat-mode-coding" class="mode-btn" onclick="setChatMode('coding')">
         Coding
       </button>
+      <div style="flex:1;"></div>
+      <button class="chat-history-btn" onclick="openCodingHistorySheet()" style="margin-right:6px;">History</button>
+      <button class="new-chat-btn" onclick="newChat()" style="margin-right:10px;">New Chat</button>
     </div>
     <div id="chat-messages" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 8px;"></div>
     <div id="chat-input-bar" style="flex-shrink:0;display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);">
@@ -1410,45 +1693,146 @@
     </div>
   </div>
 
+  <!-- ── LOG (Live activity log feed) ── -->
+  <div id="screen-log" class="screen">
+    <div id="log-content"><div class="loading">Loading...</div></div>
+  </div>
+
 </div>
 
-<!-- Bottom tab bar (6 tabs) — HOME is default/active -->
+<!-- ── Health Check-in Bottom Sheet ── -->
+<div class="sheet-backdrop-generic" id="health-sheet-backdrop" onclick="closeHealthSheet()"></div>
+<div class="bottom-sheet" id="sheet-health">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content">
+    <div class="sheet-title">Daily Health Check-in</div>
+    <div class="sheet-subtitle">LYRIN · Ember Covenant</div>
+
+    <div class="health-section">
+      <div class="health-label">Sleep (hours)</div>
+      <div class="health-slider-row">
+        <input type="range" class="health-slider" id="hs-sleep" min="0" max="12" step="0.5" value="7" oninput="document.getElementById('hs-sleep-val').textContent=this.value+'h'">
+        <span class="health-val" id="hs-sleep-val">7h</span>
+      </div>
+    </div>
+
+    <div class="health-section">
+      <div class="health-label">Sleep Quality</div>
+      <div class="health-btn-group" id="hs-sleep-quality">
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-sleep-quality')">Poor</button>
+        <button class="health-opt active" onclick="selectHealthOpt(this,'hs-sleep-quality')">Fair</button>
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-sleep-quality')">Good</button>
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-sleep-quality')">Great</button>
+      </div>
+    </div>
+
+    <div class="health-section">
+      <div class="health-label">Mood</div>
+      <div class="health-btn-group" id="hs-mood">
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-mood')">Low</button>
+        <button class="health-opt active" onclick="selectHealthOpt(this,'hs-mood')">Neutral</button>
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-mood')">Good</button>
+        <button class="health-opt" onclick="selectHealthOpt(this,'hs-mood')">High</button>
+      </div>
+    </div>
+
+    <div class="health-section">
+      <div class="health-label">Energy Level</div>
+      <div class="health-slider-row">
+        <input type="range" class="health-slider" id="hs-energy" min="1" max="10" step="1" value="6" oninput="document.getElementById('hs-energy-val').textContent=this.value+'/10'">
+        <span class="health-val" id="hs-energy-val">6/10</span>
+      </div>
+    </div>
+
+    <div class="health-section">
+      <div class="health-label">Notes (optional)</div>
+      <textarea class="health-textarea" id="hs-notes" placeholder="How are you feeling today?"></textarea>
+    </div>
+
+    <button class="btn-primary" onclick="submitHealthCheckin()" style="width:100%;margin-top:8px;">Submit Check-in</button>
+  </div>
+</div>
+
+<!-- ── Coding History Bottom Sheet ── -->
+<div class="sheet-backdrop-generic" id="coding-history-backdrop" onclick="closeCodingHistorySheet()"></div>
+<div class="bottom-sheet" id="sheet-coding-history">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content">
+    <div class="sheet-title">Coding Sessions</div>
+    <div class="sheet-subtitle">Recent sessions from the Iron Codex</div>
+    <div id="coding-history-content">
+      <div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Achievements Bottom Sheet ── -->
+<div class="sheet-backdrop-generic" id="achievements-backdrop" onclick="closeAchievementsSheet()"></div>
+<div class="bottom-sheet" id="sheet-achievements">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content">
+    <div class="sheet-title">Chronicles</div>
+    <div class="sheet-subtitle">Achievements of the realm</div>
+    <div id="achievements-content">
+      <div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Division Report Bottom Sheet ── -->
+<div class="sheet-backdrop-generic" id="div-report-backdrop" onclick="closeDivReportSheet()"></div>
+<div class="bottom-sheet" id="div-report-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content">
+    <div class="sheet-title" id="div-report-sheet-title">Division Report</div>
+    <div class="sheet-subtitle" id="div-report-sheet-sub"></div>
+    <div id="div-report-content" class="report-json">Loading...</div>
+  </div>
+</div>
+
+<!-- ── Story / Choice Modal ── -->
+<div id="story-modal" style="display:none;">
+  <div class="story-backdrop" onclick="dismissStoryModal()"></div>
+  <div class="story-panel">
+    <div class="story-chapter-label" id="story-chapter-label">Chapter</div>
+    <div class="story-title" id="story-title"></div>
+    <div class="story-narrative" id="story-narrative"></div>
+    <div class="story-choices" id="story-choices"></div>
+    <button class="story-skip" onclick="dismissStoryModal()">Skip for now</button>
+  </div>
+</div>
+
+<!-- Bottom tab bar (5 tabs) — J_CLAW is default/active -->
 <nav id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('home')" id="tab-home">
+  <button class="tab-btn" onclick="switchTab('home')" id="tab-home">
     <div class="tab-wrap">
-      <span class="tab-icon">⌂</span>
+      <span class="tab-icon">🏠</span>
       <span>Home</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('jclaw')" id="tab-jclaw">
+  <button class="tab-btn" onclick="switchTab('intel')" id="tab-intel">
+    <div class="tab-wrap" style="position:relative;">
+      <span class="tab-icon">🔍</span>
+      <span id="alert-badge" class="tab-badge">0</span>
+      <span>Intel</span>
+    </div>
+  </button>
+  <button class="tab-btn active" onclick="switchTab('jclaw')" id="tab-jclaw">
     <div class="tab-wrap">
-      <span class="tab-icon">⚔</span>
+      <span class="tab-icon">⚡</span>
       <span>J_Claw</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('reports')" id="tab-reports">
-    <div class="tab-wrap" style="position:relative;">
-      <span class="tab-icon">⊞</span>
-      <span id="alert-badge" class="tab-badge">0</span>
-      <span>Reports</span>
-    </div>
-  </button>
-  <button class="tab-btn" onclick="switchTab('intel')" id="tab-intel">
+  <button class="tab-btn" onclick="switchTab('command')" id="tab-command">
     <div class="tab-wrap">
-      <span class="tab-icon">📋</span>
-      <span>Intel</span>
+      <span class="tab-icon">⚔️</span>
+      <span>Command</span>
     </div>
   </button>
   <button class="tab-btn" onclick="switchTab('log')" id="tab-log">
     <div class="tab-wrap">
-      <span class="tab-icon">◈</span>
+      <span class="tab-icon">📋</span>
       <span>Log</span>
-    </div>
-  </button>
-  <button class="tab-btn" onclick="switchTab('chat')" id="tab-chat">
-    <div class="tab-wrap">
-      <span class="tab-icon">💬</span>
-      <span>Chat</span>
     </div>
   </button>
 </nav>
@@ -1546,8 +1930,9 @@ function _setStored(key, val) {
 
 let MC_TOKEN  = _hashToken || _getStored('mc_token') || '';
 let MC_SERVER = _getStored('mc_server') || location.origin;
-let _currentTab = 'home';
+let _currentTab = 'jclaw';
 let _reportsSeg = 'intel';
+let _intelSub   = 'jobs';
 let _lastLoadTime = 0;
 
 // ── Setup ────────────────────────────────────────────────
@@ -1643,15 +2028,17 @@ function init() {
   updateClock();
   setInterval(updateClock, 1000);
   setInterval(checkStaleness, 15000);
-  loadTab('home');
+  loadTab('jclaw');
   setInterval(() => loadTab(_currentTab, true), 30000);
   // Theater queue polling — check every 45s, also on init
   _pollTheaterQueue();
   setInterval(_pollTheaterQueue, 45000);
+  // Story/choice check on init
+  _checkStoryState();
 
   // Pull-to-refresh + swipe tab navigation
   const screens = document.getElementById('screens');
-  const TAB_ORDER = ['home', 'jclaw', 'reports', 'intel', 'log', 'chat'];
+  const TAB_ORDER = ['home', 'intel', 'jclaw', 'command', 'log'];
   let _ptrStartX = 0, _ptrStartY = 0, _ptrActive = false;
   screens.addEventListener('touchstart', e => {
     _ptrStartX = e.touches[0].clientX;
@@ -1982,23 +2369,25 @@ function refreshCurrent() { loadTab(_currentTab); }
 
 function loadTab(name, silent = false) {
   switch(name) {
-    case 'home':    loadOverview(silent);       break;
-    case 'jclaw':   loadStatsTab();             break;
-    case 'reports': loadReportsTab(silent);     break;
-    case 'intel':   loadIntelReference();       break;
-    case 'log':     loadActivityLog(silent);    break;
-    case 'chat':    initChat();                 break;
+    case 'home':    loadOverview(silent);         break;
+    case 'jclaw':   loadStatsTab();               break;
+    case 'intel':   loadIntelTab(silent);         break;
+    case 'command': initChat();                   break;
+    case 'log':     loadActivityLog(silent);      break;
+    // legacy aliases kept for internal refs
+    case 'reports': loadReportsTab(silent);       break;
+    case 'chat':    initChat();                   break;
   }
 }
 
 function loadReportsTab(silent = false) {
   // Load the active segment; pre-load the other in background
   if (_reportsSeg === 'intel') {
-    loadIntel(silent);
+    loadIntel(silent, 'intel-reports-content');
     loadOps(true);
   } else {
     loadOps(silent);
-    loadIntel(true);
+    loadIntel(true, 'intel-reports-content');
   }
 }
 
@@ -2008,9 +2397,418 @@ function switchReportsSeg(seg) {
   document.getElementById('seg-reports-ops').classList.toggle('active', seg === 'ops');
   document.getElementById('reports-intel-wrap').style.display = seg === 'intel' ? 'block' : 'none';
   document.getElementById('reports-ops-wrap').style.display   = seg === 'ops'   ? 'block' : 'none';
-  if (seg === 'intel') loadIntel(true);
+  if (seg === 'intel') loadIntel(true, 'intel-reports-content');
   if (seg === 'ops')   loadOps(true);
 }
+
+// ── Intel Tab Hub ─────────────────────────────────────────────────────────────
+function loadIntelTab(silent = false) {
+  switchIntelSub(_intelSub, silent);
+}
+
+function switchIntelSub(sub, silent = false) {
+  _intelSub = sub;
+  const subs = ['jobs', 'trading', 'health', 'reports'];
+  subs.forEach(s => {
+    const pane = document.getElementById('intel-sub-' + s);
+    const btn  = document.getElementById('isnav-' + s);
+    if (pane) pane.style.display = s === sub ? '' : 'none';
+    if (btn)  btn.classList.toggle('active', s === sub);
+  });
+  if (sub === 'jobs')    loadJobs(_currentJobStatus || 'pending_review');
+  if (sub === 'trading') { loadTrading(silent); }
+  if (sub === 'health')  loadHealthHistory();
+  if (sub === 'reports') loadReportsTab(silent);
+}
+
+// ── Morning Briefing ─────────────────────────────────────────────────────────
+async function loadBriefing() {
+  const wrap = document.getElementById('briefing-card-wrap');
+  if (!wrap) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const dismissed = _getStored('briefing_dismissed_' + today);
+  if (dismissed) { wrap.innerHTML = ''; return; }
+  try {
+    const d = await api('/mobile/api/briefing');
+    if (!d || !d.content) { wrap.innerHTML = ''; return; }
+    const ts = d.last_generated ? new Date(d.last_generated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    wrap.innerHTML = `<div class="briefing-card" id="briefing-card">
+      <div class="briefing-header">
+        <span class="briefing-title">Morning Briefing</span>
+        <span class="briefing-time">${ts}</span>
+        <button class="briefing-dismiss" onclick="dismissBriefing()">✕</button>
+      </div>
+      <div class="briefing-content">${escHtml(d.content).replace(/\n/g, '<br>')}</div>
+    </div>`;
+  } catch(e) { wrap.innerHTML = ''; }
+}
+
+function dismissBriefing() {
+  const today = new Date().toISOString().slice(0, 10);
+  _setStored('briefing_dismissed_' + today, '1');
+  const card = document.getElementById('briefing-card');
+  if (card) card.style.transition = 'opacity 0.3s'; card && (card.style.opacity = '0');
+  setTimeout(() => { const w = document.getElementById('briefing-card-wrap'); if (w) w.innerHTML = ''; }, 300);
+}
+
+// ── Job Board ─────────────────────────────────────────────────────────────────
+let _currentJobStatus = 'pending_review';
+async function loadJobs(status = 'pending_review') {
+  _currentJobStatus = status;
+  // Update pill active state
+  document.querySelectorAll('#jobs-pill-tabs .pill-tab').forEach((btn, i) => {
+    const statuses = ['pending_review', 'applied', 'snoozed', 'archived'];
+    btn.classList.toggle('active', statuses[i] === status);
+  });
+  const el = document.getElementById('jobs-list-content');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
+  try {
+    const d = await api('/mobile/api/jobs?status=' + encodeURIComponent(status) + '&limit=30');
+    const jobs = d.jobs || [];
+    if (!jobs.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏹</div><p>No ' + escHtml(status.replace(/_/g, ' ')) + ' jobs</p></div>';
+      return;
+    }
+    el.innerHTML = '<div class="jobs-list">' + jobs.map(j => {
+      const id = j.id || j.job_id || j.url || '';
+      const tier = j.tier || j.match_tier || 'D';
+      const co   = j.company || j.employer || '';
+      const title = j.title || j.position || j.role || 'Untitled';
+      const pay   = j.salary_display || j.pay || j.salary || '';
+      const actionBtns = status === 'pending_review'
+        ? `<button class="job-action-btn job-action-apply"  onclick="doJobAction('${escAttr(id)}','apply')">Apply</button>
+           <button class="job-action-btn job-action-snooze" onclick="doJobAction('${escAttr(id)}','snooze')">Snooze</button>
+           <button class="job-action-btn job-action-archive" onclick="doJobAction('${escAttr(id)}','archive')">Archive</button>`
+        : `<button class="job-action-btn" onclick="doJobAction('${escAttr(id)}','archive')" style="border-color:var(--border);color:var(--subtext);">Archive</button>`;
+      return `<div class="job-card">
+        <div class="job-card-header">
+          <div class="job-card-info">
+            ${co ? `<div class="job-company">${escHtml(co)}</div>` : ''}
+            <div class="job-title">${escHtml(title)}</div>
+            ${pay ? `<div class="job-pay">${escHtml(pay)}</div>` : ''}
+          </div>
+          <span class="tier-badge tier-${escHtml(tier)}">${escHtml(tier)}</span>
+        </div>
+        <div class="job-actions">${actionBtns}</div>
+      </div>`;
+    }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+
+async function doJobAction(jobId, action) {
+  haptic('medium');
+  try {
+    const ch = await api('/mobile/api/challenge');
+    const token = ch.token || ch.challenge || '';
+    await api('/mobile/api/jobs/' + encodeURIComponent(jobId) + '/action', {
+      method: 'POST',
+      body: JSON.stringify({ action, challenge_token: token }),
+    });
+    showToast(action === 'apply' ? 'Application marked!' : action === 'snooze' ? 'Snoozed 7 days' : 'Archived');
+    haptic('success');
+    loadJobs(_currentJobStatus);
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    haptic('error');
+  }
+}
+
+// ── Health Check-in Sheet ─────────────────────────────────────────────────────
+function openHealthSheet() {
+  haptic('light');
+  document.getElementById('health-sheet-backdrop').classList.add('open');
+  document.getElementById('sheet-health').classList.add('open');
+}
+function closeHealthSheet() {
+  document.getElementById('health-sheet-backdrop').classList.remove('open');
+  document.getElementById('sheet-health').classList.remove('open');
+}
+function selectHealthOpt(btn, groupId) {
+  document.querySelectorAll('#' + groupId + ' .health-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  haptic('light');
+}
+async function submitHealthCheckin() {
+  haptic('medium');
+  const sleep = parseFloat(document.getElementById('hs-sleep').value) || 0;
+  const sleepQualityEl = document.querySelector('#hs-sleep-quality .health-opt.active');
+  const moodEl = document.querySelector('#hs-mood .health-opt.active');
+  const energy = parseInt(document.getElementById('hs-energy').value) || 5;
+  const notes  = document.getElementById('hs-notes').value.trim();
+  const body = {
+    sleep_hours:   sleep,
+    sleep_quality: sleepQualityEl ? sleepQualityEl.textContent : 'Fair',
+    mood:          moodEl ? moodEl.textContent : 'Neutral',
+    energy_level:  energy,
+    notes,
+  };
+  try {
+    const ch = await api('/mobile/api/challenge');
+    body.challenge_token = ch.token || ch.challenge || '';
+    await api('/mobile/api/health-checkin', { method: 'POST', body: JSON.stringify(body) });
+    showToast('Check-in logged — Lyrin approves');
+    haptic('success');
+    showXpFloat('+15 XP', '#10b981');
+    closeHealthSheet();
+    if (_intelSub === 'health') loadHealthHistory();
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    haptic('error');
+  }
+}
+
+async function loadHealthHistory() {
+  const el = document.getElementById('health-history-content');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/divisions');
+    const personal = d.personal || {};
+    const hl = personal.health_logger || {};
+    const m  = hl.metrics || {};
+    let html = '';
+    if (m.sleep_hours != null || m.avg_sleep_hours != null) {
+      html += `<div class="card"><div class="info-row"><span class="info-lbl">Avg Sleep</span><span class="info-val">${m.avg_sleep_hours ?? m.sleep_hours ?? '—'}h</span></div>
+        <div class="info-row"><span class="info-lbl">Burnout</span><span class="info-val" style="color:${m.burnout_level === 'elevated' ? 'var(--red)' : m.burnout_level === 'check' ? 'var(--yellow)' : 'var(--green)'}">${m.burnout_level || 'ok'}</span></div>
+        <div class="info-row"><span class="info-lbl">Health Logs</span><span class="info-val">${m.health_entries ?? '—'}</span></div>
+      </div>`;
+    }
+    if (hl.summary) html += `<div class="card"><div style="font-size:12px;line-height:1.5;color:var(--subtext);">${escHtml(hl.summary)}</div></div>`;
+    if (!html) html = '<div class="empty-state"><div class="empty-icon">🌿</div><p>No health data yet</p></div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+
+// ── Coding History Sheet ──────────────────────────────────────────────────────
+function openCodingHistorySheet() {
+  haptic('light');
+  document.getElementById('coding-history-backdrop').classList.add('open');
+  document.getElementById('sheet-coding-history').classList.add('open');
+  loadCodingHistory();
+}
+function closeCodingHistorySheet() {
+  document.getElementById('coding-history-backdrop').classList.remove('open');
+  document.getElementById('sheet-coding-history').classList.remove('open');
+}
+async function loadCodingHistory() {
+  const el = document.getElementById('coding-history-content');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>';
+  try {
+    const d = await api('/mobile/api/coding-history');
+    const sessions = d.sessions || d.entries || [];
+    if (!sessions.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">⬡</div><p>No coding sessions yet</p></div>';
+      return;
+    }
+    el.innerHTML = sessions.slice(0, 20).map(s => {
+      const id     = s.session_id || s.id || '—';
+      const status = s.status || 'pending';
+      const ts     = s.timestamp || s.started_at || s.created_at || '';
+      const tsFmt  = ts ? new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+      const files  = s.files_changed || s.files || [];
+      const filesStr = Array.isArray(files) ? files.slice(0, 3).join(', ') + (files.length > 3 ? ' +' + (files.length - 3) + ' more' : '') : String(files);
+      return `<div class="coding-session-card">
+        <div class="session-header">
+          <span class="session-id">${escHtml(String(id).slice(0, 12))}</span>
+          <span class="session-status session-${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending'}">${escHtml(status)}</span>
+        </div>
+        <div class="session-time">${tsFmt}</div>
+        ${filesStr ? `<div class="session-files">${escHtml(filesStr)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+
+// ── Achievements Sheet ────────────────────────────────────────────────────────
+function openAchievementsSheet() {
+  haptic('light');
+  document.getElementById('achievements-backdrop').classList.add('open');
+  document.getElementById('sheet-achievements').classList.add('open');
+  loadAchievements();
+}
+function closeAchievementsSheet() {
+  document.getElementById('achievements-backdrop').classList.remove('open');
+  document.getElementById('sheet-achievements').classList.remove('open');
+}
+async function loadAchievements() {
+  const el = document.getElementById('achievements-content');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton-list"><div class="skeleton"></div><div class="skeleton"></div></div>';
+  try {
+    const d = await api('/mobile/api/achievements');
+    const earned = new Set((d.earned || d.achievements || []).map(a => typeof a === 'string' ? a : a.id));
+    const defs = d.definitions || [];
+    if (!defs.length && !earned.size) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div><p>No achievements yet</p></div>';
+      return;
+    }
+    // Use local ACH_DEFS if server provides no definitions
+    const allDefs = defs.length ? defs : Object.entries(_ACH_DEFS).map(([id, v]) => ({ id, ...v }));
+    el.innerHTML = '<div class="ach-grid">' + allDefs.map(a => {
+      const unlocked = earned.has(a.id);
+      return `<div class="ach-card ${unlocked ? 'unlocked' : 'locked'}">
+        <div class="ach-card-icon">${a.icon || '🏆'}</div>
+        <div class="ach-card-name">${escHtml(a.name || a.id)}</div>
+        <div class="ach-card-desc">${escHtml(a.desc || a.description || '')}</div>
+        ${a.lore ? `<div class="ach-card-lore">${escHtml(a.lore)}</div>` : ''}
+      </div>`;
+    }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+
+// ── Division Report Sheet ─────────────────────────────────────────────────────
+function openDivReportSheet() {
+  document.getElementById('div-report-backdrop').classList.add('open');
+  document.getElementById('div-report-sheet').classList.add('open');
+}
+function closeDivReportSheet() {
+  document.getElementById('div-report-backdrop').classList.remove('open');
+  document.getElementById('div-report-sheet').classList.remove('open');
+}
+async function viewDivisionReport(divId) {
+  haptic('light');
+  const titleEl = document.getElementById('div-report-sheet-title');
+  const subEl   = document.getElementById('div-report-sheet-sub');
+  const contEl  = document.getElementById('div-report-content');
+  if (titleEl) titleEl.textContent = divId.replace(/_/g, '-') + ' Report';
+  if (subEl)   subEl.textContent   = '';
+  if (contEl)  contEl.textContent  = 'Loading...';
+  openDivReportSheet();
+  try {
+    const d = await api('/mobile/api/division/' + encodeURIComponent(divId) + '/report');
+    if (subEl && d.last_run) subEl.textContent = 'Last run: ' + relTime(d.last_run);
+    if (contEl) contEl.textContent = JSON.stringify(d, null, 2);
+  } catch(e) {
+    if (contEl) contEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Trading Signals (Intel/Trading/Signals pill) ──────────────────────────────
+let _tradingPill = 'overview';
+function switchTradingPill(pill, btnEl) {
+  _tradingPill = pill;
+  document.querySelectorAll('#intel-sub-trading .pill-tab').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  document.getElementById('trading-pill-overview').style.display = pill === 'overview' ? '' : 'none';
+  document.getElementById('trading-pill-signals').style.display  = pill === 'signals'  ? '' : 'none';
+  document.getElementById('trading-pill-history').style.display  = pill === 'history'  ? '' : 'none';
+  if (pill === 'signals') loadTradingSignals();
+  if (pill === 'history') loadTradingHistory();
+}
+async function loadTradingSignals() {
+  const el = document.getElementById('trading-signals-content');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/trading/signals');
+    const signals = d.signals || [];
+    if (!signals.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📈</div><p>No signals available</p></div>';
+      return;
+    }
+    el.innerHTML = signals.map(sig => {
+      const dir = (sig.direction || sig.signal || '').toLowerCase();
+      const isLong = dir === 'long' || dir === 'buy';
+      return `<div class="signal-card">
+        <div class="signal-header">
+          <span class="signal-symbol">${escHtml(sig.symbol || sig.ticker || '?')}</span>
+          <span class="signal-dir ${isLong ? 'signal-long' : 'signal-short'}">${escHtml((sig.direction || sig.signal || '—').toUpperCase())}</span>
+        </div>
+        <div class="signal-meta">${sig.timeframe ? escHtml(sig.timeframe) + ' · ' : ''}${sig.confidence ? 'Conf: ' + escHtml(String(sig.confidence)) + ' · ' : ''}${sig.generated_at ? relTime(sig.generated_at) : ''}</div>
+        ${sig.note ? `<div style="font-size:11px;color:var(--subtext);margin-top:4px;">${escHtml(sig.note)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+async function loadTradingHistory() {
+  const el = document.getElementById('trading-history-content');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/trading');
+    const history = d.history || d.recent_trades || [];
+    if (!history.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>No trade history</p></div>';
+      return;
+    }
+    el.innerHTML = '<div class="card" style="padding:0;">' + history.slice(0, 20).map((t, i) => {
+      const border = i < history.length - 1 ? 'border-bottom:1px solid var(--border);' : '';
+      const pnl = t.pnl || t.profit_loss || t.return;
+      const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--subtext)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;${border}">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${escHtml(t.symbol || t.ticker || '?')}</div>
+          <div style="font-size:11px;color:var(--subtext);">${t.date ? new Date(t.date).toLocaleDateString([], {month:'short',day:'numeric'}) : ''} · ${escHtml(t.direction || t.side || '')}</div>
+        </div>
+        ${pnl != null ? `<span style="font-size:13px;font-weight:700;color:${pnlColor}">${pnl > 0 ? '+' : ''}${escHtml(String(pnl))}</span>` : ''}
+      </div>`;
+    }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--red);">' + escHtml(e.message) + '</p></div>';
+  }
+}
+
+// ── Story / Choice Modal ───────────────────────────────────────────────────────
+async function _checkStoryState() {
+  try {
+    const d = await api('/mobile/api/story/state');
+    if (d && d.pending_choice) _showStoryModal(d);
+  } catch(e) { /* endpoint may not exist yet */ }
+}
+function _showStoryModal(data) {
+  document.getElementById('story-chapter-label').textContent = data.chapter_label || 'Chapter';
+  document.getElementById('story-title').textContent        = data.title || '';
+  document.getElementById('story-narrative').textContent    = data.narrative || '';
+  const choicesEl = document.getElementById('story-choices');
+  choicesEl.innerHTML = (data.choices || []).map((c, i) =>
+    `<button class="story-choice-btn" onclick="_pickStoryChoice(${i},this)">${escHtml(c.text || c)}</button>`
+  ).join('');
+  document.getElementById('story-modal').style.display = 'flex';
+  haptic('medium');
+}
+async function _pickStoryChoice(idx, btn) {
+  haptic('medium');
+  try {
+    await api('/mobile/api/story/choose', { method: 'POST', body: JSON.stringify({ choice_index: idx }) });
+    showToast('Choice made');
+    dismissStoryModal();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+function dismissStoryModal() {
+  document.getElementById('story-modal').style.display = 'none';
+}
+
+// ── Chat history persistence ──────────────────────────────────────────────────
+function _saveChatHistory(mode, messages) {
+  try { localStorage.setItem('mc_chat_history_' + mode, JSON.stringify(messages)); } catch(e) {}
+}
+function _loadChatHistory(mode) {
+  try { const v = localStorage.getItem('mc_chat_history_' + mode); return v ? JSON.parse(v) : []; } catch(e) { return []; }
+}
+function newChat() {
+  haptic('light');
+  if (typeof _chatMessages !== 'undefined') {
+    _chatMessages = [];
+    _saveChatHistory(_chatMode || 'jclaw', []);
+  }
+  document.getElementById('chat-messages').innerHTML = '';
+  showToast('New chat started');
+}
+
+// ── Command tab alias ─────────────────────────────────────────────────────────
+// chat-related functions already use screen-command via getChatEl helpers
 
 // ── Commander dialogue lines ──────────────────────────────────────────────────
 const _COMMANDER_DIALOGUE = {
@@ -2939,6 +3737,9 @@ async function loadStatsTab() {
       html += `</div></div>`;
     }
 
+    // ── Chronicles button ──
+    html += `<button class="chronicles-btn" onclick="openAchievementsSheet()">✦ CHRONICLES — Trophy Cabinet</button>`;
+
     el.innerHTML = html;
 
     // ── Store party data for character sheet ──
@@ -3279,6 +4080,9 @@ function escHtml(s) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function escAttr(s) {
+  return String(s ?? '').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 function statBox(val, lbl, color) {
   return `<div class="stat-box"><div class="val" ${color ? `style="color:${color}"` : ''}>${val}</div><div class="lbl">${lbl}</div></div>`;
@@ -3396,6 +4200,8 @@ function renderWinRateRing(pct) {
 async function loadOverview(silent = false) {
   const el = document.getElementById('home-content');
   if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  // Load briefing card (non-blocking)
+  loadBriefing().catch(() => {});
   try {
     const d = await api('/mobile/api/overview');
     setConnected(true);
@@ -3563,7 +4369,10 @@ async function loadOverview(silent = false) {
       html += `<div class="div-card ${cardClass}" onclick="openDivisionDetail('${key}')" style="${divColor ? `border-top:2px solid ${divColor}44;` : ''}">
         <div class="div-card-header">
           <span class="div-name" style="${divColor ? `color:${divColor};` : ''}">${escHtml(divLabel)}</span>
-          <span class="pill ${statusPillClass}">${escHtml(div.status || '?')}</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="div-report-btn" onclick="event.stopPropagation();viewDivisionReport('${key}')">Report</button>
+            <span class="pill ${statusPillClass}">${escHtml(div.status || '?')}</span>
+          </div>
         </div>
         ${metricsHtml}
         <div class="div-lastrun">${escHtml(lastRunLabel)} <span style="color:var(--border);float:right">›</span></div>
@@ -3632,11 +4441,13 @@ async function loadActivityLog(silent = false) {
       const divLabel = escHtml(e.division || 'SYS');
       const msg = escHtml(e.message || '');
       const border = i < entries.length - 1 ? 'border-bottom:1px solid var(--border);' : '';
+      const llmProvider = e.model || e.provider || e.llm || '';
+      const llmBadge = llmProvider ? `<span class="llm-badge">${escHtml(llmProvider)}</span>` : '';
       html += `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 14px;${border}">
         <div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:${col};margin-top:5px;box-shadow:0 0 6px ${col};"></div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">
-            <span style="font-size:10px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:0.06em;">${divLabel}</span>
+            <span style="font-size:10px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:0.06em;">${divLabel}${llmBadge}</span>
             <span style="font-size:10px;color:var(--subtext);white-space:nowrap;flex-shrink:0;">${ts}</span>
           </div>
           <div style="font-size:12px;color:var(--text);line-height:1.4;">${msg}</div>
@@ -3885,8 +4696,9 @@ function doApproval(decision, id, type) {
 // ══════════════════════════════════════════════════════
 // SCREEN: INTEL (Opportunity + Personal)
 // ══════════════════════════════════════════════════════
-async function loadIntel(silent = false) {
-  const el = document.getElementById('intel-content');
+async function loadIntel(silent = false, targetId = 'intel-content') {
+  const el = document.getElementById(targetId);
+  if (!el) return;
   if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
   try {
     const d = await api('/mobile/api/divisions');
@@ -4003,7 +4815,7 @@ async function loadIntel(silent = false) {
     el.innerHTML = html;
   } catch(e) {
     setConnected(false);
-    renderError(el, e.message, () => loadIntel());
+    renderError(el, e.message, () => loadIntel(false, targetId));
   }
 }
 
@@ -4659,8 +5471,13 @@ function initChat() {
     return;
   }
   _chatReady = true;
-  _chatHistory.jclaw.push({ role: 'assistant', text: 'J_Claw online. Ask me anything about your system.' });
-  _chatHistory.coding.push({ role: 'assistant', text: 'Coding mode — Claude agent connected. I can make real file edits on the PC. Ask me to make changes, fix bugs, or add features. All changes are git-checkpointed and OP-Sec monitored.' });
+  // Restore from localStorage
+  const savedJclaw  = _loadChatHistory('jclaw');
+  const savedCoding = _loadChatHistory('coding');
+  if (savedJclaw.length)  { _chatHistory.jclaw  = savedJclaw;  }
+  else { _chatHistory.jclaw.push({ role: 'assistant', text: 'J_Claw online. Ask me anything about your system.' }); }
+  if (savedCoding.length) { _chatHistory.coding = savedCoding; }
+  else { _chatHistory.coding.push({ role: 'assistant', text: 'Coding mode — Claude agent connected. I can make real file edits on the PC. Ask me to make changes, fix bugs, or add features. All changes are git-checkpointed and OP-Sec monitored.' }); }
   _renderChatHistory();
 }
 
@@ -4814,6 +5631,8 @@ async function sendChat() {
   } else {
     _chatHistory[_chatMode].push({ role: 'assistant', text: fullText });
   }
+  // Persist chat history (keep last 40 messages per mode)
+  try { _saveChatHistory(_chatMode, _chatHistory[_chatMode].slice(-40)); } catch(e) {}
 
   _chatStreaming = false;
   haptic('light');

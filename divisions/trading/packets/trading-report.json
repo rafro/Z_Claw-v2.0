@@ -1,6 +1,6 @@
 {
   "division": "trading",
-  "generated_at": "2026-03-21T21:00:02.322563+00:00",
+  "generated_at": "2026-03-22T15:24:43.090943+00:00",
   "skill": "trading-report",
   "status": "success",
   "summary": "No closed trades today. Market: SPX500 down 1.5% today — $6,506.48",
@@ -16,11 +16,11 @@
     "total_pnl": null,
     "source": "dry_run",
     "market_context": true,
-    "cycle_number": 209,
+    "cycle_number": 462,
     "risk_multiplier": 1.0,
-    "active_strategy": "Bollinger Lower Touch + Expanding Volatility",
-    "strategy_sharpe": 0.605,
-    "strategy_win_rate_pct": 38.8
+    "active_strategy": "Bollinger Lower Touch with Volume Boost",
+    "strategy_sharpe": 0.978,
+    "strategy_win_rate_pct": 39.3
   },
   "artifact_refs": [
     {
