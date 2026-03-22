@@ -1019,6 +1019,30 @@
     .combo-running .combo-progress { display:block; }
     /* Prompt badge on skill cards */
     .skill-prompt-badge { font-size:8px; background:rgba(167,139,250,0.18); color:#a78bfa; border-radius:4px; padding:1px 5px; margin-left:5px; letter-spacing:0.04em; font-weight:700; vertical-align:middle; }
+    /* Combo detail sheet */
+    .combo-detail-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:1050; display:none; align-items:flex-end; }
+    .combo-detail-overlay.open { display:flex; }
+    .combo-detail-sheet { background:var(--bg); border-radius:20px 20px 0 0; padding:20px 20px calc(var(--safe-bottom,0px) + 28px); width:100%; max-height:82dvh; overflow-y:auto; display:flex; flex-direction:column; gap:0; }
+    .cd-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 16px; }
+    .cd-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+    .cd-name { font-size:18px; font-weight:800; letter-spacing:0.01em; }
+    .cd-character { font-size:10px; color:var(--subtext); letter-spacing:0.07em; text-transform:uppercase; margin-top:3px; }
+    .cd-close-btn { background:rgba(255,255,255,0.06); border:none; color:var(--subtext); font-size:18px; width:30px; height:30px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .cd-full-desc { font-size:13px; color:var(--text); line-height:1.65; margin-bottom:18px; }
+    .cd-steps-label { font-size:10px; color:var(--subtext); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+    .cd-step { display:flex; gap:10px; margin-bottom:12px; }
+    .cd-step-num { width:22px; height:22px; border-radius:50%; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+    .cd-step-title { font-size:12px; font-weight:700; margin-bottom:2px; }
+    .cd-step-desc { font-size:11px; color:var(--subtext); line-height:1.45; }
+    .cd-prompt-section { margin:4px 0 16px; }
+    .cd-prompt-label { font-size:10px; color:var(--subtext); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+    .cd-prompt-textarea { width:100%; min-height:90px; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; line-height:1.5; resize:vertical; box-sizing:border-box; }
+    .cd-prompt-textarea:focus { outline:none; border-color:var(--accent); }
+    .cd-run-btn { width:100%; padding:14px; border-radius:12px; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#fff; border:none; cursor:pointer; margin-top:4px; transition:opacity 0.15s; }
+    .cd-run-btn:active { opacity:0.75; }
+    /* Combo cards — now tappable, no run button */
+    .combo-card { cursor:pointer; user-select:none; }
+    .combo-card:active { opacity:0.8; }
     /* Prompt input sheet */
     .prompt-sheet-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:1100; display:none; align-items:flex-end; }
     .prompt-sheet-overlay.open { display:flex; }
@@ -1981,6 +2005,28 @@
   </div>
 </div>
 
+<!-- ── Combo Detail Sheet ── -->
+<div id="combo-detail-overlay" class="combo-detail-overlay" onclick="closeComboDetail()">
+  <div class="combo-detail-sheet" onclick="event.stopPropagation()">
+    <div class="cd-handle"></div>
+    <div class="cd-header">
+      <div>
+        <div class="cd-name" id="cd-name"></div>
+        <div class="cd-character" id="cd-character"></div>
+      </div>
+      <button class="cd-close-btn" onclick="closeComboDetail()">✕</button>
+    </div>
+    <div class="cd-full-desc" id="cd-full-desc"></div>
+    <div class="cd-steps-label">Steps</div>
+    <div id="cd-steps"></div>
+    <div class="cd-prompt-section" id="cd-prompt-section" style="display:none;">
+      <div class="cd-prompt-label" id="cd-prompt-label">Prompt</div>
+      <textarea class="cd-prompt-textarea" id="cd-prompt-input" rows="4"></textarea>
+    </div>
+    <button class="cd-run-btn" id="cd-run-btn" onclick="runComboFromDetail()">Run</button>
+  </div>
+</div>
+
 <!-- ── Story / Choice Modal ── -->
 <div id="story-modal" style="display:none;">
   <div class="story-backdrop" onclick="dismissStoryModal()"></div>
@@ -2235,7 +2281,7 @@ function init() {
     _ptrStartX = e.touches[0].clientX;
     _ptrStartY = e.touches[0].clientY;
     _ptrActive = true;
-    _ptrInChat = !!e.target.closest('#chat-messages, #chat-input-bar, #skills-panel, #prompt-sheet-overlay');
+    _ptrInChat = !!e.target.closest('#chat-messages, #chat-input-bar, #skills-panel, #prompt-sheet-overlay, #combo-detail-overlay');
   }, { passive: true });
   screens.addEventListener('touchend', e => {
     if (!_ptrActive) return;
@@ -7081,11 +7127,11 @@ function _handleWSMessage(msg) {
         const prog = document.getElementById('combo-prog-' + combo.id);
         if (card) card.classList.remove('combo-running');
         if (msg.success) {
-          if (prog) prog.textContent = 'Complete ✓';
+          if (prog) { prog.textContent = 'Complete ✓'; setTimeout(() => { if (prog) prog.style.display = 'none'; }, 3000); }
           showToast(`${combo.name} complete! ✓`);
           haptic('success');
         } else {
-          if (prog) prog.textContent = `Failed at ${_SKILL_ABILITY_NAMES[msg.failed_at] || msg.failed_at} ✗`;
+          if (prog) { prog.textContent = `Failed at ${_SKILL_ABILITY_NAMES[msg.failed_at] || msg.failed_at} ✗`; setTimeout(() => { if (prog) prog.style.display = 'none'; }, 4000); }
           showToast(`${combo.name} failed ✗`);
           haptic('error');
         }
@@ -7167,44 +7213,86 @@ const _PROMPT_SKILLS = {
 // Skill combos — sequential multi-skill workflows
 const _SKILL_COMBOS = [
   {
-    id: 'full-hunt',      name: 'Full Hunt',
-    desc: 'Hunt all new leads from every source, then tier-rank every candidate in queue',
+    id: 'full-hunt', name: 'Full Hunt',
+    desc: 'Pull new job listings from all sources, then score and rank every pending application.',
+    fullDesc: 'Pulls new job listings from all configured job sources (Adzuna, LinkedIn, etc.) and adds them to the pending queue. Then runs the scoring filter to evaluate every pending application and assign it a tier rating (A through D) based on match quality, pay, and role fit. Results are saved to state and visible in Intel > Jobs.',
+    steps: [
+      'Fetches new job listings from all active sources and saves them to the pending queue.',
+      'Evaluates every pending application using the configured scoring criteria and assigns tier ratings (A/B/C/D).',
+    ],
     skills: ['job-intake', 'hard-filter'],
     color: '#f59e0b', character: 'VAEL',
   },
   {
     id: 'market-morning', name: 'Market Morning',
-    desc: 'Scan for live market signals then generate a full strategy performance report',
+    desc: 'Scan for active trading signals, then generate a full strategy performance report.',
+    fullDesc: 'Runs the market scanner across all configured instruments to identify any active entry signals based on the current strategy parameters. Immediately follows with a full trading report that summarizes the current cycle\'s win rate, Sharpe ratio, total trades, and key performance metrics.',
+    steps: [
+      'Scans all configured instruments for active trading signals using the current strategy.',
+      'Generates a full performance report: win rate, Sharpe ratio, cycle count, and recent trade metrics.',
+    ],
     skills: ['market-scan', 'trading-report'],
     color: '#06b6d4', character: 'SEREN',
   },
   {
-    id: 'dev-sweep',      name: 'Dev Sweep',
-    desc: 'Monitor repos, find technical debt, and scan for code vulnerabilities',
+    id: 'dev-sweep', name: 'Dev Sweep',
+    desc: 'Scan repos for issues, identify technical debt, and check for code vulnerabilities.',
+    fullDesc: 'Monitors all connected GitHub repositories for new issues, stale branches, and changes since the last check. Then scans the codebase for technical debt hotspots and refactor opportunities. Finally runs a security scan to flag vulnerabilities, exposed credentials, or unsafe code patterns.',
+    steps: [
+      'Checks all connected GitHub repos for new issues, stale branches, and recent changes.',
+      'Scans the codebase for technical debt hotspots and areas flagged for refactoring.',
+      'Runs a security scan to identify vulnerabilities, exposed secrets, or unsafe code patterns.',
+    ],
     skills: ['repo-monitor', 'refactor-scan', 'security-scan'],
     color: '#a78bfa', character: 'KAELEN',
   },
   {
     id: 'wellness-check', name: 'Wellness Check',
-    desc: 'Log today\'s health vitals then check for burnout and stress signals',
+    desc: 'Log today\'s health vitals and check for burnout or recovery concerns.',
+    fullDesc: 'Logs today\'s health metrics (sleep duration, energy level, mood, exercise) to the health state file. Then runs the burnout monitor to analyze the last 7 days of data and flag any concerning trends in recovery, stress load, or sleep deficit. Results feed into EMBER\'s performance correlation tracking.',
+    steps: [
+      'Records today\'s health metrics: sleep hours, energy level, mood rating, and exercise.',
+      'Analyzes the last 7 days of health data to detect burnout signals or recovery deficits.',
+    ],
     skills: ['health-logger', 'burnout-monitor'],
     color: '#10b981', character: 'LYRIN',
   },
   {
     id: 'security-audit', name: 'Security Audit',
-    desc: 'Full posture — device armor, credential breach scan, and threat surface analysis',
+    desc: 'Check device security, scan for data breaches, and analyze the exposed attack surface.',
+    fullDesc: 'Checks the current device\'s security configuration: firewall status, antivirus state, disk encryption, and UAC settings. Then checks configured email addresses against the Have I Been Pwned database for known data breaches. Finally analyzes the system\'s exposed attack surface and flags any high-risk open vectors.',
+    steps: [
+      'Verifies device security: firewall, antivirus, disk encryption, and UAC are checked.',
+      'Checks configured email addresses against the HIBP breach database for known exposures.',
+      'Analyzes the system\'s exposed attack surface and flags high-severity entries.',
+    ],
     skills: ['device-posture', 'breach-check', 'threat-surface'],
     color: '#ef4444', character: 'ZETH',
   },
   {
     id: 'creative-sprint', name: 'Creative Sprint',
-    desc: 'Generate images and sprites with a shared prompt, then catalog all assets',
+    desc: 'Generate images and sprites from a prompt, then catalog all produced assets.',
+    fullDesc: 'Uses your prompt to generate production-quality images via the configured image generation model. Then generates sprite or character assets using the same prompt. All produced files are automatically cataloged and indexed in the asset store so they\'re accessible for later use.',
+    steps: [
+      'Generates production images from your prompt using the configured image generation model.',
+      'Generates sprite or character assets from the same prompt.',
+      'Catalogs and indexes all newly generated files in the asset store.',
+    ],
     skills: ['image-generate', 'sprite-generate', 'asset-catalog'],
-    color: '#f97316', character: 'LYKE', hasPrompt: true,
+    color: '#f97316', character: 'LYKE',
+    hasPrompt: true,
+    promptLabel: 'What do you want to generate?',
+    promptPlaceholder: 'Describe the image or character to generate…',
   },
   {
     id: 'full-system', name: 'Full System Scan',
-    desc: 'Cross-division check: market signals, fresh leads, and security posture',
+    desc: 'Cross-division check: trading signals, new job leads, and device security.',
+    fullDesc: 'Runs three independent checks in sequence across three divisions: a market scan to detect active trading signals, a job intake to pull new listings from all sources, and a device posture check to verify the current security configuration. Use this as a morning or end-of-day status sweep when you want a fast multi-division snapshot.',
+    steps: [
+      'Scans all configured instruments for active trading signals.',
+      'Fetches new job listings from all configured job sources.',
+      'Verifies the device\'s current security posture.',
+    ],
     skills: ['market-scan', 'job-intake', 'device-posture'],
     color: '#8b5cf6', character: 'ALL',
   },
@@ -7313,21 +7401,18 @@ async function loadSkillsPanel() {
       const aName = _SKILL_ABILITY_NAMES[s] || s;
       return `<span class="combo-skill-pill" style="color:${combo.color};">${escHtml(aName)}</span>${i < combo.skills.length-1 ? '<span class="combo-arrow">→</span>' : ''}`;
     }).join('');
-    const promptNote = combo.hasPrompt
-      ? `<div style="font-size:10px;color:#a78bfa;margin-bottom:8px;">✦ Generation skills will ask for a prompt</div>`
+    const promptBadge = combo.hasPrompt
+      ? `<span style="font-size:9px;background:rgba(249,115,22,0.15);color:#f97316;border-radius:4px;padding:1px 6px;margin-left:6px;letter-spacing:0.04em;font-weight:700;vertical-align:middle;">PROMPT</span>`
       : '';
     html += `
-      <div class="combo-card" id="combo-card-${escAttr(combo.id)}" style="border-left-color:${combo.color};">
+      <div class="combo-card" id="combo-card-${escAttr(combo.id)}" style="border-left-color:${combo.color};" onclick="openComboDetail('${escAttr(combo.id)}')">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
-          <div class="combo-card-name" style="color:${combo.color};">${escHtml(combo.name)}</div>
+          <div class="combo-card-name" style="color:${combo.color};">${escHtml(combo.name)}${promptBadge}</div>
           <div style="font-size:9px;color:var(--subtext);letter-spacing:0.05em;text-transform:uppercase;">${escHtml(combo.character)}</div>
         </div>
         <div class="combo-card-desc">${escHtml(combo.desc)}</div>
-        <div class="combo-card-chain">${pillsHtml}</div>
-        ${promptNote}
-        <button class="combo-run-btn" style="background:${combo.color}18;color:${combo.color};border:1px solid ${combo.color}40;"
-          onclick="runCombo('${escAttr(combo.id)}')">⚡ Run ${escHtml(combo.name)}</button>
-        <div class="combo-progress" id="combo-prog-${escAttr(combo.id)}">Starting…</div>
+        <div class="combo-card-chain" style="margin-bottom:0;">${pillsHtml}</div>
+        <div class="combo-progress" id="combo-prog-${escAttr(combo.id)}" style="display:none;">Starting…</div>
       </div>`;
   }
   html += '</div>';
@@ -7416,14 +7501,91 @@ async function submitPromptSheet() {
   }
 }
 
+// ── Combo Detail Sheet ────────────────────────────────────────────────────
+let _detailComboId = null;
+
+function openComboDetail(comboId) {
+  const combo = _SKILL_COMBOS.find(c => c.id === comboId);
+  if (!combo) return;
+  _detailComboId = comboId;
+
+  // Header
+  const nameEl = document.getElementById('cd-name');
+  nameEl.textContent = combo.name;
+  nameEl.style.color = combo.color;
+  document.getElementById('cd-character').textContent = combo.character + ' · ' + combo.skills.length + ' steps';
+
+  // Full plain description
+  document.getElementById('cd-full-desc').textContent = combo.fullDesc || combo.desc;
+
+  // Steps
+  const stepsEl = document.getElementById('cd-steps');
+  stepsEl.innerHTML = (combo.steps || []).map((stepDesc, i) => {
+    const skillId = combo.skills[i] || '';
+    const skillName = _SKILL_ABILITY_NAMES[skillId] || skillId;
+    return `<div class="cd-step">
+      <div class="cd-step-num" style="background:${combo.color}22;color:${combo.color};">${i + 1}</div>
+      <div>
+        <div class="cd-step-title">${escHtml(skillName)}</div>
+        <div class="cd-step-desc">${escHtml(stepDesc)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Prompt input (only for combos that need it)
+  const promptSection = document.getElementById('cd-prompt-section');
+  const promptInput   = document.getElementById('cd-prompt-input');
+  const promptLabel   = document.getElementById('cd-prompt-label');
+  if (combo.hasPrompt) {
+    promptLabel.textContent = combo.promptLabel || 'Prompt';
+    promptInput.placeholder = combo.promptPlaceholder || 'Enter a prompt…';
+    promptInput.value = '';
+    promptInput.style.borderColor = '';
+    promptSection.style.display = '';
+  } else {
+    promptSection.style.display = 'none';
+  }
+
+  // Run button
+  const runBtn = document.getElementById('cd-run-btn');
+  runBtn.textContent = 'Run ' + combo.name;
+  runBtn.style.background = combo.color;
+
+  document.getElementById('combo-detail-overlay').style.display = 'flex';
+  haptic('light');
+  if (combo.hasPrompt) setTimeout(() => promptInput.focus(), 280);
+}
+
+function closeComboDetail() {
+  document.getElementById('combo-detail-overlay').style.display = 'none';
+  _detailComboId = null;
+}
+
+async function runComboFromDetail() {
+  const combo = _SKILL_COMBOS.find(c => c.id === _detailComboId);
+  if (!combo) return;
+  let prompt;
+  if (combo.hasPrompt) {
+    prompt = document.getElementById('cd-prompt-input').value.trim();
+    if (!prompt) {
+      const ta = document.getElementById('cd-prompt-input');
+      ta.style.borderColor = '#ef4444';
+      ta.focus();
+      setTimeout(() => ta.style.borderColor = '', 1200);
+      return;
+    }
+  }
+  closeComboDetail();
+  await runCombo(_detailComboId, prompt);
+}
+
 // ── Combo Runner ──────────────────────────────────────────────────────────
 async function runCombo(comboId, prompt) {
   const combo = _SKILL_COMBOS.find(c => c.id === comboId);
   if (!combo) return;
-  // If combo touches prompt skills and no prompt given, open sheet
+  // If combo needs a prompt and none provided, open the detail sheet
   if (combo.hasPrompt && prompt === undefined) {
-    const firstPS = combo.skills.find(s => _PROMPT_SKILLS[s]);
-    openPromptSheet(firstPS || combo.skills[0], comboId);
+    openComboDetail(comboId);
     return;
   }
   if (_runningCombos.has(comboId)) return;
@@ -7431,7 +7593,7 @@ async function runCombo(comboId, prompt) {
   const card = document.getElementById('combo-card-' + comboId);
   const prog = document.getElementById('combo-prog-' + comboId);
   if (card) card.classList.add('combo-running');
-  if (prog) prog.textContent = 'Starting…';
+  if (prog) { prog.style.display = ''; prog.textContent = 'Starting…'; }
   haptic('medium');
   try {
     const body = { name: combo.name, skills: combo.skills };
