@@ -604,6 +604,10 @@
     .skill-run-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
     .skill-run-btn:disabled { color: var(--overlay); border-color: var(--overlay); cursor: not-allowed; }
 
+    /* ── Account source tabs ── */
+    .an-acct-tab { background: none; font-family: 'Press Start 2P', monospace; border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; }
+    .an-acct-tab:hover { border-color: var(--teal) !important; color: var(--teal) !important; }
+
     /* ── Reports Panel ── */
     #reports-panel { margin-bottom: 12px; }
 
@@ -1077,12 +1081,15 @@
             EV: <strong id="an-ev-r">—</strong>R
           </div>
           <div style="border-top:1px solid var(--border);margin:3px 0;"></div>
-          <div class="div-row">BALANCE: <strong id="an-balance" style="color:var(--teal);">—</strong> &nbsp;|&nbsp; GROWTH: <strong id="an-growth" style="color:var(--green);">—</strong></div>
-          <div class="div-row">PROFIT: <strong id="an-profit-pct" style="color:var(--green);">—</strong> &nbsp;|&nbsp; ANN. RETURN: <strong id="an-ann-return" style="color:var(--green);">—</strong></div>
-          <div class="div-row">PROJ/MO: <strong id="an-proj-mo" style="color:var(--teal);">—</strong> &nbsp;|&nbsp; RISK/TRADE: <strong id="an-risk-trade">—</strong>%</div>
-          <div id="an-open-positions" style="display:none;">
-            <div style="font-size:6px;color:var(--subtext);margin-top:3px;margin-bottom:1px;">OPEN POSITIONS</div>
-            <div id="an-open-pos-list" style="font-size:7px;"></div>
+          <!-- Account switcher tabs — populated by loadTradingAccounts() -->
+          <div id="an-acct-tabs" style="display:flex;gap:3px;margin-bottom:5px;flex-wrap:wrap;"></div>
+          <!-- Account panels — one per account, toggled by anSwitchAccount() -->
+          <div id="an-acct-panels"></div>
+          <!-- Agent Network cycle performance metrics -->
+          <div style="border-top:1px solid var(--border);margin:3px 0;padding-top:2px;">
+            <div style="font-size:6px;color:var(--subtext);margin-bottom:2px;letter-spacing:0.5px;">CYCLE PERFORMANCE</div>
+            <div class="div-row">PROFIT: <strong id="an-profit-pct" style="color:var(--green);">—</strong> &nbsp;|&nbsp; ANN. RETURN: <strong id="an-ann-return" style="color:var(--green);">—</strong></div>
+            <div class="div-row">PROJ/MO: <strong id="an-proj-mo" style="color:var(--teal);">—</strong> &nbsp;|&nbsp; RISK/TRADE: <strong id="an-risk-trade">—</strong>%</div>
           </div>
         </div>
 
@@ -1800,6 +1807,97 @@ Hit ⚡ GENERATE NOW to compile immediately.
       if (_anTradePage < total - 1) { _anTradePage++; anRenderTrades(); }
     }
 
+    // ── Trading account panel ──────────────────────────────────────────────────
+    let _anActiveAcct = localStorage.getItem('an_active_acct') || 'virtual';
+
+    function anSwitchAccount(key) {
+      _anActiveAcct = key;
+      localStorage.setItem('an_active_acct', key);
+      document.querySelectorAll('.an-acct-tab').forEach(btn => {
+        const active = btn.dataset.key === key;
+        btn.style.color       = active ? 'var(--teal)' : 'var(--subtext)';
+        btn.style.borderColor = active ? 'var(--teal)' : 'var(--border)';
+      });
+      document.querySelectorAll('.an-acct-panel').forEach(p => {
+        p.style.display = p.dataset.key === key ? '' : 'none';
+      });
+    }
+
+    function _acctTimeSince(iso) {
+      if (!iso) return '—';
+      const diff = Date.now() - new Date(iso).getTime();
+      if (isNaN(diff) || diff < 0) return '—';
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      return h > 0 ? `${h}h ${m}m ago` : `${m}m ago`;
+    }
+
+    async function loadTradingAccounts() {
+      try {
+        const r = await fetch('/api/trading/accounts');
+        if (!r.ok) return;
+        const data  = await r.json();
+        const accts = data.accounts || {};
+        const keys  = data.account_keys || Object.keys(accts);
+        if (!keys.length) return;
+
+        if (!accts[_anActiveAcct]) _anActiveAcct = keys[0];
+
+        // Build tab strip
+        const tabsEl = document.getElementById('an-acct-tabs');
+        if (tabsEl) tabsEl.innerHTML = keys.map(k => {
+          const a = accts[k];
+          const active = k === _anActiveAcct;
+          return `<button class="an-acct-tab" data-key="${k}" onclick="anSwitchAccount('${k}')" ` +
+            `style="font-size:6px;padding:2px 6px;border:1px solid ${active ? 'var(--teal)' : 'var(--border)'};` +
+            `color:${active ? 'var(--teal)' : 'var(--subtext)'};">${a.label.toUpperCase()}</button>`;
+        }).join('');
+
+        // Build panels
+        const panelsEl = document.getElementById('an-acct-panels');
+        if (panelsEl) panelsEl.innerHTML = keys.map(k => {
+          const a         = accts[k];
+          const pnlColor  = (a.pnl_total || 0) >= 0 ? 'var(--green)' : 'var(--red)';
+          const dayColor  = (a.pnl_today || 0) >= 0 ? 'var(--green)' : 'var(--red)';
+          const pnlSign   = (a.pnl_total || 0) >= 0 ? '+' : '';
+          const daySign   = (a.pnl_today || 0) >= 0 ? '+' : '';
+          const pnlDollars = `${pnlSign}$${Math.abs(a.pnl_total || 0).toFixed(2)}`;
+          const pnlPct    = a.pnl_pct != null ? ` (${pnlSign}${a.pnl_pct}%)` : '';
+
+          // Open positions block
+          let posHtml = '';
+          if (a.open_positions && a.open_positions.length) {
+            posHtml = `<div style="font-size:6px;color:var(--subtext);margin-top:3px;margin-bottom:1px;">` +
+              `OPEN POSITIONS (${a.open_positions.length})</div>` +
+              a.open_positions.map(p => {
+                const sc = p.side === 'buy' ? 'var(--green)' : 'var(--red)';
+                const ep = p.entry_price != null ? `$${p.entry_price.toFixed(2)}` : '?';
+                const sl = p.stop_loss  != null ? ` &nbsp;SL:<span style="color:var(--red);">$${p.stop_loss.toFixed(2)}</span>` : '';
+                return `<div style="border-bottom:1px solid var(--border);padding:2px 0;font-size:7px;">` +
+                  `<strong>${p.symbol||'?'}</strong> ` +
+                  `<span style="color:${sc};">${(p.side||'').toUpperCase()}</span>` +
+                  `${p.qty != null ? ` ×${p.qty}` : ''} ` +
+                  `<span style="color:var(--subtext);">@ ${ep}</span>${sl}` +
+                  `</div>`;
+              }).join('');
+          } else {
+            posHtml = `<div style="font-size:6px;color:var(--subtext);margin-top:2px;">No open positions</div>`;
+          }
+
+          return `<div class="an-acct-panel" data-key="${k}" style="display:${k === _anActiveAcct ? '' : 'none'};">` +
+            `<div class="div-row">BALANCE: <strong style="color:var(--teal);">` +
+            `$${(a.balance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>` +
+            `&nbsp;<span style="font-size:6px;color:var(--subtext);">${a.type === 'paper' ? '[PAPER]' : '[LIVE]'}</span></div>` +
+            `<div class="div-row">PNL: <strong style="color:${pnlColor};">${pnlDollars}${pnlPct}</strong>` +
+            (a.pnl_today != null ? ` &nbsp;TODAY: <strong style="color:${dayColor};">${daySign}$${Math.abs(a.pnl_today).toFixed(2)}</strong>` : '') +
+            `</div>` +
+            posHtml +
+            `<div style="font-size:6px;color:var(--overlay);margin-top:2px;">UPD: ${_acctTimeSince(a.updated_at)}</div>` +
+            `</div>`;
+        }).join('');
+      } catch(e) {}
+    }
+
     async function loadTradingCycle() {
       await loadTradingCycleStatus();
       try {
@@ -1823,32 +1921,9 @@ Hit ⚡ GENERATE NOW to compile immediately.
         document.getElementById('an-avg-loss-r').textContent = d.active_strategy?.avg_loss_r ? d.active_strategy.avg_loss_r.toFixed(2) : '—';
         document.getElementById('an-ev-r').textContent       = d.active_strategy?.empirical_ev_r ? d.active_strategy.empirical_ev_r.toFixed(3) : '—';
 
-        // Page 0 — Account
+        // Page 0 — Cycle performance metrics (account panel is loaded separately)
         const s = d.active_strategy || {};
-        const acct = d.account;
-        if (acct) {
-          document.getElementById('an-balance').textContent  = '$' + acct.balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-          const gPos = acct.growth_usd >= 0;
-          const gEl = document.getElementById('an-growth');
-          gEl.textContent = (gPos ? '+' : '') + '$' + Math.abs(acct.growth_usd).toFixed(2);
-          gEl.style.color = gPos ? 'var(--green)' : 'var(--red)';
-          // Open positions
-          const opBlock = document.getElementById('an-open-positions');
-          const opList  = document.getElementById('an-open-pos-list');
-          if (acct.open_positions && acct.open_positions.length) {
-            opBlock.style.display = '';
-            opList.innerHTML = acct.open_positions.map(p => {
-              const pos = (p.unrealized_pnl || 0) >= 0;
-              return `<div style="border-bottom:1px solid var(--border);padding:1px 0;">` +
-                `<strong>${p.symbol||'?'}</strong> ${p.direction||''} ` +
-                `${p.unrealized_pnl != null ? `<span style="color:${pos?'var(--green)':'var(--red)'};">${pos?'+':''}${p.unrealized_pnl.toFixed(2)}R</span>` : ''} ` +
-                `${p.entry_price != null ? `<span style="color:var(--subtext);">@ ${p.entry_price}</span>` : ''}` +
-                `</div>`;
-            }).join('');
-          } else {
-            opBlock.style.display = 'none';
-          }
-        }
+        loadTradingAccounts();
         const profitEl = document.getElementById('an-profit-pct');
         if (s.total_pnl_pct != null) {
           profitEl.textContent = (s.total_pnl_pct >= 0 ? '+' : '') + s.total_pnl_pct + '%';
@@ -2951,11 +3026,11 @@ Hit ⚡ GENERATE NOW to compile immediately.
     // Refresh every 30 seconds
     setInterval(() => {
       loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadTradingCycle();
-      loadReports();
+      loadTradingAccounts(); loadReports();
     }, 30000);
 
     // Initial load
-    loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadReports(); loadTradingCycle();
+    loadState(); loadActivityLog(); loadBriefing(); loadRankCard(); loadReports(); loadTradingCycle(); loadTradingAccounts();
 
     // ── Chat ──
     let chatSending = false;

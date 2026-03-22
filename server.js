@@ -987,6 +987,80 @@ function handleGetTradingCycle(res) {
   }
 }
 
+// GET /api/trading/accounts — returns all known trading account states (virtual, alpaca paper, etc.)
+function handleGetTradingAccounts(res) {
+  const AGENT_STATE = 'C:/Users/Tyler/agent-network/state';
+  const accounts    = {};
+  const today       = new Date().toISOString().slice(0, 10);
+
+  // Virtual Account (J_Claw paper trader)
+  try {
+    const va   = JSON.parse(fs.readFileSync(path.join(AGENT_STATE, 'virtual_account.json'), 'utf8'));
+    const bal  = va.account_balance  || 10000;
+    const init = va.initial_balance  || 10000;
+    const pnl  = Math.round((bal - init) * 100) / 100;
+    const pnlPct = init > 0 ? Math.round(((bal - init) / init) * 10000) / 100 : 0;
+    const log  = va.trade_log || [];
+    const todayExits = log.filter(t => t.type === 'exit' && (t.timestamp || '').startsWith(today));
+    const todayPnl   = Math.round(todayExits.reduce((s, t) => s + (t.pnl || 0), 0) * 100) / 100;
+    accounts.virtual = {
+      key:             'virtual',
+      label:           'Virtual',
+      type:            'paper',
+      balance:         bal,
+      initial_balance: init,
+      pnl_total:       pnl,
+      pnl_pct:         pnlPct,
+      pnl_today:       todayPnl,
+      total_trades:    log.filter(t => t.type === 'exit').length,
+      open_positions:  (va.open_positions || []).map(p => ({
+        symbol:      p.symbol,
+        side:        p.side,
+        entry_price: p.entry_price,
+        qty:         p.qty,
+        risk_usd:    p.risk_usd,
+        stop_loss:   p.stop_loss,
+        opened_at:   p.opened_at,
+      })),
+      updated_at: va.updated_at || null,
+    };
+  } catch(e) {}
+
+  // Alpaca Paper (optional — only included if file exists)
+  try {
+    const ap   = JSON.parse(fs.readFileSync(path.join(AGENT_STATE, 'alpaca_paper_state.json'), 'utf8'));
+    const bal  = ap.account_balance || ap.portfolio_value || 10000;
+    const init = ap.initial_balance || 10000;
+    const pnl  = Math.round((bal - init) * 100) / 100;
+    const pnlPct = init > 0 ? Math.round(((bal - init) / init) * 10000) / 100 : 0;
+    const log  = ap.trade_log || [];
+    const todayExits = log.filter(t => t.type === 'exit' && (t.timestamp || '').startsWith(today));
+    const todayPnl   = Math.round(todayExits.reduce((s, t) => s + (t.pnl || 0), 0) * 100) / 100;
+    accounts.alpaca_paper = {
+      key:             'alpaca_paper',
+      label:           'Alpaca Paper',
+      type:            'paper',
+      balance:         bal,
+      initial_balance: init,
+      pnl_total:       pnl,
+      pnl_pct:         pnlPct,
+      pnl_today:       todayPnl,
+      total_trades:    log.filter(t => t.type === 'exit').length,
+      open_positions:  (ap.open_positions || []).map(p => ({
+        symbol:      p.symbol,
+        side:        p.side,
+        entry_price: p.entry_price,
+        qty:         p.qty,
+        risk_usd:    p.risk_usd,
+        stop_loss:   p.stop_loss,
+      })),
+      updated_at: ap.updated_at || null,
+    };
+  } catch(e) {}
+
+  jsonOk(res, { accounts, account_keys: Object.keys(accounts) });
+}
+
 // POST /api/agents/toggle  { division: "opportunity", agent: "job-intake" }
 function handleToggle(body, res) {
   const { division, agent } = body;
@@ -3010,6 +3084,7 @@ const server = http.createServer(async (req, res) => {
       if (method === 'GET' && reqPath === '/api/grants') { return handleGetGrants(res); }
       if (method === 'GET' && reqPath === '/api/packets') { return handleGetPackets(res); }
       if (method === 'GET' && reqPath === '/api/trading/cycle') { return handleGetTradingCycle(res); }
+      if (method === 'GET' && reqPath === '/api/trading/accounts') { return handleGetTradingAccounts(res); }
       if (method === 'GET' && reqPath === '/api/trading/cycle/status') { return proxyZenith('GET', '/status', null, res); }
       if (method === 'POST' && reqPath === '/api/trading/cycle/run') {
         const body = await parseBody(req); return proxyZenith('POST', '/run', body, res);
