@@ -12,7 +12,7 @@
   "asset_policy": {
     "hot_ttl_hours": 72,
     "archive_after_hours": 72,
-    "max_hot_mb": 2048,
+    "max_hot_mb": 10240,
     "auto_catalog": true
   },
   "packet_output_path": "divisions/production/packets",
@@ -82,7 +82,7 @@
       "status": "idle"
     },
     "storyboard-compose": {
-      "schedule": "every 6 hours",
+      "schedule": "on_demand",
       "skill": "storyboard-compose",
       "enabled": true,
       "last_run": null,
