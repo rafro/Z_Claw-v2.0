@@ -741,7 +741,7 @@
       box-shadow: 0 4px 24px #a78bfa44, inset 0 0 0 1px #a78bfa20;
       animation: theater-pulse 2.2s ease-in-out infinite;
       -webkit-tap-highlight-color: transparent;
-      display: flex; align-items: center; gap: 8px;
+      align-items: center; gap: 8px;
     }
     #theater-watch-btn.has-queue { display: flex !important; }
     @keyframes theater-pulse {
@@ -7031,8 +7031,8 @@ async function _thPlayChoice(event) {
 
   // Record choice
   _TH.storyChoices.push({ division, choice_id: chosen.id, ts: new Date().toISOString() });
-  fetch('/mobile/api/story/choice', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+  api('/mobile/api/story/choice', {
+    method: 'POST',
     body: JSON.stringify({ division, choice_id: chosen.id, choice_text: chosen.text }),
   }).catch(() => {});
 
@@ -7095,7 +7095,7 @@ async function _runTheaterQueue() {
 
   // All done — clear queue
   _TH.phase = 'idle';
-  await fetch('/mobile/api/anim/queue/clear', { method: 'POST' }).catch(() => {});
+  await api('/mobile/api/anim/queue/clear', { method: 'POST' }).catch(() => {});
   closeTheater();
   _updateTheaterBadge(0);
 }
@@ -7103,8 +7103,7 @@ async function _runTheaterQueue() {
 // ── Public: open / close theater ──────────────────────────────────────────
 async function openTheater() {
   try {
-    const resp = await fetch('/mobile/api/anim/queue');
-    const data = await resp.json();
+    const data = await api('/mobile/api/anim/queue');
     if (!data.queue || data.queue.length === 0) { return; }
     _TH.queue = data.queue;
     _TH.idx   = 0;
@@ -7147,8 +7146,7 @@ function _updateTheaterBadge(count) {
 
 async function _pollTheaterQueue() {
   try {
-    const resp = await fetch('/mobile/api/anim/queue');
-    const data = await resp.json();
+    const data = await api('/mobile/api/anim/queue');
     _updateTheaterBadge(data.count || 0);
   } catch {}
 }
