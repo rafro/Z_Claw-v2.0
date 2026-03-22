@@ -120,7 +120,6 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      scroll-behavior: smooth;
       padding-bottom: 8px;
     }
 
@@ -1153,7 +1152,7 @@
     .chat-spinner.blue { border-top-color: var(--blue); }
     .chat-thinking-text { font-size: 13px; color: var(--subtext); }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #screen-chat.active, #screen-command.active { display: flex !important; flex-direction: column; padding: 0; }
+    #screen-chat.active, #screen-command.active { display: flex !important; flex-direction: column; padding: 0; overflow: hidden; }
 
     /* ── Division detail overlay ── */
     #div-detail-backdrop {
@@ -1790,7 +1789,7 @@
     </div>
     <!-- Chat panel -->
     <div id="chat-panel" style="display:flex;flex-direction:column;flex:1;min-height:0;">
-      <div id="chat-messages" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 8px;"></div>
+      <div id="chat-messages" style="flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:12px 16px 8px;"></div>
       <div id="chat-input-bar" style="flex-shrink:0;display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);">
         <textarea id="chat-input" placeholder="Message J_Claw…" rows="1"
           style="flex:1;background:var(--overlay);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;padding:10px 14px;resize:none;max-height:120px;-webkit-appearance:none;font-family:inherit;line-height:1.4;"
@@ -2184,15 +2183,17 @@ function init() {
   // Pull-to-refresh + swipe tab navigation
   const screens = document.getElementById('screens');
   const TAB_ORDER = ['home', 'intel', 'jclaw', 'command', 'log'];
-  let _ptrStartX = 0, _ptrStartY = 0, _ptrActive = false;
+  let _ptrStartX = 0, _ptrStartY = 0, _ptrActive = false, _ptrInChat = false;
   screens.addEventListener('touchstart', e => {
     _ptrStartX = e.touches[0].clientX;
     _ptrStartY = e.touches[0].clientY;
     _ptrActive = true;
+    _ptrInChat = !!e.target.closest('#chat-messages, #chat-input-bar, #skills-panel');
   }, { passive: true });
   screens.addEventListener('touchend', e => {
     if (!_ptrActive) return;
     _ptrActive = false;
+    if (_ptrInChat) return; // let chat panel handle its own scroll/gestures
     const dx = e.changedTouches[0].clientX - _ptrStartX;
     const dy = e.changedTouches[0].clientY - _ptrStartY;
     // Pull-to-refresh: mostly vertical downward at top of scroll
@@ -5775,6 +5776,13 @@ function tradingControl(action) {
 }
 
 // ── Chat ─────────────────────────────────────────────────
+// Smooth-scroll chat to the bottom. Pass smooth=false for instant (history load).
+function _scrollChatToBottom(smooth) {
+  const msgs = document.getElementById('chat-messages');
+  if (!msgs) return;
+  msgs.scrollTo({ top: msgs.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+}
+
 let _chatReady = false;
 let _chatStreaming = false;
 let _chatMode = 'jclaw'; // 'jclaw' | 'coding'
@@ -5815,7 +5823,7 @@ function _renderChatHistory() {
   for (const m of _chatHistory[_chatMode]) {
     _appendChatBubble(m.role, m.text, _chatMode);
   }
-  msgs.scrollTop = msgs.scrollHeight;
+  _scrollChatToBottom(false); // instant — restoring saved history
 }
 
 function _appendChatBubble(role, text, mode) {
@@ -5827,6 +5835,7 @@ function _appendChatBubble(role, text, mode) {
   const content = role === 'assistant' ? renderMarkdown(text) : escHtml(text);
   div.innerHTML = `<div class="chat-sender">${senderName}</div><div class="chat-bubble" style="${bubbleAccent}">${content}</div>`;
   msgs.appendChild(div);
+  _scrollChatToBottom(true);
   return div;
 }
 
@@ -5841,7 +5850,7 @@ function updateChatMsg(id, text) {
   if (!el) return;
   const bubble = el.querySelector('.chat-bubble');
   if (bubble) bubble.innerHTML = renderMarkdown(text);
-  document.getElementById('chat-messages').scrollTop = 99999;
+  _scrollChatToBottom(true); // smooth — streaming update
 }
 
 function showTypingIndicator() {
@@ -5854,7 +5863,7 @@ function showTypingIndicator() {
   const spinnerClass = isCoding ? 'chat-spinner blue' : 'chat-spinner';
   div.innerHTML = `<div class="chat-sender">${senderName}</div><div class="chat-bubble chat-loading-bubble"><div class="${spinnerClass}"></div><span class="chat-thinking-text">Thinking…</span></div>`;
   msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  _scrollChatToBottom(true); // smooth — new typing indicator
 }
 
 function removeTypingIndicator() {

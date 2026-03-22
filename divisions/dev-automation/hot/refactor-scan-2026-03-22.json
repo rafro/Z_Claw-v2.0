@@ -1,6 +1,6 @@
 {
   "date": "2026-03-22",
-  "generated_at": "2026-03-22T15:02:42.653836+00:00",
+  "generated_at": "2026-03-22T16:02:40.492681+00:00",
   "summary": "Several files contain large functions and duplicate logic, which can be refactored to improve maintainability and readability.",
   "findings": [
     {
@@ -8,7 +8,7 @@
       "severity": "high",
       "type": "oversized_function",
       "detail": "The `run_virtual_account` function is 152 lines long, which is quite large for a single function.",
-      "suggestion": "Consider breaking down the function into smaller, more focused functions."
+      "suggestion": "Consider breaking down the `run_virtual_account` function into smaller, more focused functions."
     },
     {
       "file": "runtime/skills/market_scan.py",
@@ -50,14 +50,14 @@
       "severity": "high",
       "type": "oversized_function",
       "detail": "The `run` method in `repo_monitor.py` is 62 lines long.",
-      "suggestion": "Refactor the `run` method into smaller functions to improve readability and maintainability."
+      "suggestion": "Break down the `run` method into smaller, more focused functions."
     },
     {
-      "file": "runtime/skills/mobile_audit_review.py",
+      "file": "runtime/orchestrators/opportunity.py",
       "severity": "high",
       "type": "oversized_function",
-      "detail": "The `run` method in `mobile_audit_review.py` is 134 lines long.",
-      "suggestion": "Refactor the `run` method into smaller functions to improve readability and maintainability."
+      "detail": "The `run_job_intake` function is 98 lines long.",
+      "suggestion": "Refactor the `run_job_intake` function into smaller, more focused functions."
     }
   ]
 }

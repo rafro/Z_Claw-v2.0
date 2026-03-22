@@ -1,6 +1,6 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-21T16:00:23.301539+00:00",
+  "generated_at": "2026-03-22T16:03:01.907347+00:00",
   "skill": "doc-update",
   "status": "failed",
   "summary": "Doc update failed: llama runner process has terminated: exit status 2 (status code: 500)",
@@ -11,7 +11,7 @@
   },
   "artifact_refs": [
     {
-      "bundle_id": "architecture-doc-2026-03-21",
+      "bundle_id": "architecture-doc-2026-03-22",
       "location": "hot"
     }
   ],

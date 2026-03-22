@@ -1,13 +1,13 @@
 {
   "division": "dev-automation",
-  "generated_at": "2026-03-22T15:02:42.654119+00:00",
+  "generated_at": "2026-03-22T16:02:40.493487+00:00",
   "skill": "refactor-scan",
   "status": "success",
   "summary": "Several files contain large functions and duplicate logic, which can be refactored to improve maintainability and readability.",
   "action_items": [
     {
       "priority": "high",
-      "description": "[high] runtime/tools/virtual_account.py: The `run_virtual_account` function is 152 lines long, which is quite large for a single function. — Consider breaking down the function into smaller, more focused functions.",
+      "description": "[high] runtime/tools/virtual_account.py: The `run_virtual_account` function is 152 lines long, which is quite large for a single function. — Consider breaking down the `run_virtual_account` function into smaller, more focused functions.",
       "requires_matthew": false
     },
     {

@@ -813,5 +813,26 @@
     },
     "total_event": 39,
     "ts": "2026-03-22T15:24:43.093973+00:00"
+  },
+  {
+    "id": "0e8f1ee0",
+    "type": "skill_complete",
+    "division": "dev_automation",
+    "skill": "refactor-scan",
+    "commander": "KAELEN",
+    "color": "#a78bfa",
+    "enemy": "code_rot",
+    "enemy_name": "Code Rot",
+    "xp": 5,
+    "multiplier": 1.0,
+    "rank_up": false,
+    "rank_up_msg": "",
+    "new_rank": "Forge Warden",
+    "chapter": {
+      "title": "Chapter IV \u2014 The Iron Pact",
+      "narration": "All five orders stand united. An ancient darkness gathers on the horizon. J_Claw must forge the pact before the veil breaks."
+    },
+    "total_event": 40,
+    "ts": "2026-03-22T16:02:40.510535+00:00"
   }
 ]
