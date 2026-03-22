@@ -319,17 +319,31 @@
       background: var(--surface);
     }
 
-    /* ── Rank-up / achievement celebration banner ── */
+    /* ── Rank-up / achievement celebration overlay ── */
     #rank-up-banner {
-      position: fixed; top: -90px; left: 0; right: 0; z-index: 9999;
-      background: linear-gradient(135deg, #4b0082, #7c3aed);
-      color: #fff; text-align: center; padding: 16px 20px;
-      font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px;
-      transition: top 0.4s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow: 0 4px 24px rgba(124,58,237,0.5);
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.82);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
       cursor: pointer;
     }
-    #rank-up-banner.show { top: 0; }
+    #rank-up-banner.show { opacity: 1; pointer-events: all; }
+    .ru-inner {
+      background: linear-gradient(135deg, #3b0764, #6d28d9);
+      border: 1px solid rgba(167,139,250,0.4);
+      padding: 40px 56px; text-align: center;
+      box-shadow: 0 0 80px rgba(124,58,237,0.5);
+      animation: ruPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+      max-width: 480px; width: 90%;
+    }
+    @keyframes ruPop {
+      0%   { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .ru-label { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #c084fc; letter-spacing: 3px; margin-bottom: 14px; }
+    .ru-rank  { font-family: 'Press Start 2P', monospace; font-size: 12px; color: #fff; letter-spacing: 1px; line-height: 1.6; }
+    .ru-sub   { font-size: 9px; color: rgba(255,255,255,0.45); margin-top: 18px; font-family: monospace; letter-spacing: 1px; }
 
     /* ── Stats panel ── */
     .stats-grid {
@@ -2816,10 +2830,20 @@ Hit ⚡ GENERATE NOW to compile immediately.
     // ── Stats Panel ──
     async function loadStatsPanel() {
       try {
-        const d   = await fetch('/api/stats/summary').then(r => r.json());
-        const div = { opportunity: 'OPPS', trading: 'TRADE', dev_automation: 'DEV', personal: 'PERS', op_sec: 'OPSEC', production: 'FORGE' };
-        let streakRows = Object.entries(d.longest_streaks || {})
-          .map(([k,v]) => `<span style="margin-right:8px">${div[k]||k} 🔥${v}d</span>`).join('');
+        const [d, full] = await Promise.all([
+          fetch('/api/stats/summary').then(r => r.json()),
+          fetch('/api/stats').then(r => r.json()),
+        ]);
+        const divLabel = { opportunity: 'OPPS', trading: 'TRADE', dev_automation: 'DEV', personal: 'PERS', op_sec: 'OPSEC', production: 'FORGE' };
+        const streakRows = Object.entries(d.longest_streaks || {})
+          .map(([k,v]) => `<span style="margin-right:8px">${divLabel[k]||k} 🔥${v}d</span>`).join('');
+        // Division breakdown from full stats
+        const divBreakdown = Object.entries(full.divisions || {}).map(([k, v]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:8px;color:var(--subtext);min-width:48px;">${divLabel[k]||k}</span>
+            <span style="font-size:8px;color:var(--purple);flex:1;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.rank||'—'}</span>
+            <span style="font-size:9px;color:var(--green);min-width:40px;text-align:right;">${v.xp||0} XP</span>
+          </div>`).join('');
         const html = `
           <div class="stats-grid">
             <div class="stats-cell"><div class="stats-cell-label">TOTAL XP EARNED</div><div class="stats-cell-value">${d.total_xp_earned || 0}</div></div>
@@ -2827,21 +2851,23 @@ Hit ⚡ GENERATE NOW to compile immediately.
             <div class="stats-cell"><div class="stats-cell-label">ACHIEVEMENTS</div><div class="stats-cell-value">${d.achievements_earned}/${d.achievements_total}</div></div>
             <div class="stats-cell"><div class="stats-cell-label">PRESTIGE</div><div class="stats-cell-value">${d.prestige > 0 ? '⭐'.repeat(d.prestige) : '—'}</div></div>
           </div>
-          <div style="margin-top:8px;font-size:8px;color:var(--subtext);">LONGEST STREAKS</div>
+          <div style="margin-top:10px;font-size:8px;color:var(--subtext);">LONGEST STREAKS</div>
           <div style="font-size:9px;color:var(--yellow);margin-top:4px;">${streakRows || '—'}</div>
           ${d.prestige_multiplier > 1.0 ? `<div style="font-size:8px;color:var(--green);margin-top:6px;">PRESTIGE BONUS: ×${d.prestige_multiplier}</div>` : ''}
+          <div style="margin-top:12px;font-size:8px;color:var(--subtext);">DIVISION BREAKDOWN</div>
+          <div style="margin-top:4px;">${divBreakdown || '<span style="font-size:8px;color:var(--subtext);">No division data</span>'}</div>
         `;
         document.getElementById('stats-panel-content').innerHTML = html;
       } catch(e) {}
     }
 
     // ── Rank-up Banner ──
-    function showRankUpBanner(text) {
+    function showRankUpBanner(label, body) {
       const el = document.getElementById('rank-up-banner');
-      el.textContent = text;
+      el.innerHTML = `<div class="ru-inner"><div class="ru-label">${label}</div><div class="ru-rank">${body}</div><div class="ru-sub">CLICK TO DISMISS</div></div>`;
       el.classList.add('show');
       clearTimeout(el._timer);
-      el._timer = setTimeout(() => el.classList.remove('show'), 3500);
+      el._timer = setTimeout(() => el.classList.remove('show'), 4000);
     }
 
     function playRankUpChime() {
@@ -2903,16 +2929,18 @@ Hit ⚡ GENERATE NOW to compile immediately.
           } else if (evt.event === 'rank_up') {
             loadRankCard(); loadActivityLog();
             const label = evt.division ? `⚔ ${evt.division.toUpperCase()} RANK UP` : '⚔ RANK UP';
-            showRankUpBanner(`${label} — ${evt.new_rank}`); playRankUpChime();
+            showRankUpBanner(label, evt.new_rank || ''); playRankUpChime();
           } else if (evt.event === 'achievement_unlock') {
             loadRankCard();
             addLog('SYS', `🏆 Achievement unlocked: ${evt.achievement}`, 'yellow');
-            showRankUpBanner(`🏆 ${evt.achievement.replace(/_/g,' ').toUpperCase()}`); playRankUpChime();
+            showRankUpBanner('🏆 ACHIEVEMENT UNLOCKED', evt.achievement.replace(/_/g,' ').toUpperCase()); playRankUpChime();
           } else if (evt.event === 'streak_milestone') {
             addLog('SYS', `🔥 ${evt.division} streak: ${evt.streak} days!`, 'yellow');
+          } else if (evt.event === 'streak_multiplier_applied') {
+            addLog('SYS', `🔥 ${(evt.division||'').toUpperCase()} streak bonus active: ×${evt.multiplier} XP (${evt.streak_days}d streak)`, 'yellow');
           } else if (evt.event === 'prestige') {
             loadRankCard(); loadActivityLog();
-            showRankUpBanner(`⭐ PRESTIGE ${evt.prestige} — +${Math.round((evt.multiplier-1)*100)}% PERMANENT XP`);
+            showRankUpBanner(`⭐ PRESTIGE ${evt.prestige}`, `+${Math.round((evt.multiplier-1)*100)}% PERMANENT XP`);
             playRankUpChime();
           }
         } catch(e) {}

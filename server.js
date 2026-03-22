@@ -391,8 +391,37 @@ function grantDivisionXP(division, amount, skillName = null) {
     stats.last_updated = new Date().toISOString();
     writeState('jclaw-stats.json', stats);
 
+    // Broadcast streak multiplier when active
+    if (streakMult > 1.0) {
+      _broadcastGamifEvent({ event: 'streak_multiplier_applied', division, multiplier: streakMult, streak_days: streakDays });
+    }
+
+    // Auto-prestige check
+    _checkAutoPrestige();
+
     const resolved = skillName || Object.keys(SKILL_XP).find(k => SKILL_XP[k].division === division) || 'unknown';
     setImmediate(() => handleGamifCheck(resolved, division, actualAmount, streakMult));
+  } catch(e) {}
+}
+
+// Auto-prestige: triggers when all 6 divisions hit rank 5 (>= 500 XP each)
+function _checkAutoPrestige() {
+  try {
+    const stats = readState('jclaw-stats.json');
+    if (!stats) return;
+    const CORE = ['opportunity', 'trading', 'dev_automation', 'personal', 'op_sec', 'production'];
+    if (!CORE.every(d => ((stats.divisions || {})[d] || {}).xp >= 500)) return;
+    for (const d of CORE) {
+      stats.divisions[d].xp   = 0;
+      stats.divisions[d].rank = (DIV_RANKS[d] || ['Unknown'])[0];
+    }
+    stats.prestige            = (stats.prestige || 0) + 1;
+    stats.prestige_multiplier = Math.round((1.0 + stats.prestige * 0.05) * 1000) / 1000;
+    stats.last_updated        = new Date().toISOString();
+    writeState('jclaw-stats.json', stats);
+    logActivity('SYS', `⭐ AUTO-PRESTIGE ${stats.prestige} — ×${stats.prestige_multiplier} XP`, 'purple');
+    _broadcastGamifEvent({ event: 'prestige', prestige: stats.prestige, multiplier: stats.prestige_multiplier, auto: true });
+    _appendXpHistory({ event: 'auto_prestige', prestige: stats.prestige, multiplier: stats.prestige_multiplier });
   } catch(e) {}
 }
 
@@ -2973,6 +3002,7 @@ const server = http.createServer(async (req, res) => {
         const body = await parseBody(req); return handleControl(body, res);
       }
       if (method === 'GET' && reqPath === '/api/gamif/stream') { return handleGamifStream(req, res); }
+      if (method === 'GET' && reqPath === '/api/stats')         { return jsonOk(res, readState('jclaw-stats.json') || {}); }
       if (method === 'GET' && reqPath === '/api/stats/summary') { return handleStatsSummary(res); }
       if (method === 'POST' && reqPath === '/api/prestige') { return handlePrestige(res); }
       if (method === 'GET' && reqPath === '/api/jobs') { return handleGetJobs(res); }

@@ -2496,6 +2496,9 @@ function _connectGamifStream() {
           haptic('success');
           triggerSpriteAnim('power-surge');
           showCommanderQuote(evt.division, 'streak_7');
+        } else if (evt.event === 'streak_multiplier_applied') {
+          haptic('success');
+          showXpFloat(`×${evt.multiplier} STREAK`, (_COMMANDER_DEF[evt.division] || {}).color || '#f59e0b');
         } else if (evt.event === 'prestige') {
           showRankUpOverlay({ new_rank: `PRESTIGE ${evt.prestige} · +${Math.round((evt.multiplier-1)*100)}% XP`, division: null, _prestige: true });
           if (_onGamifTab) refreshCurrent();
