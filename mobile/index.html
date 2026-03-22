@@ -1042,6 +1042,18 @@
     .asset-type-pill.selected { background:var(--accent); border-color:var(--accent); color:#fff; }
     .cd-run-btn { width:100%; padding:14px; border-radius:12px; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#fff; border:none; cursor:pointer; margin-top:4px; transition:opacity 0.15s; }
     .cd-run-btn:active { opacity:0.75; }
+    .cd-comfyui-banner { display:flex; align-items:center; gap:10px; border-radius:10px; padding:10px 12px; margin-bottom:14px; }
+    .cd-comfyui-banner.offline { background:#f9731618; border:1px solid #f9731640; }
+    .cd-comfyui-banner.online  { background:#a6e3a118; border:1px solid #a6e3a140; }
+    .cd-comfyui-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .cd-comfyui-dot.online { background:#a6e3a1; box-shadow:0 0 6px #a6e3a1; }
+    .cd-comfyui-dot.offline { background:#f38ba8; }
+    .cd-comfyui-info { flex:1; min-width:0; }
+    .cd-comfyui-label { font-size:11px; font-weight:700; color:var(--text); }
+    .cd-comfyui-sub { font-size:10px; color:var(--subtext); margin-top:1px; line-height:1.4; }
+    .cd-comfyui-launch-btn { padding:7px 14px; border-radius:8px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; background:#f97316; color:#fff; border:none; cursor:pointer; flex-shrink:0; transition:opacity 0.15s; white-space:nowrap; }
+    .cd-comfyui-launch-btn:active { opacity:0.75; }
+    .cd-comfyui-launch-btn:disabled { opacity:0.45; cursor:not-allowed; }
     /* Combo cards — now tappable, no run button */
     .combo-card { cursor:pointer; user-select:none; }
     .combo-card:active { opacity:0.8; }
@@ -2071,6 +2083,15 @@
           <button class="asset-type-pill" data-type="ui_element" onclick="_selectAssetType(this)">UI Element</button>
         </div>
       </div>
+    </div>
+    <!-- ComfyUI status banner — only shown for image combos -->
+    <div id="cd-comfyui-banner" class="cd-comfyui-banner" style="display:none;">
+      <div class="cd-comfyui-dot" id="cd-comfyui-dot"></div>
+      <div class="cd-comfyui-info">
+        <div class="cd-comfyui-label" id="cd-comfyui-label">ComfyUI</div>
+        <div class="cd-comfyui-sub" id="cd-comfyui-sub">Checking…</div>
+      </div>
+      <button class="cd-comfyui-launch-btn" id="cd-comfyui-launch-btn" onclick="_launchComfyUI()" style="display:none;">Launch</button>
     </div>
     <button class="cd-run-btn" id="cd-run-btn" onclick="runComboFromDetail()">Run</button>
   </div>
@@ -7755,6 +7776,46 @@ function openComboDetail(comboId) {
   runBtn.textContent = 'Run ' + combo.name;
   runBtn.style.background = combo.color;
 
+  // ComfyUI status banner — show for image combos
+  const banner  = document.getElementById('cd-comfyui-banner');
+  const dot     = document.getElementById('cd-comfyui-dot');
+  const lbl     = document.getElementById('cd-comfyui-label');
+  const sub     = document.getElementById('cd-comfyui-sub');
+  const launchBtn = document.getElementById('cd-comfyui-launch-btn');
+  if (isImageCombo) {
+    banner.style.display = 'flex';
+    banner.className = 'cd-comfyui-banner';
+    dot.className = 'cd-comfyui-dot';
+    lbl.textContent = 'ComfyUI';
+    sub.textContent = 'Checking status…';
+    launchBtn.style.display = 'none';
+    api('/mobile/api/comfyui/status').then(d => {
+      if (d.online) {
+        banner.classList.add('online');
+        dot.classList.add('online');
+        lbl.textContent = 'ComfyUI — Online';
+        sub.textContent = 'Ready to generate images';
+        launchBtn.style.display = 'none';
+      } else {
+        banner.classList.add('offline');
+        dot.classList.add('offline');
+        lbl.textContent = 'ComfyUI — Offline';
+        sub.textContent = d.bat_exists
+          ? 'Not running. Tap Launch to start it on the PC.'
+          : 'Launcher not found. Update comfyui_path in production config.';
+        launchBtn.style.display = d.bat_exists ? '' : 'none';
+      }
+    }).catch(() => {
+      banner.classList.add('offline');
+      dot.classList.add('offline');
+      lbl.textContent = 'ComfyUI — Unknown';
+      sub.textContent = 'Could not reach server to check status';
+      launchBtn.style.display = 'none';
+    });
+  } else {
+    banner.style.display = 'none';
+  }
+
   document.getElementById('combo-detail-overlay').style.display = 'flex';
   haptic('light');
   if (combo.hasPrompt) setTimeout(() => promptInput.focus(), 280);
@@ -7763,6 +7824,101 @@ function openComboDetail(comboId) {
 function closeComboDetail() {
   document.getElementById('combo-detail-overlay').style.display = 'none';
   _detailComboId = null;
+}
+
+async function _launchComfyUI() {
+  const btn    = document.getElementById('cd-comfyui-launch-btn');
+  const sub    = document.getElementById('cd-comfyui-sub');
+  const dot    = document.getElementById('cd-comfyui-dot');
+  const lbl    = document.getElementById('cd-comfyui-label');
+  const banner = document.getElementById('cd-comfyui-banner');
+
+  btn.disabled    = true;
+  btn.textContent = 'Auth…';
+  sub.textContent = 'Confirm with PIN or biometric…';
+
+  // Full auth + launch inline (mirrors restart_server pattern)
+  let challengeId;
+  try {
+    const ch = await api('/mobile/api/challenge?action=launch_comfyui');
+    challengeId = ch.challenge_id;
+  } catch(e) {
+    showToast('Could not get challenge: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Launch';
+    sub.textContent = 'Not running. Tap Launch to start it on the PC.';
+    return;
+  }
+
+  // PIN fallback (biometric not reliable from PWA)
+  let authed = false;
+  try {
+    const pin  = await openPinSheet();
+    const h    = await sha256(pin);
+    const resp = await api('/mobile/api/pin/verify', { method:'POST', body: JSON.stringify({ hash: h }) });
+    authed = resp.ok;
+    if (!authed) { showToast(resp.reason || 'Incorrect PIN'); haptic('error'); }
+  } catch(e) {
+    if (e.message !== 'cancelled') showToast('Auth error: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Launch';
+    sub.textContent = 'Not running. Tap Launch to start it on the PC.';
+    return;
+  }
+  if (!authed) { btn.disabled = false; btn.textContent = 'Launch'; return; }
+
+  // Send launch command
+  btn.textContent = 'Launching…';
+  sub.textContent = 'Sending launch command…';
+  let d;
+  try {
+    d = await api('/mobile/api/action', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'launch_comfyui', challenge_id: challengeId }),
+    });
+  } catch(e) {
+    sub.textContent = 'Request failed — check server connection.';
+    btn.disabled = false; btn.textContent = 'Retry';
+    return;
+  }
+
+  if (d.ok && d.already_running) {
+    banner.className  = 'cd-comfyui-banner online';
+    dot.className     = 'cd-comfyui-dot online';
+    lbl.textContent   = 'ComfyUI — Online';
+    sub.textContent   = 'Already running and ready.';
+    btn.style.display = 'none';
+  } else if (d.ok) {
+    lbl.textContent = 'ComfyUI — Starting';
+    sub.textContent = 'Window opened on PC. Ready in ~30 seconds…';
+    btn.textContent = 'Launched';
+    haptic('medium');
+    // Poll every 4s for up to 60s
+    let tries = 0;
+    const poll = setInterval(async () => {
+      tries++;
+      try {
+        const status = await api('/mobile/api/comfyui/status');
+        if (status.online) {
+          clearInterval(poll);
+          banner.className  = 'cd-comfyui-banner online';
+          dot.className     = 'cd-comfyui-dot online';
+          lbl.textContent   = 'ComfyUI — Online';
+          sub.textContent   = 'Ready to generate images.';
+          btn.style.display = 'none';
+          showToast('ComfyUI is ready ✓');
+          haptic('success');
+        } else if (tries >= 15) {
+          clearInterval(poll);
+          sub.textContent = 'Still starting — check the PC window. Retry if needed.';
+          btn.disabled    = false;
+          btn.textContent = 'Retry';
+        }
+      } catch(_) {}
+    }, 4000);
+  } else {
+    sub.textContent = d.message || 'Launch failed. Check the PC.';
+    btn.disabled    = false;
+    btn.textContent = 'Retry';
+  }
 }
 
 function _selectAssetType(btn) {

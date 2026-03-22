@@ -8,6 +8,7 @@
     "local_only": false
   },
   "comfyui_url": "http://127.0.0.1:8188",
+  "comfyui_path": "C:\\ComfyUI\\run_amd_gpu.bat",
   "asset_policy": {
     "hot_ttl_hours": 72,
     "archive_after_hours": 72,

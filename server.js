@@ -1809,6 +1809,7 @@ const MOBILE_ALLOWED_ACTIONS = new Set([
   'restart_server', // graceful process.exit(0) — PM2 auto-restarts
   'restart_pm2',    // spawns a new PowerShell window running: pm2 restart openclaw
   'git_sync',       // stash → pull → stash pop → push in a visible PowerShell window
+  'launch_comfyui', // start ComfyUI via run_amd_gpu.bat if not already running
   'approve_coding', // keep file edits made by a mobile coding session
   'revert_coding',  // git reset --hard back to pre-session HEAD
 ]);
@@ -1900,6 +1901,8 @@ async function handleMobileAction(body, req, res) {
         result = mobileRestartPm2(); break;
       case 'git_sync':
         result = mobileGitSync(); break;
+      case 'launch_comfyui':
+        result = await mobileLaunchComfyUI(); break;
       case 'approve_coding':
         result = mobileApproveCoding(targetId); break;
       case 'revert_coding':
@@ -2048,6 +2051,45 @@ function mobileGitSync() {
     return { ok: true, message: 'PowerShell window opened — running git stash → pull → push' };
   } catch(e) {
     return { ok: false, message: 'Failed to open PowerShell: ' + e.message };
+  }
+}
+
+async function mobileLaunchComfyUI() {
+  // Check if ComfyUI is already running first
+  try {
+    const http = require('http');
+    await new Promise((resolve, reject) => {
+      const req = http.get('http://127.0.0.1:8188', { timeout: 2000 }, res => resolve(res));
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    });
+    return { ok: true, message: 'ComfyUI is already running', already_running: true };
+  } catch(_) { /* not running — proceed to launch */ }
+
+  // Read comfyui_path from production config
+  let batPath = 'C:\\ComfyUI\\run_amd_gpu.bat';
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions/production/config.json'), 'utf8'));
+    if (cfg.comfyui_path) batPath = cfg.comfyui_path;
+  } catch(_) {}
+
+  if (!fs.existsSync(batPath)) {
+    return { ok: false, message: `ComfyUI launcher not found at: ${batPath} — update divisions/production/config.json → comfyui_path` };
+  }
+
+  try {
+    const batDir = path.dirname(batPath);
+    const proc = spawn(
+      'cmd.exe',
+      ['/c', 'start', '""', batPath],
+      { detached: true, stdio: 'ignore', windowsHide: false, cwd: batDir }
+    );
+    proc.unref();
+    logActivity('SYS', '[MOBILE] ComfyUI launch triggered via mobile dashboard', 'yellow');
+    mobileAuditLog({ action: 'launch_comfyui', actor: 'mobile-operator', result: 'succeeded', detail: batPath });
+    return { ok: true, message: 'ComfyUI is starting — this takes 20-40 seconds. A window opened on the desktop.' };
+  } catch(e) {
+    return { ok: false, message: 'Failed to launch ComfyUI: ' + e.message };
   }
 }
 
@@ -3289,6 +3331,26 @@ const server = http.createServer(async (req, res) => {
           return jsonOk(res, { entries });
         } catch(e) {
           return jsonOk(res, { entries: [] });
+        }
+      }
+
+      // ── ComfyUI: status check ─────────────────────────────────────────────────
+      if (method === 'GET' && reqPath === '/mobile/api/comfyui/status') {
+        try {
+          const http = require('http');
+          await new Promise((resolve, reject) => {
+            const req = http.get('http://127.0.0.1:8188', { timeout: 2500 }, res => resolve(res));
+            req.on('error', reject);
+            req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+          });
+          return jsonOk(res, { online: true, url: 'http://127.0.0.1:8188' });
+        } catch(_) {
+          let batPath = 'C:\\ComfyUI\\run_amd_gpu.bat';
+          try {
+            const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions/production/config.json'), 'utf8'));
+            if (cfg.comfyui_path) batPath = cfg.comfyui_path;
+          } catch(_) {}
+          return jsonOk(res, { online: false, bat_exists: fs.existsSync(batPath), bat_path: batPath });
         }
       }
 
