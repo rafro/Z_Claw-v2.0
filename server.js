@@ -3062,6 +3062,17 @@ const server = http.createServer(async (req, res) => {
         return handleMobileAction(body, req, res);
       }
 
+      // ── Activity log feed ────────────────────────────────────────────────────
+      if (method === 'GET' && reqPath === '/mobile/api/activity') {
+        try {
+          const log = readState('activity-log.json') || { entries: [] };
+          const entries = (log.entries || []).slice(-100).reverse();
+          return jsonOk(res, { entries });
+        } catch(e) {
+          return jsonOk(res, { entries: [] });
+        }
+      }
+
       return jsonError(res, 404, 'Unknown mobile endpoint');
     } catch(e) {
       return jsonError(res, 500, e.message);

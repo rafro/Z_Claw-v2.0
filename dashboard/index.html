@@ -740,6 +740,116 @@
       color: var(--subtext);
       font-size: 7px;
     }
+
+    /* ── Tab Navigation ── */
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--overlay);
+      padding-bottom: 0;
+    }
+    .nav-tab {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--subtext);
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-bottom: -2px;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active-tab { color: var(--purple); border-bottom-color: var(--purple); }
+
+    /* ── Tab Panels ── */
+    .tab-panel { display: none; animation: fadeIn 0.15s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── Commander color accents ── */
+    .tag-orange { border-color: #f97316; color: #f97316; }
+    .div-commander-label { font-size: 7px; margin-bottom: 6px; letter-spacing: 1px; }
+
+    /* ── J_CLAW tab ── */
+    .party-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .party-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0 var(--overlay);
+      padding: 14px;
+    }
+    .party-card-name {
+      font-size: 10px;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    .party-card-order { font-size: 7px; color: var(--subtext); margin-bottom: 8px; }
+    .party-card-rank  { font-size: 7px; margin-bottom: 4px; }
+    .party-card-xp    { font-size: 7px; color: var(--green); }
+
+    /* ── INTEL tab ── */
+    .intel-section {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0 var(--overlay);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .intel-div-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--overlay);
+    }
+    .intel-div-title { font-size: 10px; letter-spacing: 1px; }
+    .intel-div-commander { font-size: 7px; color: var(--subtext); }
+    .intel-mission { font-size: 8px; line-height: 2; color: var(--subtext); margin-bottom: 12px; font-family: system-ui, sans-serif; }
+    .intel-agent-list { list-style: none; }
+    .intel-agent-item {
+      display: flex;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dotted var(--overlay);
+      font-size: 7px;
+      line-height: 1.9;
+      font-family: system-ui, sans-serif;
+    }
+    .intel-agent-item:last-child { border-bottom: none; }
+    .intel-agent-name { color: var(--teal); flex-shrink: 0; font-weight: 700; font-size: 7px; min-width: 130px; }
+    .intel-agent-desc { color: var(--subtext); }
+    .intel-orch-note {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: var(--overlay);
+      font-size: 7px;
+      line-height: 2;
+      color: var(--purple);
+      font-family: system-ui, sans-serif;
+    }
+    .intel-flow-box {
+      background: var(--overlay);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-size: 7px;
+      line-height: 2.2;
+      color: var(--text);
+      margin-bottom: 14px;
+      font-family: system-ui, sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -770,6 +880,19 @@
 
   <!-- ── Rank-up / Achievement celebration banner ── -->
   <div id="rank-up-banner" onclick="this.classList.remove('show')"></div>
+
+  <!-- ── Tab Navigation ── -->
+  <nav class="tab-nav">
+    <button class="nav-tab active-tab" id="navtab-home"    onclick="switchTab('home')">HOME</button>
+    <button class="nav-tab"            id="navtab-jclaw"   onclick="switchTab('jclaw')">J_CLAW</button>
+    <button class="nav-tab"            id="navtab-intel"   onclick="switchTab('intel')">INTEL</button>
+    <button class="nav-tab"            id="navtab-reports" onclick="switchTab('reports')">REPORTS</button>
+    <button class="nav-tab"            id="navtab-log"     onclick="switchTab('log')">LOG</button>
+    <button class="nav-tab"            id="navtab-chat"    onclick="switchTab('chat')">CHAT</button>
+  </nav>
+
+  <!-- ════════════════════════════════ HOME TAB ════════════════════════════ -->
+  <div class="tab-panel active" id="panel-home">
 
   <!-- ── J_Claw Rank Card ── -->
   <div id="rank-card">
@@ -805,6 +928,7 @@
         <div class="div-badge"><span>DEV TEAM</span><span id="badge-dev_automation">Code Ward</span><span id="xp-dev_automation" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>PERSONAL</span><span id="badge-personal">Keeper</span><span id="xp-personal" class="div-xp">0 XP</span></div>
         <div class="div-badge"><span>OP-SEC</span><span id="badge-op_sec">Watchman</span><span id="xp-op_sec" class="div-xp">0 XP</span></div>
+        <div class="div-badge" style="border-color:#f97316;"><span style="color:#f97316;">LYKEON FORGE</span><span id="badge-production">Apprentice of the Forge</span><span id="xp-production" class="div-xp">0 XP</span></div>
       </div>
     </div>
 
@@ -1099,6 +1223,32 @@
       </div>
     </div>
 
+    <!-- Lykeon Forge (Production) -->
+    <div class="division-card" id="card-production" style="border-color:#f97316;">
+      <div class="div-name" style="color:#f97316;">[ LYKEON FORGE ]</div>
+      <div style="margin-bottom:4px;"><span class="tag tag-green" id="production-status">IDLE</span></div>
+      <div class="div-row" style="font-size:7px;color:#f9731680;margin-bottom:6px;">LYKE // The Lykeon Forge</div>
+      <div class="div-row">LAST RUN: <strong id="production-last">—</strong></div>
+      <div class="div-row">NEXT: <strong>on-demand</strong></div>
+      <button class="run-btn" id="run-production" onclick="runSkill('production-digest','production')" style="border-color:#f97316;color:#f97316;">▶ RUN</button>
+      <div class="agent-list">
+        <div class="agent-row"><span class="agent-name">image-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-image-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('image-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="image-generate"></div></div>
+        <div class="agent-row"><span class="agent-name">sprite-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-sprite-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('sprite-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="sprite-generate"></div></div>
+        <div class="agent-row"><span class="agent-name">video-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-video-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('video-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="video-generate"></div></div>
+        <div class="agent-row"><span class="agent-name">graphic-design</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-graphic-design">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('graphic-design','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="graphic-design"></div></div>
+        <div class="agent-row"><span class="agent-name">prompt-craft</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-prompt-craft">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('prompt-craft','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="prompt-craft"></div></div>
+        <div class="agent-row"><span class="agent-name">style-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-production-style-check">QA</span><button class="skill-run-btn" onclick="runSkill('style-check','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="style-check"></div></div>
+        <div class="agent-row"><span class="agent-name">image-review</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-production-image-review">QA</span><button class="skill-run-btn" onclick="runSkill('image-review','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="image-review"></div></div>
+        <div class="agent-row"><span class="agent-name">audio-test</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-production-audio-test">QA</span><button class="skill-run-btn" onclick="runSkill('audio-test','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="audio-test"></div></div>
+        <div class="agent-row"><span class="agent-name">video-review</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-production-video-review">QA</span><button class="skill-run-btn" onclick="runSkill('video-review','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="video-review"></div></div>
+        <div class="agent-row"><span class="agent-name">storyboard-compose</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-storyboard-compose">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('storyboard-compose','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="storyboard-compose"></div></div>
+        <div class="agent-row"><span class="agent-name">continuity-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-production-continuity-check">QA</span><button class="skill-run-btn" onclick="runSkill('continuity-check','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="continuity-check"></div></div>
+        <div class="agent-row"><span class="agent-name">asset-catalog</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-catalog">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-catalog','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-catalog"></div></div>
+        <div class="agent-row"><span class="agent-name">asset-deliver</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-deliver">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-deliver','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-deliver"></div></div>
+        <div class="agent-row"><span class="agent-name">production-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-production-digest">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('production-digest','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="production-digest"></div></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── Reports Panel ── -->
@@ -1162,28 +1312,205 @@ Hit ⚡ GENERATE NOW to compile immediately.
     </div>
   </div>
 
-  <!-- ── Live Log Feed ── -->
-  <div class="section-header">// LIVE LOG</div>
-  <div class="log-feed" id="log-feed">
-    <div class="log-line">
-      <span class="log-time">--:--:--</span>
-      <span class="log-div"><span class="tag tag-purple" style="font-size:7px;">SYS</span></span>
-      <span class="log-msg">OpenClaw Mission Control loaded.</span>
-    </div>
-  </div>
+  </div><!-- /panel-home -->
 
-  <!-- ── Chat Panel ── -->
-  <div class="section-header">// J_CLAW CHAT
-    <button onclick="clearChat()" style="float:right;background:none;border:1px solid var(--border);color:var(--subtext);font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;cursor:pointer;">✕ CLEAR</button>
-  </div>
-  <div class="pixel-box" id="chat-messages" style="max-height:400px;overflow-y:auto;padding:10px;margin-bottom:0;scrollbar-width:thin;scrollbar-color:var(--border) var(--overlay);"></div>
-  <div id="chat-input-row" style="display:flex;gap:6px;margin-bottom:24px;">
-    <input id="chat-input" type="text" maxlength="500" placeholder="SPEAK TO J_CLAW..."
-      style="flex:1;font-family:'Press Start 2P',monospace;font-size:8px;padding:9px 10px;background:var(--bg);border:1px solid var(--border);color:var(--text);outline:none;"
-      onkeydown="if(event.key==='Enter')sendChat()" />
-    <button id="chat-send-btn" onclick="sendChat()"
-      style="font-family:'Press Start 2P',monospace;font-size:8px;padding:9px 14px;background:none;border:1px solid var(--green);color:var(--green);cursor:pointer;">SEND ▶</button>
-  </div>
+  <!-- ════════════════════════════════ J_CLAW TAB ═══════════════════════════ -->
+  <div class="tab-panel" id="panel-jclaw">
+    <!-- Rank card is rendered here via JS when tab activates. Keep the original rank-card element accessible but hidden inside home panel — we clone its data to the game panel via loadRankCard() -->
+    <div class="section-header">// J_CLAW — REALM COMMANDER</div>
+    <div id="jclaw-game-content">
+      <div style="font-size:8px;color:var(--subtext);padding:20px;text-align:center;">Loading realm data...</div>
+    </div>
+  </div><!-- /panel-jclaw -->
+
+  <!-- ════════════════════════════════ INTEL TAB ════════════════════════════ -->
+  <div class="tab-panel" id="panel-intel">
+    <div class="section-header">// REALM INTELLIGENCE — DIVISION REFERENCE</div>
+
+    <div class="intel-flow-box">
+      J_CLAW oversees 6 divisions, each led by a commander who runs autonomous agents. Each agent produces a packet (JSON report). The division orchestrator synthesizes all packets into a digest. The daily briefing (22:00 or on-demand) compiles all division digests for J_Claw. Escalations bypass the briefing — they are pushed directly to the alert system.
+    </div>
+
+    <!-- TRADING -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#06b6d4;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#06b6d4;">TRADING // SEREN</div>
+          <div class="intel-div-commander">Iron Codex · Cycle-based market strategy system</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Monitor financial markets, build and test strategies, execute trades, and optimize returns over time.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">market-scan (2h)</span><span class="intel-agent-desc">Scans live market data for entry signals, volatility shifts, and anomalies across multiple assets.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">trading-report (18:00)</span><span class="intel-agent-desc">Synthesizes daily trading performance — win rate, P&amp;L, strategy review, and recommendations.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">Agent Network (09:05 M–F)</span><span class="intel-agent-desc">Multi-agent trading cycle: Strategy Builder builds the playbook, Backtester validates it, Trader executes, Trading Coach reviews the session.</span></li>
+      </ul>
+      <div class="intel-orch-note">SEREN synthesizes all trading data and escalates any breach of risk thresholds (drawdown, win rate floor) directly to J_Claw.</div>
+    </div>
+
+    <!-- OPPORTUNITY -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#f59e0b;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#f59e0b;">OPPORTUNITY // VAEL</div>
+          <div class="intel-div-commander">Dawnhunt · Lead intelligence and pipeline management</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Scout job leads, contracts, and funding opportunities across the web and surface the best ones for review.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">job-intake (3h)</span><span class="intel-agent-desc">Scrapes configured job sources, deduplicates listings, and ingests new leads into the pipeline.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">hard-filter (auto)</span><span class="intel-agent-desc">Applies strict criteria (keywords, salary, location, role) to classify leads as Tier A, B, or C.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">funding-finder (14:00)</span><span class="intel-agent-desc">Identifies grants, contracts, remote roles, and non-traditional income streams beyond standard job boards.</span></li>
+      </ul>
+      <div class="intel-orch-note">VAEL tracks pipeline health (sources online, leads/day, pending reviews) and alerts when the review queue goes stale.</div>
+    </div>
+
+    <!-- DEV AUTOMATION -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#a78bfa;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#a78bfa;">DEV AUTOMATION // KAELEN</div>
+          <div class="intel-div-commander">Veilkeepers · Codebase health and automation</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Maintain codebase quality, automate documentation, and keep the development environment clean and healthy.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">repo-monitor (3h)</span><span class="intel-agent-desc">Scans git repositories for uncommitted changes, test failures, and dependency drift.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">debug-agent (event)</span><span class="intel-agent-desc">Responds to error events triggered via Telegram — analyzes logs, traces root causes, and proposes fixes.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">refactor-scan (10:00)</span><span class="intel-agent-desc">Identifies code smells, dead code, complexity hotspots, and duplication across the codebase.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">doc-update (13:00)</span><span class="intel-agent-desc">Reviews recent code changes and updates inline documentation, docstrings, and README files.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">artifact-manager (03:00)</span><span class="intel-agent-desc">Cleans stale build outputs, orphaned packages, large temp files, and expired artifacts.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">dev-digest (15:00)</span><span class="intel-agent-desc">Synthesizes all dev health metrics into a daily report with prioritized action items.</span></li>
+      </ul>
+      <div class="intel-orch-note">KAELEN tracks the repo health score and escalates high-priority refactor flags or security issues to J_Claw.</div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#10b981;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#10b981;">PERSONAL // LYRIN</div>
+          <div class="intel-div-commander">Thornward · Human performance monitoring</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Track physical health, mental performance, and burnout risk to keep the operator running at peak capacity.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">health-logger (18:00)</span><span class="intel-agent-desc">Prompts a daily health check-in and logs responses — sleep, energy, mood, focus, physical activity.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">perf-correlation (20:00)</span><span class="intel-agent-desc">Correlates health metrics with trading performance and productivity output over rolling windows.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">burnout-monitor (21:00)</span><span class="intel-agent-desc">Analyzes stress indicators across all divisions and computes a composite burnout risk score.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">personal-digest (21:30)</span><span class="intel-agent-desc">Synthesizes all personal division health data into a daily report with wellness recommendations.</span></li>
+      </ul>
+      <div class="intel-orch-note">LYRIN monitors the human behind the realm — burnout alerts are escalated immediately and bypass the standard briefing cycle.</div>
+    </div>
+
+    <!-- OP-SEC -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#ef4444;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#ef4444;">OP-SEC // ZETH</div>
+          <div class="intel-div-commander">Null Breach · Digital security and threat monitoring</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Maintain airtight digital security posture, monitor for breaches, and ensure all credentials and systems are locked down.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">device-posture (08:00)</span><span class="intel-agent-desc">Audits device security settings — firewall, disk encryption, OS updates, open ports, and remote access.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">threat-surface (19:00)</span><span class="intel-agent-desc">Maps the current attack surface — exposed services, public accounts, credentials, and entry points.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">security-scan (11:00)</span><span class="intel-agent-desc">Scans the codebase and npm/pip dependencies for known CVEs and security vulnerabilities.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">cred-audit (15:00)</span><span class="intel-agent-desc">Reviews API keys, secrets, and credentials for rotation compliance and exposure risk.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">privacy-scan (16:00)</span><span class="intel-agent-desc">Checks for data exposure, PII leaks, third-party tracking, and excessive data collection.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">breach-check (14:00)</span><span class="intel-agent-desc">Monitors known breach databases (HaveIBeenPwned, etc.) for compromised credentials.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">opsec-digest (08:30)</span><span class="intel-agent-desc">Daily security summary with overall threat level, top priority fixes, and compliance status.</span></li>
+      </ul>
+      <div class="intel-orch-note">ZETH operates in silence. Any high-severity finding (breach detected, critical CVE, credential exposure) escalates to J_Claw without delay.</div>
+    </div>
+
+    <!-- LYKEON FORGE -->
+    <div class="intel-section">
+      <div class="intel-div-header">
+        <div style="width:10px;height:32px;background:#f97316;margin-right:4px;"></div>
+        <div>
+          <div class="intel-div-title" style="color:#f97316;">LYKEON FORGE // LYKE</div>
+          <div class="intel-div-commander">The Lykeon Forge · Creative media production pipeline</div>
+        </div>
+      </div>
+      <div class="intel-mission">Mission: Manage all creative media production — images, sprites, audio, video, and asset delivery through the ComfyUI pipeline.</div>
+      <ul class="intel-agent-list">
+        <li class="intel-agent-item"><span class="intel-agent-name">image-generate</span><span class="intel-agent-desc">Calls the ComfyUI REST API to generate images from structured prompt templates per asset type.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">sprite-generate</span><span class="intel-agent-desc">Generates FE-style chibi and bust character portraits for commanders, enemies, and UI elements.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">video-generate</span><span class="intel-agent-desc">Video generation pipeline — placeholder until video model is active, scaffolded for future use.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">graphic-design</span><span class="intel-agent-desc">Generates UI elements, card borders, overlays, and decorative graphics for the game interface.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">prompt-craft</span><span class="intel-agent-desc">Builds and refines generation prompts per asset type, commander, and art direction guidelines.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">style-check</span><span class="intel-agent-desc">Validates generated assets against the art direction palette using PIL dominant color analysis.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">image-review</span><span class="intel-agent-desc">QA agent — detects generation artifacts, near-black/white failures, and solid-color errors via PIL.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">audio-test</span><span class="intel-agent-desc">Validates audio files for clipping, silence, abnormal RMS levels using scipy/pydub analysis.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">video-review</span><span class="intel-agent-desc">Reviews video for generation failures, codec issues, and frame count validation via ffprobe.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">storyboard-compose</span><span class="intel-agent-desc">Converts theater animation queue events (skill_complete, rank_up) into visual shot lists for generation.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">continuity-check</span><span class="intel-agent-desc">Validates visual consistency across all tiers of a character's evolution — same palette, same pose language.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">asset-catalog</span><span class="intel-agent-desc">Indexes every generated asset by type, commander, tier, and approval status in state/asset-catalog.json.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">asset-deliver</span><span class="intel-agent-desc">Routes approved assets to the correct game directories under mobile/assets/ and updates catalog entries.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">production-digest</span><span class="intel-agent-desc">The Forge Report — synthesizes full pipeline status, asset counts, pending QA, and delivery metrics for J_Claw.</span></li>
+      </ul>
+      <div class="intel-orch-note">LYKE monitors the production pipeline. Any blocked pipeline (ComfyUI down, QA backlog &gt;10) escalates to J_Claw with delivery ETAs.</div>
+    </div>
+
+    <!-- Orchestrator Flow -->
+    <div class="intel-section">
+      <div class="section-header">// ORCHESTRATOR → J_CLAW REPORTING CHAIN</div>
+      <div class="intel-flow-box">
+        <strong style="color:var(--purple);">AGENT</strong> produces packet JSON → stored in <code>divisions/{div}/packets/{skill}.json</code><br>
+        <strong style="color:var(--purple);">ORCHESTRATOR</strong> synthesizes packets → produces digest with metrics, action items, escalations<br>
+        <strong style="color:var(--purple);">BRIEFING SYSTEM</strong> (22:00 daily or on-demand) reads all digests → produces J_Claw daily briefing<br>
+        <strong style="color:var(--red);">ESCALATION</strong> bypasses briefing cycle → pushed directly to alert system → visible in Mission Control<br><br>
+        J_Claw reads the daily briefing each evening, reviews alerts, and issues new directives for the next cycle.
+      </div>
+    </div>
+
+  </div><!-- /panel-intel -->
+
+  <!-- ════════════════════════════════ REPORTS TAB ══════════════════════════ -->
+  <div class="tab-panel" id="panel-reports">
+    <!-- ── Reports Panel ── -->
+    <div id="reports-panel-inner">
+      <div class="section-header">// DIVISION REPORTS</div>
+      <div class="reports-div-tabs" id="reports-div-tabs"></div>
+      <div class="reports-agent-tabs" id="reports-agent-tabs"></div>
+      <div class="pixel-box" id="report-content">
+        <div style="padding:20px;text-align:center;color:var(--subtext);font-size:7px;">Select a division tab to view reports.</div>
+      </div>
+    </div>
+  </div><!-- /panel-reports -->
+
+  <!-- ════════════════════════════════ LOG TAB ═════════════════════════════ -->
+  <div class="tab-panel" id="panel-log">
+    <div class="section-header">// LIVE LOG</div>
+    <div class="log-feed" id="log-feed" style="height:calc(100vh - 200px);">
+      <div class="log-line">
+        <span class="log-time">--:--:--</span>
+        <span class="log-div"><span class="tag tag-purple" style="font-size:7px;">SYS</span></span>
+        <span class="log-msg">OpenClaw Mission Control loaded.</span>
+      </div>
+    </div>
+  </div><!-- /panel-log -->
+
+  <!-- ════════════════════════════════ CHAT TAB ════════════════════════════ -->
+  <div class="tab-panel" id="panel-chat">
+    <div class="section-header">// J_CLAW CHAT
+      <button onclick="clearChat()" style="float:right;background:none;border:1px solid var(--border);color:var(--subtext);font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;cursor:pointer;">✕ CLEAR</button>
+    </div>
+    <div class="pixel-box" id="chat-messages" style="max-height:calc(100vh - 260px);overflow-y:auto;padding:10px;margin-bottom:0;scrollbar-width:thin;scrollbar-color:var(--border) var(--overlay);"></div>
+    <div id="chat-input-row" style="display:flex;gap:6px;margin-top:10px;margin-bottom:24px;">
+      <input id="chat-input" type="text" maxlength="500" placeholder="SPEAK TO J_CLAW..."
+        style="flex:1;font-family:'Press Start 2P',monospace;font-size:8px;padding:9px 10px;background:var(--bg);border:1px solid var(--border);color:var(--text);outline:none;"
+        onkeydown="if(event.key==='Enter')sendChat()" />
+      <button id="chat-send-btn" onclick="sendChat()"
+        style="font-family:'Press Start 2P',monospace;font-size:8px;padding:9px 14px;background:none;border:1px solid var(--green);color:var(--green);cursor:pointer;">SEND ▶</button>
+    </div>
+  </div><!-- /panel-chat -->
 
   <!-- ── Footer ── -->
   <footer>
@@ -1709,7 +2036,8 @@ Hit ⚡ GENERATE NOW to compile immediately.
       opportunity: 'job-intake',
       dev_automation: 'repo-monitor',
       personal: 'health-logger',
-      op_sec: 'device-posture'
+      op_sec: 'device-posture',
+      production: 'production-digest'
     };
 
     // ── Skill → division (full map for queue status display) ──
@@ -1736,6 +2064,20 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'privacy-scan':     'op_sec',
       'security-scan':    'op_sec',
       'opsec-digest':     'op_sec',
+      'image-generate':     'production',
+      'sprite-generate':    'production',
+      'video-generate':     'production',
+      'graphic-design':     'production',
+      'prompt-craft':       'production',
+      'style-check':        'production',
+      'image-review':       'production',
+      'audio-test':         'production',
+      'video-review':       'production',
+      'storyboard-compose': 'production',
+      'continuity-check':   'production',
+      'asset-catalog':      'production',
+      'asset-deliver':      'production',
+      'production-digest':  'production',
     };
 
     // ── Reports Panel ──
@@ -1745,6 +2087,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'dev-automation': { label: 'DEV',       agents: ['repo-monitor', 'refactor-scan', 'doc-update', 'artifact-manager', 'dev-digest'] },
       'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest'] },
       'op-sec':         { label: 'OP-SEC',    agents: ['device-posture', 'threat-surface', 'breach-check', 'cred-audit', 'privacy-scan', 'security-scan', 'opsec-digest'] },
+      'production':     { label: 'FORGE',     agents: ['image-generate', 'sprite-generate', 'graphic-design', 'prompt-craft', 'style-check', 'image-review', 'audio-test', 'video-review', 'storyboard-compose', 'continuity-check', 'asset-catalog', 'asset-deliver', 'production-digest'] },
       'sentinel':       { label: 'SENTINEL',  agents: ['provider-health', 'queue-monitor'] },
     };
 
@@ -1913,7 +2256,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
         const res = await fetch('../state/orchestrator-state.json?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
-          const divs = ['trading', 'opportunity', 'dev_automation', 'personal', 'op_sec'];
+          const divs = ['trading', 'opportunity', 'dev_automation', 'personal', 'op_sec', 'production'];
           divs.forEach(div => {
             const d = data.divisions[div];
             if (!d) return;
@@ -1949,7 +2292,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
             }
           });
           // Reset buttons for divisions with no active queue entries
-          ['trading','opportunity','dev_automation','personal','op_sec'].forEach(div => {
+          ['trading','opportunity','dev_automation','personal','op_sec','production'].forEach(div => {
             const active = (ctrl.queue || []).some(e => SKILL_DIV[e.skill] === div && (e.status === 'queued' || e.status === 'running'));
             if (!active) {
               const btn = document.getElementById('run-' + div);
@@ -2133,6 +2476,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
       setTimeout(() => addLog('DEV',      'Division standing by.', 'blue'),  1000);
       setTimeout(() => addLog('PERSONAL', 'Division standing by.', 'purple'),1300);
       setTimeout(() => addLog('OP-SEC',   'Division standing by.', 'red'),   1500);
+      setTimeout(() => addLog('FORGE',    'Lykeon Forge standing by.', 'yellow'), 1650);
       setTimeout(() => {
         addLog('SYS', 'All divisions online. Loading state...', 'green');
         loadState();
@@ -2300,6 +2644,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
       { id: 'division_master', name: 'Div Master'  },
       { id: 'realm_commander', name: 'Commander'   },
       { id: 'eternal',         name: 'Eternal'     },
+      { id: 'forge_lit',       name: 'Forge Lit'   },
     ];
 
     async function loadRankCard() {
@@ -2321,14 +2666,14 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
         // Streak display
         const streaks = s.streaks || {};
-        const streakLabels = {opportunity:'OPPS',trading:'TRADE',dev_automation:'DEV',personal:'PERS',op_sec:'OPSEC'};
+        const streakLabels = {opportunity:'OPPS',trading:'TRADE',dev_automation:'DEV',personal:'PERS',op_sec:'OPSEC',production:'FORGE'};
         const streakParts  = Object.entries(streaks)
           .filter(([,v]) => v.current > 0)
           .map(([k,v]) => `${streakLabels[k]||k} 🔥${v.current}d`);
         const streakEl = document.getElementById('streak-display');
         if (streakEl) streakEl.textContent = streakParts.join('  ');
 
-        ['trading','opportunity','dev_automation','personal','op_sec'].forEach(div => {
+        ['trading','opportunity','dev_automation','personal','op_sec','production'].forEach(div => {
           const data = s.divisions[div];
           if (!data) return;
           const badge = document.getElementById('badge-' + div);
@@ -2370,7 +2715,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
     async function loadStatsPanel() {
       try {
         const d   = await fetch('/api/stats/summary').then(r => r.json());
-        const div = { opportunity: 'OPPS', trading: 'TRADE', dev_automation: 'DEV', personal: 'PERS', op_sec: 'OPSEC' };
+        const div = { opportunity: 'OPPS', trading: 'TRADE', dev_automation: 'DEV', personal: 'PERS', op_sec: 'OPSEC', production: 'FORGE' };
         let streakRows = Object.entries(d.longest_streaks || {})
           .map(([k,v]) => `<span style="margin-right:8px">${div[k]||k} 🔥${v}d</span>`).join('');
         const html = `

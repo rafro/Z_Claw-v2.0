@@ -1,20 +1,14 @@
 {
   "division": "opportunity",
-  "generated_at": "2026-03-22T00:08:10.528277+00:00",
+  "generated_at": "2026-03-22T15:07:23.423341+00:00",
   "skill": "job-intake",
   "status": "success",
-  "summary": "The job intake run for J_Claw shows all sources (WeWorkRemotely, RemoteOK, Remotive) are operational with ok status, while Adzuna has partial data. Notable is the addition of 1 new opportunity, but scoring indicates a single B-level position was found, with no A, C, or D level positions identified.",
-  "action_items": [
-    {
-      "priority": "high",
-      "description": "[TIER B] Crypto Trader (Full Training Provided) — Elemental Terra Capital Ltd | Worldwide | $48k - $60k | Fit: 7.0/10 | Resume: Technical | https://remotive.com/remote-jobs/finance/crypto-trader-full-training-provided-2088659",
-      "requires_matthew": true
-    }
-  ],
+  "summary": "All source health is \"ok,\" with no new opportunities fetched. Concerns include the partial data from Adzuna, which may affect the completeness of the job intake.",
+  "action_items": [],
   "metrics": {
-    "new_jobs_found": 1,
+    "new_jobs_found": 0,
     "tier_a": 0,
-    "tier_b": 1,
+    "tier_b": 0,
     "tier_c": 0,
     "tier_d": 0,
     "source_status": {
@@ -37,7 +31,7 @@
   "confidence": null,
   "urgency": "normal",
   "recommended_action": "",
-  "provider_used": "ollama:qwen2.5:7b-instruct-q4_K_M",
+  "provider_used": "deterministic",
   "approval_required": false,
   "approval_status": ""
 }

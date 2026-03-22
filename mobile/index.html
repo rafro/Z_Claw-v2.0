@@ -1124,6 +1124,44 @@
     .div-card { cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
     .div-card:active { transform: scale(0.97); }
 
+    /* ── Division quick-run button row ── */
+    .div-quick-actions { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+    .div-quick-btn {
+      flex: 1; min-width: 0; padding: 5px 4px; border-radius: 7px;
+      background: var(--overlay); border: 1px solid var(--border);
+      color: var(--subtext); font-size: 9px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.03em; text-align: center;
+      cursor: pointer; -webkit-appearance: none;
+    }
+    .div-quick-btn:active { background: var(--border); color: var(--text); }
+    .div-quick-btn.running { color: var(--blue); border-color: var(--blue); }
+    .div-quick-btn.done    { color: var(--green); border-color: var(--green); }
+
+    /* ── Agent control row in detail sheet ── */
+    .agent-ctrl-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid var(--border); gap: 8px;
+    }
+    .agent-ctrl-row:last-child { border-bottom: none; }
+    .agent-ctrl-info { flex: 1; min-width: 0; }
+    .agent-ctrl-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .agent-ctrl-meta { font-size: 10px; color: var(--subtext); }
+    .agent-run-btn {
+      padding: 6px 12px; border-radius: 8px; background: var(--overlay);
+      border: 1px solid var(--border); color: var(--subtext); font-size: 10px;
+      font-weight: 700; letter-spacing: 0.05em; cursor: pointer;
+      -webkit-appearance: none; flex-shrink: 0; white-space: nowrap;
+    }
+    .agent-run-btn:active { background: var(--border); }
+    .agent-run-btn.running { color: var(--blue); border-color: var(--blue); }
+    .agent-run-btn.done    { color: var(--green); border-color: var(--green); }
+    .detail-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--subtext);
+      padding: 14px 0 8px; margin-bottom: 4px; border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
     /* ── Info row (two-col label/value) ── */
     .info-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
     .info-row:last-child { border-bottom: none; }
@@ -1317,33 +1355,38 @@
 <!-- Screens -->
 <div id="screens">
 
-  <!-- ── HOME ── -->
+  <!-- ── HOME (Divisions — operational default) ── -->
   <div id="screen-home" class="screen active">
     <div id="home-content"><div class="loading">Loading...</div></div>
   </div>
 
-  <!-- ── ALERTS ── -->
-  <div id="screen-alerts" class="screen">
-    <div id="alerts-content"><div class="loading">Loading...</div></div>
+  <!-- ── J_CLAW (Game: party, achievements, prestige, streaks) ── -->
+  <div id="screen-jclaw" class="screen">
+    <div id="stats-content"><div class="loading">Loading...</div></div>
   </div>
 
-  <!-- ── COMMAND (merged Intel + Ops) ── -->
-  <div id="screen-command" class="screen" style="padding:0;">
+  <!-- ── REPORTS (Division report packets: Opportunity, Personal, Dev, Op-Sec) ── -->
+  <div id="screen-reports" class="screen" style="padding:0;">
     <div class="segment-control">
-      <button class="seg-btn active" id="seg-intel" onclick="switchCommandSeg('intel')">📋 Intel</button>
-      <button class="seg-btn" id="seg-ops" onclick="switchCommandSeg('ops')">⚙ Ops</button>
+      <button class="seg-btn active" id="seg-reports-intel" onclick="switchReportsSeg('intel')">Opp / Pers</button>
+      <button class="seg-btn" id="seg-reports-ops" onclick="switchReportsSeg('ops')">Dev / Sec</button>
     </div>
-    <div id="command-intel-wrap" style="padding:0 16px 24px;">
+    <div id="reports-intel-wrap" style="padding:0 16px 24px;">
       <div id="intel-content"><div class="loading">Loading...</div></div>
     </div>
-    <div id="command-ops-wrap" style="padding:0 16px 24px;display:none;">
+    <div id="reports-ops-wrap" style="padding:0 16px 24px;display:none;">
       <div id="ops-content"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
-  <!-- ── TRADING ── -->
-  <div id="screen-trading" class="screen">
-    <div id="trading-content"><div class="loading">Loading...</div></div>
+  <!-- ── INTEL (Static reference guide) ── -->
+  <div id="screen-intel" class="screen">
+    <div id="intel-ref-content"></div>
+  </div>
+
+  <!-- ── LOG (Live activity log feed) ── -->
+  <div id="screen-log" class="screen">
+    <div id="log-content"><div class="loading">Loading...</div></div>
   </div>
 
   <!-- ── CHAT ── -->
@@ -1351,10 +1394,10 @@
     <!-- Mode toggle -->
     <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);">
       <button id="chat-mode-jclaw" class="mode-btn mode-active" onclick="setChatMode('jclaw')">
-        🤖 J_Claw
+        J_Claw
       </button>
       <button id="chat-mode-coding" class="mode-btn" onclick="setChatMode('coding')">
-        💻 Coding
+        Coding
       </button>
     </div>
     <div id="chat-messages" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 8px;"></div>
@@ -1367,44 +1410,39 @@
     </div>
   </div>
 
-  <!-- ── STATS ── -->
-  <div id="screen-stats" class="screen">
-    <div id="stats-content"><div class="loading">Loading...</div></div>
-  </div>
-
 </div>
 
-<!-- Bottom tab bar (6 tabs) — J_Claw in center, default open -->
+<!-- Bottom tab bar (6 tabs) — HOME is default/active -->
 <nav id="tab-bar">
-  <button class="tab-btn" onclick="switchTab('home')" id="tab-home">
+  <button class="tab-btn active" onclick="switchTab('home')" id="tab-home">
     <div class="tab-wrap">
       <span class="tab-icon">⌂</span>
       <span>Home</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('alerts')" id="tab-alerts">
-    <div class="tab-wrap" style="position:relative;">
-      <span class="tab-icon">⚠</span>
-      <span id="alert-badge" class="tab-badge">0</span>
-      <span>Alerts</span>
-    </div>
-  </button>
-  <button class="tab-btn active" onclick="switchTab('stats')" id="tab-stats">
+  <button class="tab-btn" onclick="switchTab('jclaw')" id="tab-jclaw">
     <div class="tab-wrap">
       <span class="tab-icon">⚔</span>
       <span>J_Claw</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('trading')" id="tab-trading">
-    <div class="tab-wrap">
-      <span class="tab-icon">📈</span>
-      <span>Trading</span>
+  <button class="tab-btn" onclick="switchTab('reports')" id="tab-reports">
+    <div class="tab-wrap" style="position:relative;">
+      <span class="tab-icon">⊞</span>
+      <span id="alert-badge" class="tab-badge">0</span>
+      <span>Reports</span>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchTab('command')" id="tab-command">
+  <button class="tab-btn" onclick="switchTab('intel')" id="tab-intel">
     <div class="tab-wrap">
-      <span class="tab-icon">⊞</span>
-      <span>Command</span>
+      <span class="tab-icon">📋</span>
+      <span>Intel</span>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('log')" id="tab-log">
+    <div class="tab-wrap">
+      <span class="tab-icon">◈</span>
+      <span>Log</span>
     </div>
   </button>
   <button class="tab-btn" onclick="switchTab('chat')" id="tab-chat">
@@ -1509,6 +1547,7 @@ function _setStored(key, val) {
 let MC_TOKEN  = _hashToken || _getStored('mc_token') || '';
 let MC_SERVER = _getStored('mc_server') || location.origin;
 let _currentTab = 'home';
+let _reportsSeg = 'intel';
 let _lastLoadTime = 0;
 
 // ── Setup ────────────────────────────────────────────────
@@ -1612,7 +1651,7 @@ function init() {
 
   // Pull-to-refresh + swipe tab navigation
   const screens = document.getElementById('screens');
-  const TAB_ORDER = ['home', 'alerts', 'command', 'trading', 'chat', 'stats'];
+  const TAB_ORDER = ['home', 'jclaw', 'reports', 'intel', 'log', 'chat'];
   let _ptrStartX = 0, _ptrStartY = 0, _ptrActive = false;
   screens.addEventListener('touchstart', e => {
     _ptrStartX = e.touches[0].clientX;
@@ -1665,7 +1704,7 @@ function _connectAlertStream() {
         if (data.type === 'init' || data.type === 'update') {
           const alerts = data.alerts || [];
           updateBadge('alert-badge', alerts.length + _approvalCount);
-          if (_currentTab === 'alerts') loadAlerts(true);
+          if (_currentTab === 'home') loadOverview(true);
         }
         if (data.type === 'coding_approval') {
           _showCodingApprovalBanner(data.session_id, data.files_changed, data.diff_stat);
@@ -1696,7 +1735,7 @@ function _connectGamifStream() {
       try {
         const evt = JSON.parse(e.data);
         if (!evt || evt.type !== 'gamif') return;
-        const _onGamifTab = _currentTab === 'home' || _currentTab === 'stats';
+        const _onGamifTab = _currentTab === 'home' || _currentTab === 'jclaw';
         if (evt.event === 'skill_complete') {
           haptic('success');
           // XP float bubble
@@ -1923,7 +1962,6 @@ function checkStaleness() {
 }
 
 // ── Tab navigation ───────────────────────────────────────
-let _commandSeg = 'intel'; // active segment within Command tab
 
 function switchTab(name) {
   haptic('light');
@@ -1939,34 +1977,39 @@ function switchTab(name) {
   document.getElementById('screens').scrollTop = 0;
 }
 
-function switchCommandSeg(seg) {
-  _commandSeg = seg;
-  document.getElementById('seg-intel').classList.toggle('active', seg === 'intel');
-  document.getElementById('seg-ops').classList.toggle('active', seg === 'ops');
-  document.getElementById('command-intel-wrap').style.display = seg === 'intel' ? 'block' : 'none';
-  document.getElementById('command-ops-wrap').style.display = seg === 'ops' ? 'block' : 'none';
-  // Load if not yet loaded
-  if (seg === 'intel') loadIntel(true);
-  if (seg === 'ops') loadOps(true);
-}
 
 function refreshCurrent() { loadTab(_currentTab); }
 
 function loadTab(name, silent = false) {
   switch(name) {
-    case 'home':     loadOverview(silent); break;
-    case 'alerts':   loadAlerts(silent);   break;
-    case 'command':  loadCommand(silent);  break;
-    case 'trading':  loadTrading(silent);  break;
-    case 'chat':     initChat();           break;
-    case 'stats':    loadStatsTab();       break;
+    case 'home':    loadOverview(silent);       break;
+    case 'jclaw':   loadStatsTab();             break;
+    case 'reports': loadReportsTab(silent);     break;
+    case 'intel':   loadIntelReference();       break;
+    case 'log':     loadActivityLog(silent);    break;
+    case 'chat':    initChat();                 break;
   }
 }
 
-function loadCommand(silent = false) {
+function loadReportsTab(silent = false) {
   // Load the active segment; pre-load the other in background
-  loadIntel(silent);
-  loadOps(true);
+  if (_reportsSeg === 'intel') {
+    loadIntel(silent);
+    loadOps(true);
+  } else {
+    loadOps(silent);
+    loadIntel(true);
+  }
+}
+
+function switchReportsSeg(seg) {
+  _reportsSeg = seg;
+  document.getElementById('seg-reports-intel').classList.toggle('active', seg === 'intel');
+  document.getElementById('seg-reports-ops').classList.toggle('active', seg === 'ops');
+  document.getElementById('reports-intel-wrap').style.display = seg === 'intel' ? 'block' : 'none';
+  document.getElementById('reports-ops-wrap').style.display   = seg === 'ops'   ? 'block' : 'none';
+  if (seg === 'intel') loadIntel(true);
+  if (seg === 'ops')   loadOps(true);
 }
 
 // ── Commander dialogue lines ──────────────────────────────────────────────────
@@ -2000,6 +2043,12 @@ const _COMMANDER_DIALOGUE = {
     streak_7:      ["Seven days on the perimeter. The Nullward Circle sees everything."],
     skill_complete:["Perimeter clear.", "The null holds.", "The ward stands."],
     dormant:       ["The perimeter goes dark when Zeth goes quiet. Move.", "Unseen doesn't mean absent. The threat is there. Watch."],
+  },
+  production: {
+    rank_up:       ["The blueprint was already written. We simply built it.", "The Forge ascends. Every tier demands more precision.", "Quality does not decrease as the forge grows. It intensifies."],
+    streak_7:      ["Seven cycles without a cold forge. LYKE is satisfied — for now."],
+    skill_complete:["Sealed.", "The Forge delivers.", "Asset complete. Quality confirmed."],
+    dormant:       ["An idle forge accumulates nothing. Light it.", "The blueprint waits. The asset does not build itself."],
   },
 };
 
@@ -2063,6 +2112,7 @@ const _COMMANDER_DEF = {
   dev_automation: { name:'KAELEN', order:'The Iron Codex',        color:'#a78bfa' },
   personal:       { name:'LYRIN',  order:'The Ember Covenant',    color:'#10b981' },
   op_sec:         { name:'ZETH',   order:'The Nullward Circle',   color:'#ef4444' },
+  production:     { name:'LYKE',   order:'The Lykeon Forge',       color:'#f97316' },
   base:           { name:'J_CLAW', order:'Realm Command',         color:'#3b82f6' },
 };
 
@@ -2216,6 +2266,54 @@ function commanderPortraitSVG(key, color, size) {
       <line x1="33" y1="28" x2="36" y2="48" stroke="${c}" stroke-width="1" opacity="0.4"/>
       <rect x="14" y="45" width="5" height="7" fill="#030000"/>
       <rect x="21" y="45" width="5" height="7" fill="#030000"/>
+    </svg>`,
+
+    // LYKE — forge architect, orange plate armor, hexagonal chest motif, amber eyes
+    production: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${szH}" shape-rendering="crispEdges">
+      <!-- Cape / body base -->
+      <path d="M8,22 L32,22 L36,52 L4,52 Z" fill="#1a0800"/>
+      <!-- Torso forge plate -->
+      <rect x="12" y="22" width="16" height="18" fill="#3a1a06"/>
+      <rect x="12" y="22" width="16" height="2" fill="${c}"/>
+      <rect x="12" y="22" width="2" height="18" fill="${c}" opacity="0.6"/>
+      <rect x="26" y="22" width="2" height="18" fill="${c}" opacity="0.6"/>
+      <rect x="12" y="38" width="16" height="2" fill="${c}" opacity="0.5"/>
+      <!-- Hexagonal chest emblem -->
+      <polygon points="20,25 24,27 24,31 20,33 16,31 16,27" fill="#1a0800" stroke="${c}" stroke-width="0.8"/>
+      <polygon points="20,27 22,28 22,30 20,31 18,30 18,28" fill="${c}" opacity="0.5"/>
+      <!-- Pauldrons -->
+      <rect x="6"  y="20" width="8" height="6" rx="1" fill="#2a1000"/>
+      <rect x="6"  y="20" width="8" height="1.5" fill="${c}" opacity="0.7"/>
+      <rect x="26" y="20" width="8" height="6" rx="1" fill="#2a1000"/>
+      <rect x="26" y="20" width="8" height="1.5" fill="${c}" opacity="0.7"/>
+      <!-- Arms -->
+      <rect x="4"  y="26" width="8" height="12" fill="#1a0900"/>
+      <rect x="4"  y="26" width="8" height="1.5" fill="${c}" opacity="0.5"/>
+      <rect x="4"  y="36" width="8" height="1.5" fill="${c}" opacity="0.4"/>
+      <rect x="28" y="26" width="8" height="12" fill="#1a0900"/>
+      <rect x="28" y="26" width="8" height="1.5" fill="${c}" opacity="0.5"/>
+      <rect x="28" y="36" width="8" height="1.5" fill="${c}" opacity="0.4"/>
+      <!-- Blueprint scroll hint at hip -->
+      <rect x="27" y="38" width="4" height="8" rx="1" fill="#c8a060" opacity="0.7"/>
+      <line x1="28" y1="40" x2="30" y2="40" stroke="#3a1800" stroke-width="0.5"/>
+      <line x1="28" y1="42" x2="30" y2="42" stroke="#3a1800" stroke-width="0.5"/>
+      <!-- Neck -->
+      <rect x="17" y="17" width="6" height="6" fill="#1a0900"/>
+      <!-- Head -->
+      <rect x="13" y="7" width="14" height="11" fill="#1a0900"/>
+      <!-- Hair — short, functional -->
+      <rect x="13" y="7"  width="14" height="3" fill="#0f0500"/>
+      <rect x="13" y="7"  width="2"  height="6" fill="#0f0500"/>
+      <rect x="25" y="7"  width="2"  height="6" fill="#0f0500"/>
+      <!-- Face -->
+      <rect x="15" y="10" width="10" height="8" fill="#b07840"/>
+      <!-- Forge-fire eyes — amber with orange glow -->
+      <rect x="15" y="11" width="4" height="3" rx="1" fill="${c}"/>
+      <rect x="21" y="11" width="4" height="3" rx="1" fill="${c}"/>
+      <rect x="16" y="12" width="2" height="2" fill="#1a0500"/>
+      <rect x="22" y="12" width="2" height="2" fill="#1a0500"/>
+      <rect x="16" y="11" width="1" height="1" fill="#fed7aa" opacity="0.9"/>
+      <rect x="22" y="11" width="1" height="1" fill="#fed7aa" opacity="0.9"/>
     </svg>`,
   };
   return portraits[key] || `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${szH}"><circle cx="20" cy="26" r="14" fill="none" stroke="${c}" stroke-width="2"/></svg>`;
@@ -2391,6 +2489,64 @@ function commanderFullPortraitSVG(key, color, w, h) {
       <line x1="16" y1="68" x2="12" y2="98" stroke="${color}" stroke-width="1.2" opacity="0.35"/>
       <line x1="64" y1="68" x2="68" y2="98" stroke="${color}" stroke-width="1.2" opacity="0.35"/>
     </svg>`,
+
+    // LYKE — Forge Architect, orange plate, hex motif, blueprint scroll, amber fire eyes
+    production: `<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+      <rect width="80" height="100" fill="#080300"/>
+      <ellipse cx="40" cy="18" rx="28" ry="20" fill="${color}14"/>
+      <!-- Hair — short, no-nonsense craftwright -->
+      <rect x="22" y="8"  width="36" height="14" rx="3" fill="#0f0400"/>
+      <rect x="20" y="10" width="40" height="10" rx="2" fill="#180800"/>
+      <!-- Face -->
+      <ellipse cx="40" cy="38" rx="16" ry="18" fill="#b07840"/>
+      <ellipse cx="40" cy="46" rx="12" ry="10" fill="#9a6830" opacity="0.4"/>
+      <!-- Forge-fire amber eyes -->
+      <path d="M27,34 Q30,31 33,34" fill="${color}50" stroke="#3a1200" stroke-width="0.5"/>
+      <ellipse cx="30" cy="36" rx="4.5" ry="3.5" fill="${color}"/>
+      <circle cx="30" cy="37" r="2.4" fill="#1a0500"/>
+      <circle cx="28.5" cy="34.8" r="1.2" fill="white" opacity="0.85"/>
+      <ellipse cx="30" cy="36" rx="2" ry="1.5" fill="${color}" opacity="0.6"/>
+      <path d="M47,34 Q50,31 53,34" fill="${color}50" stroke="#3a1200" stroke-width="0.5"/>
+      <ellipse cx="50" cy="36" rx="4.5" ry="3.5" fill="${color}"/>
+      <circle cx="50" cy="37" r="2.4" fill="#1a0500"/>
+      <circle cx="48.5" cy="34.8" r="1.2" fill="white" opacity="0.85"/>
+      <ellipse cx="50" cy="36" rx="2" ry="1.5" fill="${color}" opacity="0.6"/>
+      <!-- Firm mouth, confident -->
+      <path d="M36,46 Q40,48 44,46" fill="none" stroke="#7a4820" stroke-width="1.2"/>
+      <!-- Neck -->
+      <rect x="34" y="54" width="12" height="10" fill="#1a0900"/>
+      <!-- Forge plate torso — deep orange iron -->
+      <path d="M12,62 L28,56 L40,60 L52,56 L68,62 L68,100 L12,100 Z" fill="#2a1000"/>
+      <!-- Chest plate -->
+      <rect x="26" y="58" width="28" height="30" rx="2" fill="#3a1800"/>
+      <rect x="26" y="58" width="28" height="2" fill="${color}"/>
+      <rect x="26" y="58" width="2" height="30" fill="${color}" opacity="0.6"/>
+      <rect x="52" y="58" width="2" height="30" fill="${color}" opacity="0.6"/>
+      <rect x="26" y="86" width="28" height="2" fill="${color}" opacity="0.5"/>
+      <!-- Hexagonal forge emblem on chest -->
+      <polygon points="40,63 46,66 46,72 40,75 34,72 34,66" fill="#1a0800" stroke="${color}" stroke-width="1.2"/>
+      <polygon points="40,65 44,67 44,71 40,73 36,71 36,67" fill="${color}" opacity="0.35"/>
+      <!-- Hex circuit lines on armor -->
+      <line x1="28" y1="63" x2="33" y2="63" stroke="${color}" stroke-width="0.6" opacity="0.5"/>
+      <line x1="47" y1="63" x2="52" y2="63" stroke="${color}" stroke-width="0.6" opacity="0.5"/>
+      <line x1="28" y1="80" x2="33" y2="80" stroke="${color}" stroke-width="0.6" opacity="0.4"/>
+      <line x1="47" y1="80" x2="52" y2="80" stroke="${color}" stroke-width="0.6" opacity="0.4"/>
+      <!-- Pauldrons -->
+      <rect x="10" y="56" width="18" height="12" rx="2" fill="#2a1000" stroke="${color}" stroke-width="0.7" opacity="0.8"/>
+      <rect x="10" y="56" width="18" height="2" fill="${color}" opacity="0.6"/>
+      <rect x="52" y="56" width="18" height="12" rx="2" fill="#2a1000" stroke="${color}" stroke-width="0.7" opacity="0.8"/>
+      <rect x="52" y="56" width="18" height="2" fill="${color}" opacity="0.6"/>
+      <!-- Blueprint scroll at hip -->
+      <rect x="54" y="72" width="8" height="18" rx="2" fill="#c8a060" opacity="0.85"/>
+      <rect x="55" y="75" width="6" height="1" fill="#3a1800"/>
+      <rect x="55" y="78" width="6" height="1" fill="#3a1800"/>
+      <rect x="55" y="81" width="4" height="1" fill="#3a1800"/>
+      <!-- Gauntlets -->
+      <rect x="10" y="68" width="12" height="20" rx="1" fill="#1a0800"/>
+      <rect x="10" y="68" width="12" height="2" fill="${color}" opacity="0.5"/>
+      <rect x="58" y="68" width="12" height="20" rx="1" fill="#1a0800"/>
+      <rect x="58" y="68" width="12" height="2" fill="${color}" opacity="0.5"/>
+    </svg>`,
   };
   const fallback = _COMMANDER_DEF[key];
   const fc = fallback?.color || color;
@@ -2415,6 +2571,7 @@ async function loadStatsTab() {
       { id: 'code_warden',      icon: '⬡',  name: 'Forge Lit',            desc: 'Kaelen lit the forge — the Iron Codex is building' },
       { id: 'covenant_keeper',  icon: '🔥', name: 'Flame Kindled',        desc: 'Lyrin tended the flame — the Ember Covenant is watching' },
       { id: 'veil_opened',      icon: '👁',  name: 'The Veil Opens',       desc: 'Zeth raised the first ward — the Nullward Circle is watching' },
+      { id: 'forge_lit',        icon: '⬡',  name: 'The Forge Ignites',    desc: 'LYKE struck the first spark — the Lykeon Forge is open' },
       { id: 'loyal_flame',      icon: '🔥', name: 'Loyal Flame',          desc: 'Any order held a 7-day streak — Elite morale reached' },
       { id: 'division_master',  icon: '⚔',  name: 'Division Master',      desc: 'An order reached the third ascension — mastery approaches' },
       { id: 'five_orders',      icon: '✦',  name: 'Five Orders Stand',    desc: 'All five orders have opened their ledger' },
@@ -2427,6 +2584,7 @@ async function loadStatsTab() {
       { key: 'trading',        icon: '📈', label: 'Trading'  },
       { key: 'opportunity',    icon: '🏹', label: 'Opps'     },
       { key: 'personal',       icon: '🌿', label: 'Personal' },
+      { key: 'production',     icon: '⬡',  label: 'Forge'    },
     ];
 
     const earned   = new Set((s.achievements || []).map(a => typeof a === 'string' ? a : a.id));
@@ -2445,6 +2603,7 @@ async function loadStatsTab() {
       dev_automation: ['Codex Initiate','Iron Smith','Forge Warden','Codex Architect','Master of the Iron Codex'],
       personal:       ['Covenant Initiate','Flame Tender','Guardian of Vitality','Covenant Warden','Eternal Keeper'],
       op_sec:         ['Circle Watchman','Veil Scout','Shadow Warden','Grand Sentinel','Sovereign of the Null'],
+      production:     ['Apprentice of the Forge','Craftwright Adept','Lykeon Architect','Master of the Forge','Lyke, Architect of the Lykeon Forge'],
     };
     const DIV_THRESHOLDS = [0, 51, 151, 301, 500];
 
@@ -2549,6 +2708,28 @@ async function loadStatsTab() {
           {name:'The Sweeper',       desc:'Audits credential hygiene across all realm access points'},
           {name:'The Ward',          desc:'Scans for PII exposure and privacy risk across the perimeter'},
           {name:'Null Reporter',     desc:'Delivers the weekly threat and breach intelligence brief'},
+        ],
+      },
+      production: {
+        name:'LYKE', order:'The Lykeon Forge', color:'#f97316', glow:'#f9731640',
+        element:'🔥 Fire', element_desc:'Transformative and relentless — fire shapes raw material into something new',
+        strengths:['Asset pipeline discipline','Quality-first generation','Visual consistency enforcement'],
+        weaknesses:['Dependent on ComfyUI uptime','Slow on first-generation batch'],
+        lore:"An ancient craftwright who sees the blueprint beneath every chaos. Where others imagine, LYKE builds. Every asset in the realm passes through the Forge before it becomes real.",
+        classes:['Apprentice of the Forge','Craftwright Adept','Lykeon Architect','Master of the Forge','Lyke, Architect of the Lykeon Forge'],
+        abilities:[
+          {name:'Blueprint Vision', desc:'Sees the final form before a single stroke is made. Reduces prompt iterations.'},
+          {name:'Forge Fire',       desc:'Generates assets at accelerated pace during active production sprints.'},
+          {name:'Quality Seal',     desc:'No asset leaves the Forge without passing QA. Zero defects policy.'},
+          {name:'Continuity Lock',  desc:'Ensures every asset in a set maintains visual coherence with its siblings.'},
+          {name:'Archive Mastery',  desc:'The Forge catalog never forgets. Every asset is indexed and retrievable.'},
+        ],
+        soldiers:[
+          {name:'The Illustrator',   desc:'Calls the ComfyUI API to generate images from prompt templates'},
+          {name:'The Sprite Caster', desc:'Generates FE-style chibi and bust portraits for commanders and enemies'},
+          {name:'The Archivist',     desc:'Indexes every asset by type, commander, tier, and approval status'},
+          {name:'The Inspector',     desc:'Validates images are free from artifacts and generation errors'},
+          {name:'The Warden',        desc:'Ensures visual consistency across all tiers of a character\'s evolution'},
         ],
       },
     };
@@ -2677,7 +2858,7 @@ async function loadStatsTab() {
     // ── Party Members ──
     html += `<div class="jclaw-section-title">⚔ THE PARTY</div>`;
     html += `<div class="party-grid">`;
-    const PARTY_ORDER = ['opportunity', 'trading', 'dev_automation', 'op_sec', 'personal'];
+    const PARTY_ORDER = ['opportunity', 'trading', 'dev_automation', 'op_sec', 'personal', 'production'];
     for (const key of PARTY_ORDER) {
       const char   = PARTY[key];
       const div    = divs[key] || { xp: 0 };
@@ -2746,7 +2927,7 @@ async function loadStatsTab() {
     const longestStreaks = d.longest_streaks || {};
     const streakEntries  = Object.entries(longestStreaks).filter(([,v]) => v > 0);
     if (streakEntries.length) {
-      const sl = { opportunity:'Opps', trading:'Trading', dev_automation:'Dev', personal:'Personal', op_sec:'Op-Sec' };
+      const sl = { opportunity:'Opps', trading:'Trading', dev_automation:'Dev', personal:'Personal', op_sec:'Op-Sec', production:'Forge' };
       html += `<div class="jclaw-section-title">🔥 Longest Streaks</div>`;
       html += `<div class="card"><div class="card-body" style="padding:4px 0;">`;
       for (const [k, v] of streakEntries) {
@@ -3247,11 +3428,14 @@ async function loadOverview(silent = false) {
     } catch(_) {}
 
     // ── Stats bar ──
+    const prodMetrics = (d.divisions?.production?.metrics) || {};
+    const totalAssets = prodMetrics.total_assets ?? '—';
     html += '<div class="stat-row">';
     html += statBox(d.stats?.pending_jobs ?? '—', 'Jobs');
     html += statBox(alertCount, 'Alerts', alertCount > 0 ? 'var(--red)' : null);
     html += statBox(approvalCount, 'Pending', approvalCount > 0 ? 'var(--yellow)' : null);
     html += statBox(Object.keys(d.divisions || {}).length, 'Divs');
+    html += statBox(totalAssets, 'Assets', 'var(--peach)');
     html += '</div>';
 
     // ── XP / Rank card ──
@@ -3264,7 +3448,7 @@ async function loadOverview(silent = false) {
       const pct      = Math.min(100, Math.round(baseXp / xpToNext * 100));
       const divs     = s.divisions || {};
       const streaks  = s.streaks   || {};
-      const divOrder = [['op_sec','OP-Sec'],['dev_automation','Dev'],['trading','Trading'],['opportunity','Opps'],['personal','Personal']];
+      const divOrder = [['op_sec','OP-Sec'],['dev_automation','Dev'],['trading','Trading'],['opportunity','Opps'],['personal','Personal'],['production','Forge']];
       html += '<div class="xp-card">';
       html += '<div class="xp-rank-row">';
       html += `<div class="xp-rank-title">${escHtml(rank)}</div>`;
@@ -3279,13 +3463,13 @@ async function loadOverview(silent = false) {
       const activeStreaks = Object.entries(streaks).filter(([,v]) => v.current > 0);
       const atRiskStreaks = activeStreaks.filter(([k,v]) => v.last_date && v.last_date !== homeToday);
       if (activeStreaks.length) {
-        const sl = {opportunity:'OPPS',trading:'TRADE',dev_automation:'DEV',personal:'PERS',op_sec:'OPSEC'};
+        const sl = {opportunity:'OPPS',trading:'TRADE',dev_automation:'DEV',personal:'PERS',op_sec:'OPSEC',production:'FORGE'};
         html += '<div style="font-size:10px;color:var(--yellow);margin-bottom:4px;">';
         html += activeStreaks.map(([k,v]) => `${sl[k]||k} 🔥${v.current}d`).join('  ');
         html += '</div>';
       }
       if (atRiskStreaks.length) {
-        const sl = {opportunity:'Opps',trading:'Trade',dev_automation:'Dev',personal:'Pers',op_sec:'OpSec'};
+        const sl = {opportunity:'Opps',trading:'Trade',dev_automation:'Dev',personal:'Pers',op_sec:'OpSec',production:'Forge'};
         html += `<div style="font-size:9px;color:var(--yellow);margin-bottom:6px;">⚠ ${atRiskStreaks.map(([k])=>sl[k]||k).join(', ')} streak${atRiskStreaks.length>1?'s':''} at risk today</div>`;
       }
       html += '<div class="xp-divs">';
@@ -3360,19 +3544,30 @@ async function loadOverview(silent = false) {
           <span class="dm-item"><span class="dm-val">${m.breach_status || '—'}</span><span class="dm-lbl">BRCH</span></span>
         </div>`;
 
+      } else if (key === 'production') {
+        const pendingWarn = (m.pending_review || 0) > 5;
+        cardClass = pendingWarn ? 'warning' : '';
+        metricsHtml = `<div class="div-metrics">
+          <span class="dm-item"><span class="dm-val">${m.total_assets ?? '—'}</span><span class="dm-lbl">ASSETS</span></span>
+          <span class="dm-item"><span class="dm-val" ${(m.pending_review || 0) > 0 ? 'style="color:var(--yellow)"' : ''}>${m.pending_review ?? '—'}</span><span class="dm-lbl">PEND</span></span>
+          <span class="dm-item"><span class="dm-val">${m.delivered ?? '—'}</span><span class="dm-lbl">DELIV</span></span>
+        </div>`;
+
       } else {
         // sentinel or unknown
         metricsHtml = `<div class="div-metrics"><span class="dm-item" style="flex:unset;padding:4px 8px;"><span class="dm-val" style="font-size:10px;color:var(--subtext);">—</span></span></div>`;
       }
 
       const divLabel = key.replace(/_/g, '-');
-      html += `<div class="div-card ${cardClass}" onclick="openDivisionDetail('${key}')">
+      const divColor = {trading:'#06b6d4',opportunity:'#f59e0b',personal:'#10b981',dev_automation:'#a78bfa',op_sec:'#ef4444',production:'#f97316'}[key] || '';
+      html += `<div class="div-card ${cardClass}" onclick="openDivisionDetail('${key}')" style="${divColor ? `border-top:2px solid ${divColor}44;` : ''}">
         <div class="div-card-header">
-          <span class="div-name">${escHtml(divLabel)}</span>
+          <span class="div-name" style="${divColor ? `color:${divColor};` : ''}">${escHtml(divLabel)}</span>
           <span class="pill ${statusPillClass}">${escHtml(div.status || '?')}</span>
         </div>
         ${metricsHtml}
         <div class="div-lastrun">${escHtml(lastRunLabel)} <span style="color:var(--border);float:right">›</span></div>
+        ${_divQuickActions(key)}
       </div>`;
     }
     html += '</div>';
@@ -3410,6 +3605,178 @@ async function loadOverview(silent = false) {
     setConnected(false);
     renderError(el, e.message, () => loadOverview());
   }
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: LOG (live activity log feed)
+// ══════════════════════════════════════════════════════
+async function loadActivityLog(silent = false) {
+  const el = document.getElementById('log-content');
+  if (!el) return;
+  if (!silent) el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api('/mobile/api/activity');
+    setConnected(true);
+    const entries = d.entries || [];
+    if (!entries.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">◈</div><p>No activity yet</p></div>';
+      return;
+    }
+    const colorMap = { green:'var(--green)', red:'var(--red)', yellow:'var(--yellow)', blue:'var(--blue)', purple:'var(--purple)', teal:'var(--teal)' };
+    let html = '<div class="section-title">Activity Log</div>';
+    html += '<div class="card" style="padding:0;">';
+    entries.forEach((e, i) => {
+      const t   = e.time ? new Date(e.time) : null;
+      const ts  = t ? (t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})) : '—';
+      const col = colorMap[e.color] || 'var(--subtext)';
+      const divLabel = escHtml(e.division || 'SYS');
+      const msg = escHtml(e.message || '');
+      const border = i < entries.length - 1 ? 'border-bottom:1px solid var(--border);' : '';
+      html += `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 14px;${border}">
+        <div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:${col};margin-top:5px;box-shadow:0 0 6px ${col};"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">
+            <span style="font-size:10px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:0.06em;">${divLabel}</span>
+            <span style="font-size:10px;color:var(--subtext);white-space:nowrap;flex-shrink:0;">${ts}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text);line-height:1.4;">${msg}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    setConnected(false);
+    renderError(el, e.message, () => loadActivityLog());
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN: INTEL (static reference guide — rendered once, no API needed)
+// ══════════════════════════════════════════════════════
+function loadIntelReference() {
+  const el = document.getElementById('intel-ref-content');
+  if (!el) return;
+  if (el.innerHTML.trim()) return; // already rendered — static, no reload
+
+  const INTEL_DIVISIONS = [
+    {
+      label:'TRADING', color:'#06b6d4', commander:'SEREN', order:'Iron Codex',
+      responsibility:'Monitors markets, builds and backtests strategies, and executes trades. The Auric Veil reads patterns that others cannot see and acts with precision.',
+      agents:[
+        {name:'market-scan',    desc:'Scans live market for signals across instruments and timeframes, flagging high-probability setups.'},
+        {name:'trading-report', desc:'Synthesizes daily trading performance, strategy metrics, and win-rate trends into a structured review packet.'},
+        {name:'agent-network',  desc:'Multi-cycle pipeline: strategy-builder constructs edge hypotheses, backtester validates them, trader executes approved setups, trading-coach reviews post-trade for improvement.'},
+      ],
+      orchestrator:'SEREN collects packets from all trading agents, computes aggregate metrics (win rate, Sharpe, drawdown), and escalates degraded edge or anomalies to J_Claw in the daily briefing.',
+    },
+    {
+      label:'OPPORTUNITY', color:'#f59e0b', commander:'VAEL', order:'Dawnhunt',
+      responsibility:'Scouts job leads, freelance contracts, and funding opportunities. The Dawnhunt Order marks targets and cuts false leads so only worthy quarry reaches Matthew.',
+      agents:[
+        {name:'job-intake',     desc:'Scrapes and ingests job listings from configured sources, normalizing them into scored packets by tier (A–D).'},
+        {name:'hard-filter',    desc:'Filters all leads against match criteria — salary, remote flag, skill overlap — eliminating weak targets before review.'},
+        {name:'funding-finder', desc:'Identifies grants, government contracts, and remote-first opportunities beyond the standard job market.'},
+      ],
+      orchestrator:'VAEL aggregates intake and filter packets, computes source health, and ranks top Tier-A leads. Escalates high-value opportunities and source failures to J_Claw.',
+    },
+    {
+      label:'DEV AUTOMATION', color:'#a78bfa', commander:'KAELEN', order:'Veilkeepers',
+      responsibility:'Maintains codebase health, automation pipelines, and development quality. The Iron Codex never tolerates rot in the build.',
+      agents:[
+        {name:'repo-monitor',     desc:'Scans git repositories for uncommitted changes, stale branches, and pipeline drift.'},
+        {name:'debug-agent',      desc:'Responds to error events and failing tests — diagnoses root cause and suggests fixes.'},
+        {name:'refactor-scan',    desc:'Identifies code quality issues: high complexity, dead code, over-engineered modules.'},
+        {name:'doc-update',       desc:'Maintains documentation currency — flags stale docs and updates changed APIs or patterns.'},
+        {name:'artifact-manager', desc:'Cleans build artifacts, package caches, and dist directories to prevent bloat.'},
+        {name:'dev-digest',       desc:'Produces the daily dev health report: issue counts, repos checked, recommendations.'},
+      ],
+      orchestrator:'KAELEN collects all agent packets, counts high-severity issues, and summarizes build health. Escalates critical issues (high-count refactor warnings, failing repos) to J_Claw.',
+    },
+    {
+      label:'PERSONAL', color:'#10b981', commander:'LYRIN', order:'Thornward',
+      responsibility:'Tracks physical health and mental performance. The Ember Covenant ensures the sovereign never burns out — because a cold hearth cools everything above it.',
+      agents:[
+        {name:'health-logger',    desc:'Prompts and records the daily health check-in: sleep hours, sleep quality, mood, energy, and notes.'},
+        {name:'perf-correlation', desc:'Correlates health metrics with productivity and output — finds the patterns between rest and performance.'},
+        {name:'burnout-monitor',  desc:'Tracks burnout risk indicators: skipped logs, negative emotion trends, declining sleep. Flags elevated risk.'},
+        {name:'personal-digest',  desc:'Synthesizes the personal division daily report: health summary, burnout status, weekly trends.'},
+      ],
+      orchestrator:'LYRIN aggregates all health packets and computes burnout level. Escalates "check" or "elevated" burnout flags to J_Claw for immediate awareness.',
+    },
+    {
+      label:'OP-SEC', color:'#ef4444', commander:'ZETH', order:'Null Breach',
+      responsibility:'Maintains digital security posture across all devices and services. The Nullward Circle sees threats that others miss and closes gaps before they are exploited.',
+      agents:[
+        {name:'device-posture', desc:'Checks device security settings: disk encryption, firewall status, OS patch level, screen-lock enforcement.'},
+        {name:'threat-surface', desc:'Maps the current attack surface: open ports, exposed services, public-facing endpoints.'},
+        {name:'security-scan',  desc:'Scans for known vulnerabilities in installed packages and system configurations.'},
+        {name:'cred-audit',     desc:'Audits credentials and secrets management — checks for hardcoded keys, expired tokens, and weak passwords.'},
+        {name:'privacy-scan',   desc:'Checks data exposure: public leaks, misconfigured permissions, and overly broad access grants.'},
+        {name:'breach-check',   desc:'Monitors breach databases for exposure of accounts or credentials associated with the realm.'},
+        {name:'opsec-digest',   desc:'Produces the daily security summary: posture score, anomaly count, top threats, recommended actions.'},
+      ],
+      orchestrator:'ZETH collects all security packets, computes overall posture score, and categorizes threats by severity. Escalates high-severity anomalies and active breach indicators to J_Claw immediately.',
+    },
+    {
+      label:'LYKEON FORGE', color:'#f97316', commander:'LYKE', order:'Lykeon Forge',
+      responsibility:'Manages all creative media production: images, sprites, video, audio, and asset delivery. Every asset produced by the Forge is reviewed before reaching game directories.',
+      agents:[
+        {name:'image-generate',     desc:'Calls ComfyUI to generate images according to production prompts and style directives.'},
+        {name:'sprite-generate',    desc:'Generates Fire Emblem-style character sprites for the game layer using structured prompt pipelines.'},
+        {name:'video-generate',     desc:'Runs the video generation pipeline for cutscenes, trailers, or background loops.'},
+        {name:'graphic-design',     desc:'Produces UI elements, overlays, and branded graphics for the dashboard and game layer.'},
+        {name:'prompt-craft',       desc:'Builds optimized generation prompts from high-level creative briefs and style guides.'},
+        {name:'style-check',        desc:'Validates generated assets against art direction — rejects assets that break visual consistency.'},
+        {name:'image-review',       desc:'QA pass for image artifacts: checks for distortion, wrong aspect ratio, and generation errors.'},
+        {name:'audio-test',         desc:'Audio QA: validates file integrity, format compliance, and acceptable noise floor.'},
+        {name:'video-review',       desc:'Video QA: checks frame rate, duration, and visual continuity before delivery.'},
+        {name:'storyboard-compose', desc:'Converts story events or narrative beats into ordered shot lists for production.'},
+        {name:'continuity-check',   desc:'Cross-tier visual consistency check — ensures characters and assets match across scenes.'},
+        {name:'asset-catalog',      desc:'Indexes all produced assets with metadata: type, date, source prompt, approval status.'},
+        {name:'asset-deliver',      desc:'Routes approved assets to the correct game directories and marks them as delivered.'},
+        {name:'production-digest',  desc:'Forge status report: total assets, pending review, delivered count, pipeline health.'},
+      ],
+      orchestrator:'LYKE collects all production and QA packets, tracks total assets produced vs. delivered vs. pending review, and surfaces quality failures. Escalates production bottlenecks or repeated QA failures to J_Claw.',
+    },
+  ];
+
+  let html = '';
+
+  html += `<div class="card" style="border-color:var(--purple)33;background:linear-gradient(135deg,var(--purple)0a 0%,var(--surface) 100%);">
+    <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Realm Architecture</div>
+    <div style="font-size:13px;line-height:1.65;color:var(--text);">J_Claw is the Realm Orchestrator — overseeing 6 divisions, each led by a commander, each running autonomous agents that report upward through their orchestrator to J_Claw.</div>
+  </div>`;
+
+  html += `<div class="card">
+    <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Orchestrator Flow</div>
+    <div style="font-size:12px;line-height:1.65;color:var(--subtext);">Each orchestrator runs on a schedule or on-demand. It calls its agents, collects their packets, synthesizes a digest, and escalates alerts to J_Claw. J_Claw reads all digests in the daily briefing.</div>
+  </div>`;
+
+  INTEL_DIVISIONS.forEach(div => {
+    html += `<div style="border:1px solid ${div.color}33;border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;background:${div.color}08;">`;
+    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${div.color};box-shadow:0 0 8px ${div.color};flex-shrink:0;"></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:${div.color};letter-spacing:0.06em;">${escHtml(div.label)}</div>
+        <div style="font-size:10px;color:var(--subtext);">${escHtml(div.commander)} · ${escHtml(div.order)}</div>
+      </div>
+    </div>`;
+    html += `<div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:10px;">${escHtml(div.responsibility)}</div>`;
+    html += `<div style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Agents</div>`;
+    div.agents.forEach(a => {
+      html += `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;">
+        <span style="font-size:10px;font-weight:700;color:${div.color};white-space:nowrap;padding-top:1px;flex-shrink:0;">${escHtml(a.name)}</span>
+        <span style="font-size:11px;color:var(--subtext);line-height:1.5;">${escHtml(a.desc)}</span>
+      </div>`;
+    });
+    html += `<div style="margin-top:8px;padding:8px 10px;background:var(--overlay);border-radius:8px;font-size:11px;color:var(--subtext);line-height:1.5;">
+      <span style="color:${div.color};font-weight:700;">Orchestrator: </span>${escHtml(div.orchestrator)}
+    </div>`;
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════
@@ -4455,10 +4822,105 @@ async function sendChat() {
 // ── Division Detail Sheet ─────────────────────────────────
 let _detailDivKey = null;
 
+// ── Per-division agent definitions ──────────────────────────────────────────
+const DIVISION_AGENTS = {
+  trading:        [
+    { skill: 'market-scan',     label: 'Market Scan',    schedule: '2h' },
+    { skill: 'trading-report',  label: 'Trade Report',   schedule: '18:00' },
+  ],
+  opportunity:    [
+    { skill: 'job-intake',      label: 'Job Intake',     schedule: '3h' },
+    { skill: 'hard-filter',     label: 'Hard Filter',    schedule: 'auto' },
+    { skill: 'funding-finder',  label: 'Funding Finder', schedule: '14:00' },
+  ],
+  personal:       [
+    { skill: 'health-logger',   label: 'Health Logger',  schedule: '18:00' },
+    { skill: 'perf-correlation',label: 'Perf Corr',      schedule: '20:00' },
+    { skill: 'burnout-monitor', label: 'Burnout Monitor',schedule: '21:00' },
+    { skill: 'personal-digest', label: 'Digest',         schedule: '21:30' },
+  ],
+  dev_automation: [
+    { skill: 'repo-monitor',    label: 'Repo Monitor',   schedule: '3h' },
+    { skill: 'refactor-scan',   label: 'Refactor Scan',  schedule: '10:00' },
+    { skill: 'doc-update',      label: 'Doc Update',     schedule: '13:00' },
+    { skill: 'artifact-manager',label: 'Artifacts',      schedule: '03:00' },
+    { skill: 'dev-digest',      label: 'Dev Digest',     schedule: '15:00' },
+  ],
+  op_sec:         [
+    { skill: 'device-posture',  label: 'Device Posture', schedule: '08:00' },
+    { skill: 'threat-surface',  label: 'Threat Surface', schedule: '19:00' },
+    { skill: 'security-scan',   label: 'Security Scan',  schedule: '11:00' },
+    { skill: 'cred-audit',      label: 'Cred Audit',     schedule: '15:00' },
+    { skill: 'privacy-scan',    label: 'Privacy Scan',   schedule: '16:00' },
+    { skill: 'breach-check',    label: 'Breach Check',   schedule: '14:00' },
+    { skill: 'opsec-digest',    label: 'OpSec Digest',   schedule: '08:30' },
+  ],
+  production:     [
+    { skill: 'image-generate',    label: 'Image Generate',   schedule: 'demand' },
+    { skill: 'sprite-generate',   label: 'Sprite Generate',  schedule: 'demand' },
+    { skill: 'video-generate',    label: 'Video Generate',   schedule: 'demand' },
+    { skill: 'graphic-design',    label: 'Graphic Design',   schedule: 'demand' },
+    { skill: 'prompt-craft',      label: 'Prompt Craft',     schedule: 'demand' },
+    { skill: 'style-check',       label: 'Style Check',      schedule: 'QA' },
+    { skill: 'image-review',      label: 'Image Review',     schedule: 'QA' },
+    { skill: 'audio-test',        label: 'Audio Test',       schedule: 'QA' },
+    { skill: 'video-review',      label: 'Video Review',     schedule: 'QA' },
+    { skill: 'storyboard-compose',label: 'Storyboard',       schedule: 'demand' },
+    { skill: 'continuity-check',  label: 'Continuity',       schedule: 'QA' },
+    { skill: 'asset-catalog',     label: 'Asset Catalog',    schedule: 'demand' },
+    { skill: 'asset-deliver',     label: 'Deliver Assets',   schedule: 'demand' },
+    { skill: 'production-digest', label: 'Forge Digest',     schedule: 'demand' },
+  ],
+};
+
+// Primary skill per division (for home card quick-run)
+const DIV_PRIMARY_SKILL = {
+  trading: 'trading-report', opportunity: 'job-intake', personal: 'health-logger',
+  dev_automation: 'repo-monitor', op_sec: 'device-posture', production: 'production-digest',
+};
+
+// ── Run a skill from mobile UI ───────────────────────────────────────────────
+async function runSkillFromMobile(skill, btnEl) {
+  haptic('medium');
+  if (btnEl) { btnEl.classList.add('running'); btnEl.textContent = '…'; }
+  try {
+    const res = await fetch('/api/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skill }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (btnEl) { btnEl.classList.remove('running'); btnEl.classList.add('done'); btnEl.textContent = '✓'; }
+      showToast(`✓ ${skill} queued`);
+      setTimeout(() => {
+        if (btnEl) { btnEl.classList.remove('done'); btnEl.textContent = '▶ RUN'; }
+      }, 2500);
+    } else {
+      if (btnEl) { btnEl.classList.remove('running'); btnEl.textContent = '▶ RUN'; }
+      showToast('Failed to queue: ' + skill);
+    }
+  } catch(e) {
+    if (btnEl) { btnEl.classList.remove('running'); btnEl.textContent = '▶ RUN'; }
+    showToast('Error: ' + e.message);
+  }
+}
+
+// Quick-run buttons for home div cards (stopPropagation prevents card tap-through)
+function _divQuickActions(key) {
+  const agents = DIVISION_AGENTS[key] || [];
+  if (!agents.length) return '';
+  // Show first 3 agents as quick-run buttons
+  const shown = agents.slice(0, 3);
+  return `<div class="div-quick-actions" onclick="event.stopPropagation()">` +
+    shown.map(a => `<button class="div-quick-btn" onclick="runSkillFromMobile('${a.skill}',this)">▶ ${escHtml(a.label)}</button>`).join('') +
+    `</div>`;
+}
+
 function openDivisionDetail(key) {
   haptic('light');
   _detailDivKey = key;
-  const labels = { trading: 'Trading', opportunity: 'Opportunity', personal: 'Personal', dev_automation: 'Dev Automation', op_sec: 'OP-Sec', sentinel: 'Sentinel' };
+  const labels = { trading: 'Trading', opportunity: 'Opportunity', personal: 'Personal', dev_automation: 'Dev Automation', op_sec: 'OP-Sec', production: 'Lykeon Forge', sentinel: 'Sentinel' };
   document.getElementById('div-detail-title').textContent = labels[key] || key.replace(/_/g, ' ');
   document.getElementById('div-detail-body').innerHTML = '<div class="loading">Loading...</div>';
   document.getElementById('div-detail-backdrop').classList.add('open');
@@ -4477,18 +4939,44 @@ async function _loadDivisionDetail(key) {
   const el = document.getElementById('div-detail-body');
   try {
     let html = '';
+
+    // ── Section 1: Agent Controls ──────────────────────────────────────────
+    html += _renderDivisionAgents(key);
+
+    // ── Section 2: Data / Reports ──────────────────────────────────────────
+    html += `<div class="detail-section-title">Reports</div>`;
     if (key === 'trading') {
       const d = await api('/mobile/api/trading');
-      html = _renderTradingDetail(d);
+      html += _renderTradingDetail(d);
     } else {
       const all = await api('/mobile/api/divisions');
       const divData = all[key] || {};
-      html = _renderDivisionPackets(key, divData);
+      html += _renderDivisionPackets(key, divData);
     }
+
     el.innerHTML = html || '<div class="empty-state"><div class="empty-icon">📭</div><p>No data available</p></div>';
   } catch(e) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><p>Failed to load: ${escHtml(e.message)}</p></div>`;
   }
+}
+
+// ── Render agent control section ─────────────────────────────────────────────
+function _renderDivisionAgents(key) {
+  const agents = DIVISION_AGENTS[key] || [];
+  if (!agents.length) return '';
+  let html = `<div class="detail-section-title">Agents</div>`;
+  html += `<div class="detail-packet" style="padding:0;overflow:hidden;">`;
+  agents.forEach(a => {
+    html += `<div class="agent-ctrl-row">
+      <div class="agent-ctrl-info">
+        <div class="agent-ctrl-name">${escHtml(a.label)}</div>
+        <div class="agent-ctrl-meta">${escHtml(a.skill)} · ${escHtml(a.schedule)}</div>
+      </div>
+      <button class="agent-run-btn" onclick="runSkillFromMobile('${a.skill}',this)">▶ RUN</button>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
 }
 
 function _packetCard(name, pkt) {
@@ -4533,6 +5021,7 @@ function _renderDivisionPackets(key, divData) {
     personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation' },
     dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager' },
     op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest' },
+    production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest' },
     sentinel:       {},
   };
   const names = packetNames[key] || {};
@@ -4821,6 +5310,32 @@ function _enemySVG(key, w, h) {
       <rect x="14" y="38" width="4" height="1" fill="#ff2020" opacity="0.25"/>
       <rect x="22" y="42" width="4" height="1" fill="#ff2020" opacity="0.2"/>
     </svg>`,
+    // Broken Render — fractured orange hexagon, glitch shards
+    broken_render: `<svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">
+      <!-- broken hexagon body -->
+      <polygon points="20,4 31,10 31,22 20,28 9,22 9,10" fill="#1a0800" stroke="#f97316" stroke-width="1.2"/>
+      <!-- fracture lines across hex -->
+      <line x1="20" y1="4"  x2="14" y2="18" stroke="#f97316" stroke-width="0.8" opacity="0.7"/>
+      <line x1="31" y1="14" x2="18" y2="22" stroke="#f97316" stroke-width="0.8" opacity="0.6"/>
+      <line x1="12" y1="10" x2="28" y2="24" stroke="#f97316" stroke-width="0.6" opacity="0.4"/>
+      <!-- glowing broken eyes -->
+      <rect x="14" y="13" width="4" height="3" rx="1" fill="#f97316" opacity="0.9"/>
+      <rect x="22" y="13" width="4" height="3" rx="1" fill="#f97316" opacity="0.9"/>
+      <rect x="15" y="14" width="2" height="2" fill="#3a0f00"/>
+      <rect x="23" y="14" width="2" height="2" fill="#3a0f00"/>
+      <rect x="15" y="13" width="1" height="1" fill="#fed7aa" opacity="0.9"/>
+      <rect x="23" y="13" width="1" height="1" fill="#fed7aa" opacity="0.9"/>
+      <!-- broken lower body — shards splitting apart -->
+      <polygon points="13,28 20,28 17,52 8,48" fill="#1a0800"/>
+      <polygon points="20,28 27,28 32,52 23,52" fill="#1a0800"/>
+      <!-- gap between shards -->
+      <polygon points="17,32 23,32 22,44 18,44" fill="#000000"/>
+      <!-- orange corruption sparks -->
+      <rect x="6"  y="30" width="3" height="1" fill="#f97316" opacity="0.4"/>
+      <rect x="32" y="34" width="3" height="1" fill="#f97316" opacity="0.35"/>
+      <rect x="10" y="44" width="4" height="1" fill="#f97316" opacity="0.25"/>
+      <rect x="26" y="40" width="3" height="1" fill="#f97316" opacity="0.3"/>
+    </svg>`,
   };
   return sprites[key] || sprites['false_lead'];
 }
@@ -4890,6 +5405,19 @@ const _STORY_CHOICES = {
       { id: 'aggressive', letter: 'A', text: 'Go deeper — full audit.', flavor: 'Zeth: the surface is clean. What lies beneath it?' },
       { id: 'patient',    letter: 'B', text: 'Hold — maintain current posture.', flavor: 'No news is good news. Overreach invites exposure.' },
       { id: 'balanced',   letter: 'C', text: 'Rotate the sweep schedule.', flavor: 'Predictable patterns are vulnerabilities. Change the cycle.' },
+    ],
+  },
+  production: {
+    speaker: 'LYKE',
+    quotes: [
+      "The blueprint was always there. The Forge made it visible.",
+      "Another asset sealed and delivered. The catalog grows.",
+      "The Forge burns steady. Quality holds. The work continues.",
+    ],
+    choices: [
+      { id: 'aggressive', letter: 'A', text: 'Open the next generation run.', flavor: 'LYKE: the forge is hot. Strike while the heat holds.' },
+      { id: 'patient',    letter: 'B', text: 'Review before generating more.', flavor: 'A defective batch wastes the fire. Inspect first.' },
+      { id: 'balanced',   letter: 'C', text: 'Catalog, then queue the next batch.', flavor: 'Archive what exists. Then build what is missing.' },
     ],
   },
 };
@@ -5137,7 +5665,15 @@ async function _runTheaterQueue() {
       await _thPlayChapter(event.chapter);
     }
 
-    if (event.type === 'rank_up') {
+    if (event.type === 'prestige') {
+      _thSetColor('#a855f7');
+      _thEl('th-chapter-label').textContent = `⭐ PRESTIGE ${event.prestige}`;
+      _thEl('th-chapter-narration').textContent =
+        `J_Claw has ascended. Prestige ${event.prestige} achieved — a permanent ×${event.multiplier} XP multiplier now governs all future gains. All orders reset. The cycle begins anew at a higher plane.`;
+      _thEl('th-chapter-screen').classList.add('visible');
+      await _thWaitTap(6000);
+      _thEl('th-chapter-screen').classList.remove('visible');
+    } else if (event.type === 'rank_up') {
       await _thPlayRankUp(event);
     } else if (event.type === 'achievement') {
       // Re-use the existing achievement overlay style inline

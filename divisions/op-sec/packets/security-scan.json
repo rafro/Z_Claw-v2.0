@@ -1,24 +1,26 @@
 {
   "division": "op-sec",
-  "generated_at": "2026-03-21T01:40:28.347555+00:00",
+  "generated_at": "2026-03-22T14:03:43.218091+00:00",
   "skill": "security-scan",
   "status": "success",
-  "summary": "The codebase contains multiple instances of potentially dangerous functions like eval() and os.system(), which can lead to security vulnerabilities if not handled properly.",
+  "summary": "The static scan identified potential security risks related to the use of `eval()` and `os.system()`, which can be dangerous if not handled properly. The findings are marked as false positives (FP) based on pattern matching inside string literals, but further review is needed.",
   "action_items": [
     {
       "priority": "normal",
-      "description": "[MEDIUM] runtime\\workers\\dev\\reviewer.py:? — eval_usage: The code checks for the presence of 'eval(' or 'exec(' in the input and appends an issue if found.",
+      "description": "[MEDIUM] runtime\\workers\\dev\\reviewer.py:? — Security Risk: Potential use of eval() detected. This can lead to code injection attacks if the input is not properly sanitized.",
       "requires_matthew": false
     },
     {
       "priority": "normal",
-      "description": "[MEDIUM] runtime\\workers\\dev\\reviewer.py:? — os_system_call: The code checks for the presence of 'import os' and 'os.system(' in the input and appends an issue if found.",
+      "description": "[MEDIUM] runtime\\workers\\dev\\reviewer.py:? — Security Risk: Potential use of os.system() detected. This can lead to command injection attacks if the input is not properly sanitized.",
       "requires_matthew": false
     }
   ],
   "metrics": {
     "findings": 2,
-    "high": 0
+    "high": 0,
+    "false_positives": 0,
+    "total_scanned": 2
   },
   "artifact_refs": [],
   "escalate": false,

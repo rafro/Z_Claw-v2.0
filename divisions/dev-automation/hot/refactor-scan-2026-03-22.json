@@ -1,6 +1,6 @@
 {
   "date": "2026-03-22",
-  "generated_at": "2026-03-22T03:02:26.190258+00:00",
+  "generated_at": "2026-03-22T15:02:42.653836+00:00",
   "summary": "Several files contain large functions and duplicate logic, which can be refactored to improve maintainability and readability.",
   "findings": [
     {
@@ -39,25 +39,25 @@
       "suggestion": "Break down the `fetch_adzuna` function into smaller, more focused functions."
     },
     {
+      "file": "runtime/skills/hard_filter.py",
+      "severity": "high",
+      "type": "oversized_function",
+      "detail": "The `run` method in `hard_filter.py` is 88 lines long.",
+      "suggestion": "Refactor the `run` method into smaller functions to improve readability and maintainability."
+    },
+    {
       "file": "runtime/skills/repo_monitor.py",
       "severity": "high",
       "type": "oversized_function",
-      "detail": "The `_llm_analyze` method in `repo_monitor.py` is 65 lines long.",
-      "suggestion": "Refactor the `_llm_analyze` method into smaller, more focused functions."
+      "detail": "The `run` method in `repo_monitor.py` is 62 lines long.",
+      "suggestion": "Refactor the `run` method into smaller functions to improve readability and maintainability."
     },
     {
       "file": "runtime/skills/mobile_audit_review.py",
       "severity": "high",
       "type": "oversized_function",
       "detail": "The `run` method in `mobile_audit_review.py` is 134 lines long.",
-      "suggestion": "Refactor the `run` method into smaller, more focused functions."
-    },
-    {
-      "file": "runtime/orchestrators/opportunity.py",
-      "severity": "high",
-      "type": "oversized_function",
-      "detail": "The `run_job_intake` function is 98 lines long.",
-      "suggestion": "Break down the `run_job_intake` function into smaller, more focused functions."
+      "suggestion": "Refactor the `run` method into smaller functions to improve readability and maintainability."
     }
   ]
 }
