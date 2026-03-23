@@ -6033,20 +6033,14 @@ async function restartServer() {
         return;
       }
 
+      // Biometric scanner — PIN fallback if unavailable
       let authed = false;
       try {
-        if (window.PublicKeyCredential) {
-          const cred = await navigator.credentials.get({
-            publicKey: {
-              challenge: new TextEncoder().encode(challengeId),
-              timeout: 3000,
-              userVerification: 'required',
-              rpId: location.hostname,
-            }
-          });
-          authed = !!cred;
-        }
-      } catch(e) { authed = false; }
+        authed = await openBiometricScanner();
+      } catch(e) {
+        if (e.message === 'cancelled') return;
+        authed = false;
+      }
 
       if (!authed) {
         try {
@@ -6069,7 +6063,7 @@ async function restartServer() {
             if (verifyRes.ok) { authed = true; }
             else { showToast(verifyRes.reason || 'Incorrect PIN'); haptic('error'); return; }
           }
-        } catch(e) { if (e.message !== 'cancelled') showToast('PIN error: ' + e.message); return; }
+        } catch(e) { if (e.message !== 'cancelled') showToast('Auth error: ' + e.message); return; }
       }
 
       if (!authed) { showToast('Auth failed'); haptic('error'); return; }
