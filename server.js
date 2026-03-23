@@ -18,6 +18,7 @@ try { webpush = require('web-push'); } catch(e) { console.warn('  [web-push] not
 
 const ROOT      = __dirname;
 const STATE_DIR = path.join(ROOT, 'state');
+const GAME_EVENTS_FILE = path.join(STATE_DIR, 'game-events.jsonl');
 const PORT      = 3000;
 
 // ── Mobile SSE subscribers ──
@@ -117,6 +118,76 @@ function writeState(file, data) {
 
 function simpleId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function fileSizeSafe(filePath) {
+  try {
+    return fs.existsSync(filePath) ? fs.statSync(filePath).size : 0;
+  } catch(_) {
+    return 0;
+  }
+}
+
+function readGameEventsSince(offset = 0) {
+  try {
+    if (!fs.existsSync(GAME_EVENTS_FILE)) return [];
+    const size = fs.statSync(GAME_EVENTS_FILE).size;
+    if (size <= offset) return [];
+
+    const fd = fs.openSync(GAME_EVENTS_FILE, 'r');
+    try {
+      const len = size - offset;
+      const buf = Buffer.alloc(len);
+      fs.readSync(fd, buf, 0, len, offset);
+      return buf.toString('utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map(line => {
+          try { return JSON.parse(line); } catch(_) { return null; }
+        })
+        .filter(Boolean);
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch(_) {
+    return [];
+  }
+}
+
+function parseJsonOutput(raw) {
+  try {
+    return JSON.parse((raw || '').trim() || '{}');
+  } catch(_) {
+    return {};
+  }
+}
+
+function runRealmKeeperTask(task, args = []) {
+  return new Promise((resolve, reject) => {
+    const runId = simpleId();
+    const gameEventOffset = fileSizeSafe(GAME_EVENTS_FILE);
+    const runDivisionPath = path.join(ROOT, 'run_division.py');
+    const proc = spawn(PYTHON_EXE, [runDivisionPath, 'realm-keeper', task, ...args.map(v => String(v))], {
+      env: { ...process.env, JCLAW_RUN_ID: runId },
+      windowsHide: true,
+      cwd: ROOT,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', d => { stdout += d.toString(); });
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+
+    proc.on('close', code => {
+      if (code !== 0) {
+        const errLine = stderr.split('\n').filter(Boolean).pop() || `exit ${code}`;
+        return reject(new Error(errLine.trim()));
+      }
+      const canonicalEvents = readGameEventsSince(gameEventOffset).filter(evt => evt.run_id === runId);
+      canonicalEvents.forEach(_consumeCanonicalGameEvent);
+      resolve({ result: parseJsonOutput(stdout), canonicalEvents, stdout, stderr });
+    });
+  });
 }
 
 // ── Logging helpers ──
@@ -318,24 +389,46 @@ function xpForNextLevel(level) {
   return Math.round(2100 * Math.pow(1.3, level - 9));
 }
 
+function deriveBaseProgress(totalBaseXP = 0) {
+  let level = 1;
+  let xpIntoLevel = Math.max(0, Math.floor(totalBaseXP || 0));
+  let xpForLevel = xpForNextLevel(level);
+  while (xpIntoLevel >= xpForLevel) {
+    xpIntoLevel -= xpForLevel;
+    level++;
+    xpForLevel = xpForNextLevel(level);
+  }
+  return {
+    level,
+    rank: rankForLevel(level),
+    xp_into_level: xpIntoLevel,
+    xp_for_next_level: xpForLevel,
+    xp_to_next_level: Math.max(0, xpForLevel - xpIntoLevel),
+  };
+}
+
+function syncBaseProgress(stats) {
+  if (!stats || typeof stats !== 'object') return stats;
+  stats.base_xp = Math.max(0, Math.floor(stats.base_xp || 0));
+  if (!stats.total_xp_earned) stats.total_xp_earned = 0;
+  const progress = deriveBaseProgress(stats.base_xp);
+  stats.level = progress.level;
+  stats.rank = progress.rank;
+  stats.xp_into_level = progress.xp_into_level;
+  stats.xp_for_next_level = progress.xp_for_next_level;
+  stats.xp_to_next_level = progress.xp_to_next_level;
+  return stats;
+}
+
 function applyXP(stats, amount) {
-  // Guard against missing fields (Python xp.py writes a different schema)
-  if (!stats.xp_to_next_level) stats.xp_to_next_level = xpForNextLevel(stats.level || 1);
-  if (!stats.total_xp_earned)  stats.total_xp_earned  = 0;
+  syncBaseProgress(stats);
+  const oldLevel = stats.level || 1;
+  const oldRank  = stats.rank || rankForLevel(oldLevel);
   stats.base_xp += amount;
   stats.total_xp_earned += amount;
-  let leveled = false;
-  while (stats.base_xp >= stats.xp_to_next_level) {
-    stats.base_xp -= stats.xp_to_next_level;
-    stats.level++;
-    stats.xp_to_next_level = xpForNextLevel(stats.level);
-    leveled = true;
-  }
-  const newRank = rankForLevel(stats.level);
-  const rankChanged = newRank !== stats.rank;
-  stats.rank = newRank;
+  syncBaseProgress(stats);
   stats.last_updated = new Date().toISOString();
-  return { leveled, rankChanged };
+  return { leveled: stats.level > oldLevel, rankChanged: stats.rank !== oldRank };
 }
 
 // Grant division XP — called after every successful skill run.
@@ -422,7 +515,7 @@ function _checkAutoPrestige() {
     writeState('jclaw-stats.json', stats);
     logActivity('SYS', `⭐ AUTO-PRESTIGE ${stats.prestige} — ×${stats.prestige_multiplier} XP`, 'purple');
     _broadcastGamifEvent({ event: 'prestige', prestige: stats.prestige, multiplier: stats.prestige_multiplier, auto: true });
-    _appendXpHistory({ event: 'auto_prestige', prestige: stats.prestige, multiplier: stats.prestige_multiplier });
+    _appendXpHistory({ event: 'prestige', prestige: stats.prestige, multiplier: stats.prestige_multiplier, auto: true });
   } catch(e) {}
 }
 
@@ -522,6 +615,23 @@ function _appendXpHistory(entry) {
   } catch(e) {}
 }
 
+function _consumeCanonicalGameEvent(evt) {
+  if (!evt || !evt.event) return;
+  _broadcastGamifEvent(evt);
+
+  if (evt.event === 'rank_up' && evt.division && evt.division !== 'base') {
+    logActivity('SYS', `⚔ ${evt.division} rank up: ${evt.new_rank || 'new rank'}`, 'purple');
+  } else if (evt.event === 'streak_milestone') {
+    logActivity('SYS', `🔥 ${evt.division} streak: ${evt.streak} days`, 'yellow');
+  } else if (evt.event === 'achievement_unlock') {
+    logActivity('SYS', `🏆 Achievement unlocked: ${evt.achievement}`, 'yellow');
+  } else if (evt.event === 'prestige') {
+    logActivity('SYS', `⭐ PRESTIGE ${evt.prestige} — ×${evt.multiplier} XP`, 'purple');
+  } else if (evt.event === 'xp_grant' && evt.source === 'ruler') {
+    logActivity('SYS', `⚔ Ruler bestowed ${evt.amount} XP — ${evt.reason || 'Ruler decree'}`, 'yellow');
+  }
+}
+
 // Called after every skill completion. Updates streak, checks achievements,
 // broadcasts SSE, appends telemetry. Does NOT modify division XP.
 // actualXp / streakMult are forwarded from grantDivisionXP (Node path).
@@ -572,7 +682,7 @@ function handleGamifStream(req, res) {
     'Access-Control-Allow-Origin': '*',
   });
   try {
-    const stats = readState('jclaw-stats.json');
+    const stats = syncBaseProgress(readState('jclaw-stats.json'));
     if (stats) res.write(`data: ${JSON.stringify({ type: 'gamif', event: 'init', stats })}\n\n`);
   } catch(e) {}
   const hb = setInterval(() => { try { res.write(': ping\n\n'); } catch(e) {} }, 25000);
@@ -585,7 +695,7 @@ function handleGamifStream(req, res) {
 // GET /api/stats/summary  (also /mobile/api/stats/summary)
 function handleStatsSummary(res) {
   try {
-    const stats = readState('jclaw-stats.json') || {};
+    const stats = syncBaseProgress(readState('jclaw-stats.json') || {});
     let xpPerDay7d = 0;
     try {
       const histFile = path.join(STATE_DIR, 'xp-history.jsonl');
@@ -618,7 +728,7 @@ function handleStatsSummary(res) {
 }
 
 // POST /api/prestige  — PC only, Tyler confirms
-// Condition: all 5 divisions >= 500 XP. Resets division XP, grants +5% permanent multiplier.
+// Condition: all 6 divisions >= 500 XP. Resets division XP, grants +5% permanent multiplier.
 function handlePrestige(res) {
   const stats = readState('jclaw-stats.json');
   if (!stats) return jsonError(res, 500, 'stats not found');
@@ -728,6 +838,49 @@ function handleBestow(body, res) {
     rank_up: rankChanged, old_rank: oldRank,
     achievements_unlocked: newAchievements,
   });
+}
+
+async function handlePrestigeViaPython(res) {
+  try {
+    const { result } = await runRealmKeeperTask('force-prestige');
+    return jsonOk(res, {
+      ok: true,
+      prestige: result.prestige,
+      prestige_multiplier: result.prestige_multiplier,
+      message: result.message || `Prestige ${result.prestige} achieved`,
+    });
+  } catch(e) {
+    const msg = e.message || 'prestige failed';
+    if (msg.includes('Not eligible')) return jsonError(res, 400, msg);
+    return jsonError(res, 500, msg);
+  }
+}
+
+async function handleBestowViaPython(body, res) {
+  const amount = parseInt(body.amount) || 50;
+  const reason = body.reason || 'Ruler\'s decree';
+  if (amount <= 0 || amount > 10000) return jsonError(res, 400, 'invalid amount');
+
+  try {
+    const { result } = await runRealmKeeperTask('grant-base', [amount, reason]);
+    const oldRank = result.rank_up_msg ? result.rank_up_msg.split(' -> ')[0] : '';
+    return jsonOk(res, {
+      ok: true,
+      amount,
+      reason,
+      new_level: result.level,
+      new_rank: result.rank,
+      base_xp: result.base_xp,
+      xp_into_level: result.xp_into_level,
+      xp_for_next_level: result.xp_for_next_level,
+      xp_to_next_level: result.xp_to_next_level,
+      rank_up: result.rank_up,
+      old_rank: oldRank,
+      achievements_unlocked: result.new_achievements || [],
+    });
+  } catch(e) {
+    return jsonError(res, 500, e.message || 'bestow failed');
+  }
 }
 
 // POST /api/applications/:id/status  { status: "applied|skipped|archived" }
@@ -1135,7 +1288,7 @@ function buildContext() {
     const stats = JSON.parse(fs.readFileSync(path.join(STATE_DIR, 'jclaw-stats.json'), 'utf8'));
     lines.push('\n[ J_CLAW STATUS ]');
     lines.push(`  Level: ${stats.level} | Rank: ${stats.rank}`);
-    lines.push(`  XP: ${stats.base_xp} / ${stats.xp_to_next_level} | Total earned: ${stats.total_xp_earned}`);
+    lines.push(`  XP: ${stats.xp_into_level || 0} / ${stats.xp_for_next_level || stats.xp_to_next_level} | Total base XP: ${stats.base_xp} | Total earned: ${stats.total_xp_earned}`);
     const divs = stats.divisions || {};
     for (const [d, ddata] of Object.entries(divs)) {
       lines.push(`  ${d}: ${ddata.rank} (${ddata.xp} XP)`);
@@ -2784,7 +2937,7 @@ function handleAchievements(res) {
   if (fs.existsSync(f)) { try { const s = JSON.parse(fs.readFileSync(f, 'utf8')); earned = s.achievements || []; } catch(e) {} }
   const ALL_ACHIEVEMENTS = [
     { id: 'first_blood', name: 'First Blood', icon: '⚔️', desc: 'Complete your first skill run', lore: 'The blade was drawn. The hunt began.' },
-    { id: 'five_orders', name: 'Five Orders', icon: '🏰', desc: 'Have all five divisions active', lore: 'The realm stands complete. All orders march.' },
+    { id: 'five_orders', name: 'Six Orders', icon: '🏰', desc: 'Have all six divisions active', lore: 'The realm stands complete. All orders march.' },
     { id: 'market_watcher', name: 'Market Watcher', icon: '📈', desc: 'Run market-scan 10 times', lore: 'The runes have been read. Patterns emerge from chaos.' },
     { id: 'first_hunt', name: 'First Hunt', icon: '🎯', desc: 'Find your first job opportunity', lore: 'VANCE drew the map. The first target was marked.' },
     { id: 'covenant_keeper', name: 'Covenant Keeper', icon: '🔥', desc: 'Maintain a 7-day streak', lore: 'The flame was kept alive. The pact holds.' },
@@ -2994,11 +3147,121 @@ function handleAnimQueueClear(res) {
   } catch(e) { jsonError(res, 500, 'anim queue clear error'); }
 }
 
+// ── WebAuthn credential storage ──────────────────────────────────────────────
+const WEBAUTHN_FILE = path.join(STATE_DIR, 'webauthn-credentials.json');
+const _webauthnChallenges = new Map(); // in-memory: token → { challenge, expires }
+
+function _waLoadCredentials() {
+  try {
+    if (fs.existsSync(WEBAUTHN_FILE)) return JSON.parse(fs.readFileSync(WEBAUTHN_FILE, 'utf8'));
+  } catch(e) {}
+  return { credentials: [] };
+}
+
+function _waSaveCredentials(data) {
+  fs.writeFileSync(WEBAUTHN_FILE, JSON.stringify(data, null, 2));
+}
+
+function defaultStoryState() {
+  return {
+    chapter: 0,
+    chapter_key: 'prologue',
+    chapter_label: 'Prologue',
+    chapter_title: 'The Awakening',
+    chapter_summary: 'The realm stirs. The commanders are watching to learn what kind of sovereign J_Claw will become.',
+    active_arc: {
+      id: 'balanced',
+      label: 'Balanced Doctrine',
+      name: 'The Measured Ascent',
+      summary: 'The sovereign is still unproven. The realm has not committed to a doctrine yet.',
+    },
+    relationships: {},
+    recent_scenes: [],
+    choices: [],
+    pending_choice: null,
+  };
+}
+
+// GET /mobile/api/webauthn/register/options
+function handleWebAuthnRegisterOptions(res) {
+  const challenge = require('crypto').randomBytes(32).toString('base64url');
+  const token     = require('crypto').randomBytes(16).toString('hex');
+  _webauthnChallenges.set(token, { challenge, expires: Date.now() + 120_000 });
+  jsonOk(res, {
+    token,
+    challenge,
+    rp:   { id: 'localhost', name: 'J_Claw Mission Control' },
+    user: { id: 'amNsYXctb3duZXI', name: 'owner', displayName: 'J_Claw Owner' },
+    pubKeyCredParams: [
+      { type: 'public-key', alg: -7  },  // ES256
+      { type: 'public-key', alg: -257 }, // RS256
+    ],
+    authenticatorSelection: {
+      authenticatorAttachment: 'platform',
+      userVerification:        'required',
+      residentKey:             'preferred',
+    },
+    timeout: 60000,
+    attestation: 'none',
+  });
+}
+
+// POST /mobile/api/webauthn/register/complete
+async function handleWebAuthnRegisterComplete(req, res) {
+  try {
+    const body  = await parseBody(req);
+    const entry = _webauthnChallenges.get(body.token);
+    if (!entry || Date.now() > entry.expires) return jsonError(res, 400, 'Challenge expired — try again');
+    _webauthnChallenges.delete(body.token);
+    if (!body.credential_id) return jsonError(res, 400, 'Missing credential_id');
+
+    const data = _waLoadCredentials();
+    // Replace any existing credential (one per device is enough)
+    data.credentials = data.credentials.filter(c => c.id !== body.credential_id);
+    data.credentials.push({
+      id:         body.credential_id,
+      label:      body.label || 'Mobile Biometric',
+      registered: new Date().toISOString(),
+    });
+    _waSaveCredentials(data);
+    jsonOk(res, { ok: true, message: 'Biometric registered', credential_count: data.credentials.length });
+  } catch(e) { jsonError(res, 500, 'Registration error: ' + e.message); }
+}
+
+// GET /mobile/api/webauthn/auth/options  — returns challenge + allowCredentials
+function handleWebAuthnAuthOptions(res) {
+  const challenge = require('crypto').randomBytes(32).toString('base64url');
+  const token     = require('crypto').randomBytes(16).toString('hex');
+  _webauthnChallenges.set(token, { challenge, expires: Date.now() + 90_000 });
+  const data = _waLoadCredentials();
+  jsonOk(res, {
+    token,
+    challenge,
+    allowCredentials: data.credentials.map(c => ({ type: 'public-key', id: c.id })),
+    userVerification: 'required',
+    timeout:          15000,
+  });
+}
+
+// DELETE /mobile/api/webauthn/credentials  — clear all registered credentials
+function handleWebAuthnClearCredentials(res) {
+  try {
+    _waSaveCredentials({ credentials: [] });
+    jsonOk(res, { ok: true, message: 'All biometric credentials cleared' });
+  } catch(e) { jsonError(res, 500, 'Clear error: ' + e.message); }
+}
+
+// GET /mobile/api/webauthn/credentials  — list registered credentials
+function handleWebAuthnListCredentials(res) {
+  const data = _waLoadCredentials();
+  jsonOk(res, { credentials: data.credentials, count: data.credentials.length });
+}
+
 // GET /mobile/api/story/state  — current story state + choices made
 function handleStoryState(res) {
   try {
     const sp = path.join(STATE_DIR, 'story-state.json');
-    if (!fs.existsSync(sp)) return jsonOk(res, { chapter: 0, choices: [] });
+    if (!fs.existsSync(sp)) return jsonOk(res, defaultStoryState());
     jsonOk(res, JSON.parse(fs.readFileSync(sp, 'utf8') || '{}'));
   } catch(e) { jsonError(res, 500, 'story state error'); }
 }
@@ -3007,16 +3270,12 @@ function handleStoryState(res) {
 async function handleStoryChoice(req, res) {
   try {
     const body = await parseBody(req);
-    const sp   = path.join(STATE_DIR, 'story-state.json');
-    let state  = {};
-    if (fs.existsSync(sp)) {
-      try { state = JSON.parse(fs.readFileSync(sp, 'utf8') || '{}'); } catch {}
-    }
-    if (!state.choices) state.choices = [];
-    state.choices.push({ ...body, ts: new Date().toISOString() });
-    state.last_choice = body;
-    fs.writeFileSync(sp, JSON.stringify(state, null, 2));
-    jsonOk(res, { ok: true, state });
+    const division = body.division || '';
+    const choiceId = body.choice_id || '';
+    const choiceText = body.choice_text || '';
+    if (!division || !choiceId) return jsonError(res, 400, 'division and choice_id required');
+    const { result } = await runRealmKeeperTask('story-choice', [division, choiceId, choiceText]);
+    jsonOk(res, { ok: true, state: result });
   } catch(e) { jsonError(res, 500, 'story choice error'); }
 }
 
@@ -3071,15 +3330,15 @@ const server = http.createServer(async (req, res) => {
   if (reqPath.startsWith('/api/')) {
     try {
       if (method === 'POST' && reqPath === '/api/bestow') {
-        const body = await parseBody(req); return handleBestow(body, res);
+        const body = await parseBody(req); return await handleBestowViaPython(body, res);
       }
       if (method === 'POST' && reqPath === '/api/control') {
         const body = await parseBody(req); return handleControl(body, res);
       }
       if (method === 'GET' && reqPath === '/api/gamif/stream') { return handleGamifStream(req, res); }
-      if (method === 'GET' && reqPath === '/api/stats')         { return jsonOk(res, readState('jclaw-stats.json') || {}); }
+      if (method === 'GET' && reqPath === '/api/stats')         { return jsonOk(res, syncBaseProgress(readState('jclaw-stats.json') || {})); }
       if (method === 'GET' && reqPath === '/api/stats/summary') { return handleStatsSummary(res); }
-      if (method === 'POST' && reqPath === '/api/prestige') { return handlePrestige(res); }
+      if (method === 'POST' && reqPath === '/api/prestige') { return await handlePrestigeViaPython(res); }
       if (method === 'GET' && reqPath === '/api/jobs') { return handleGetJobs(res); }
       if (method === 'GET' && reqPath === '/api/grants') { return handleGetGrants(res); }
       if (method === 'GET' && reqPath === '/api/packets') { return handleGetPackets(res); }
@@ -3317,7 +3576,7 @@ const server = http.createServer(async (req, res) => {
         return jsonOk(res, { ok: true, uptime: Math.floor(process.uptime()) });
       }
       if (method === 'GET' && reqPath === '/mobile/api/stats') {
-        const s = readState('jclaw-stats.json') || {};
+        const s = syncBaseProgress(readState('jclaw-stats.json') || {});
         return jsonOk(res, s);
       }
       if (method === 'GET' && reqPath === '/mobile/api/alerts') {
@@ -3337,6 +3596,11 @@ const server = http.createServer(async (req, res) => {
       if (method === 'POST' && reqPath === '/mobile/api/anim/queue/clear') { return handleAnimQueueClear(res); }
       if (method === 'GET'  && reqPath === '/mobile/api/story/state')      { return handleStoryState(res); }
       if (method === 'POST' && reqPath === '/mobile/api/story/choice')     { return handleStoryChoice(req, res); }
+      if (method === 'GET'  && reqPath === '/mobile/api/webauthn/register/options')   { return handleWebAuthnRegisterOptions(res); }
+      if (method === 'POST' && reqPath === '/mobile/api/webauthn/register/complete')  { return handleWebAuthnRegisterComplete(req, res); }
+      if (method === 'GET'  && reqPath === '/mobile/api/webauthn/auth/options')       { return handleWebAuthnAuthOptions(res); }
+      if (method === 'GET'  && reqPath === '/mobile/api/webauthn/credentials')        { return handleWebAuthnListCredentials(res); }
+      if (method === 'DELETE' && reqPath === '/mobile/api/webauthn/credentials')      { return handleWebAuthnClearCredentials(res); }
       if (method === 'GET' && reqPath === '/mobile/api/divisions') {
         return handleMobileDivisions(res);
       }
@@ -3603,10 +3867,15 @@ const server = http.createServer(async (req, res) => {
           const validDivs = new Set(['opportunity', 'trading', 'dev_automation', 'personal', 'op_sec', 'production']);
           if (!validDivs.has(divKey)) return jsonError(res, 400, `Unknown division: ${divKey}`);
           try {
-            grantDivisionXP(divKey, amount, 'mobile-bestow');
-            logActivity(divKey, `Mobile bestow: +${amount} XP ${flavor ? '— ' + flavor : ''}`, 'purple');
-            broadcastWS('xp_gained', { division: divKey, amount, flavor });
-            return jsonOk(res, { ok: true, message: `+${amount} XP bestowed on ${divKey}` });
+            const { result } = await runRealmKeeperTask('grant-division', [divKey, amount, 'mobile-bestow', flavor]);
+            logActivity(divKey, `Mobile bestow: +${amount} XP ${flavor ? '- ' + flavor : ''}`, 'purple');
+            return jsonOk(res, {
+              ok: true,
+              message: `+${result.xp_granted || amount} XP bestowed on ${divKey}`,
+              division_xp: result.division_xp,
+              division_rank: result.division_rank,
+              achievements_unlocked: result.new_achievements || [],
+            });
           } catch(e) { return jsonError(res, 500, e.message); }
         }
       }
@@ -3695,23 +3964,31 @@ function runSkillViaPython(skillName, logDiv, extraArgs = []) {
     }
 
     updateDivisionState(mapping.divState, 'running');
+    const runId = simpleId();
+    const gameEventOffset = fileSizeSafe(GAME_EVENTS_FILE);
 
     const runDivisionPath = path.join(ROOT, 'run_division.py');
     const proc = spawn(PYTHON_EXE, [runDivisionPath, mapping.division, mapping.task, ...extraArgs], {
-      env: { ...process.env },
+      env: { ...process.env, JCLAW_RUN_ID: runId },
       windowsHide: true,
       cwd: ROOT,
     });
 
     let stderr = '';
+    let stdout = '';
     proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.stdout.on('data', () => {}); // JSON packet written to disk — no need to capture
+    proc.stdout.on('data', d => { stdout += d.toString(); });
 
     proc.on('close', code => {
       updateDivisionState(mapping.divState, 'idle');
       if (code === 0) {
         logActivity(logDiv || 'SYS', `${skillName} complete`, 'green');
-        handleGamifCheck(skillName, mapping.divState);
+        const canonicalEvents = readGameEventsSince(gameEventOffset).filter(evt => evt.run_id === runId);
+        if (canonicalEvents.length) {
+          canonicalEvents.forEach(_consumeCanonicalGameEvent);
+        } else {
+          handleGamifCheck(skillName, mapping.divState);
+        }
         // For image/sprite generation, read the packet and attach image URLs to the WS event
         let generatedImages = [];
         if (['image-generate', 'sprite-generate'].includes(skillName)) {

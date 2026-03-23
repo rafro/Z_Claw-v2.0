@@ -6,7 +6,7 @@ Readable via /mobile/api/realm/chronicle.
 
 Event classes:
   micro — rank-ups, streaks, achievements, skill first-runs
-  major — new divisions, tier-4 legendary, five-orders-stand, prestige
+  major — new divisions, tier-4 legendary, full-order activation, prestige
 
 All narrative text is generated from templates in config.py.
 """
@@ -263,6 +263,26 @@ def migrate_from_history(xp_history_path: Path, stats_path: Path) -> int:
                     "operational": f"Matthew granted {amount} base XP",
                     "impact":      _fmt(tpl.get("impact", ""), amount=amount),
                     "retroactive": True,
+                }
+                _append(entry)
+                written += 1
+
+            elif e.get("event") in {"prestige", "auto_prestige"}:
+                prestige = e.get("prestige", 0)
+                multiplier = e.get("multiplier", 1.0)
+                tpl = CHRONICLE_TEMPLATES.get("prestige", {})
+                entry = {
+                    "ts":          ts,
+                    "event_class": "major",
+                    "category":    "prestige",
+                    "prestige":    prestige,
+                    "multiplier":  multiplier,
+                    "title":       _fmt(tpl.get("title", f"Prestige {prestige}"), prestige=prestige, multiplier=multiplier),
+                    "lore":        _fmt(tpl.get("lore", ""), prestige=prestige, multiplier=multiplier),
+                    "operational": f"Prestige {prestige} achieved — permanent ×{multiplier:.2f} XP multiplier active",
+                    "impact":      _fmt(tpl.get("impact", ""), prestige=prestige, multiplier=multiplier),
+                    "retroactive": True,
+                    "auto":        e.get("auto", e.get("event") == "auto_prestige"),
                 }
                 _append(entry)
                 written += 1

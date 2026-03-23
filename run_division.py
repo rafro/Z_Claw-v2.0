@@ -37,6 +37,10 @@ Usage:
   python run_division.py sentinel sentinel-digest
   python run_division.py realm-keeper grant-skill <skill_name>
   python run_division.py realm-keeper grant-base <amount> [reason]
+  python run_division.py realm-keeper grant-division <division> <amount> [skill_name] [reason]
+  python run_division.py realm-keeper force-prestige
+  python run_division.py realm-keeper story-state
+  python run_division.py realm-keeper story-choice <division> <choice_id> [choice_text]
 """
 
 import sys
@@ -226,7 +230,14 @@ def run(division: str, task: str, args: list) -> dict:
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────
     elif division == "realm-keeper":
-        from runtime.tools.xp import grant_skill_xp, grant_base_xp, current_stats
+        from runtime.tools.xp import (
+            current_stats,
+            force_prestige,
+            grant_base_xp,
+            grant_division_xp,
+            grant_skill_xp,
+        )
+        from runtime.realm.story import apply_choice, current_state as current_story_state
         if task == "grant-skill":
             skill = args[0] if args else ""
             if not skill:
@@ -237,6 +248,27 @@ def run(division: str, task: str, args: list) -> dict:
             amount = int(args[0]) if args else 0
             reason = args[1] if len(args) > 1 else ""
             return grant_base_xp(amount, reason)
+        if task == "grant-division":
+            division_key = args[0] if args else ""
+            amount = int(args[1]) if len(args) > 1 else 0
+            skill_name = args[2] if len(args) > 2 else "manual-bestow"
+            reason = args[3] if len(args) > 3 else ""
+            if not division_key:
+                log.error("grant-division requires division argument")
+                sys.exit(1)
+            return grant_division_xp(division_key, amount, skill_name, reason)
+        if task == "force-prestige":
+            return force_prestige()
+        if task == "story-state":
+            return current_story_state()
+        if task == "story-choice":
+            division_key = args[0] if args else ""
+            choice_id = args[1] if len(args) > 1 else ""
+            choice_text = args[2] if len(args) > 2 else ""
+            if not division_key or not choice_id:
+                log.error("story-choice requires division and choice_id")
+                sys.exit(1)
+            return apply_choice(division_key, choice_id, choice_text)
         if task == "stats":
             return current_stats()
         raise ValueError(f"Unknown realm-keeper task: {task}")

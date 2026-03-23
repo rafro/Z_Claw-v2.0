@@ -117,8 +117,6 @@ def run_dev_pipeline(spec: dict) -> dict:
         "finalizer": fin_result,
     }, provider_used=gen_result["provider_used"])
 
-    grant_skill_xp("dev-pipeline")
-
     # Build combined provider attribution
     providers_used = ", ".join(filter(None, {
         gen_result.get("provider_used"),
@@ -171,4 +169,5 @@ def run_dev_pipeline(spec: dict) -> dict:
         approval_status="pending",
     )
     packet.write(pkt)
+    grant_skill_xp("dev-pipeline")
     return pkt

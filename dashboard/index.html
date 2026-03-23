@@ -2054,9 +2054,9 @@ Hit ⚡ GENERATE NOW to compile immediately.
         const divNames  = { trading:'SEREN', opportunity:'VAEL', dev_automation:'KAELEN', personal:'LYRIN', op_sec:'ZETH', production:'LYKE' };
         const divOrders = { trading:'Iron Codex', opportunity:'Dawnhunt', dev_automation:'Veilkeepers', personal:'Thornward', op_sec:'Null Breach', production:'Lykeon Forge' };
 
-        const xpInLevel   = s.base_xp || 0;
-        const xpNeeded    = s.xp_to_next_level || 100;
-        const pct         = Math.min(100, Math.round(xpInLevel / xpNeeded * 100));
+        const xpInLevel   = s.xp_into_level ?? Math.min(s.base_xp || 0, s.xp_for_next_level || s.xp_to_next_level || 100);
+        const xpNeeded    = s.xp_for_next_level || ((s.xp_to_next_level || 100) + xpInLevel);
+        const pct         = Math.min(100, Math.round((xpInLevel / Math.max(1, xpNeeded)) * 100));
         const p           = s.prestige || 0;
 
         let html = '';
@@ -2068,7 +2068,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
           <div style="height:10px;background:var(--overlay);border:2px solid var(--border);margin-bottom:6px;overflow:hidden;">
             <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--green),var(--teal));transition:width 0.4s;"></div>
           </div>
-          <div style="font-size:7px;color:var(--subtext);margin-bottom:8px;">${xpInLevel} / ${xpNeeded} XP</div>
+          <div style="font-size:7px;color:var(--subtext);margin-bottom:8px;">${xpInLevel} / ${xpNeeded} XP · ${s.xp_to_next_level ?? Math.max(0, xpNeeded - xpInLevel)} remaining</div>
           ${p > 0 ? `<div style="font-size:8px;color:var(--yellow);margin-bottom:8px;">${'⭐'.repeat(p)} PRESTIGE ${p} · ×${s.prestige_multiplier || 1} XP BONUS</div>` : ''}
           <div id="streak-display" style="font-size:9px;color:var(--yellow);margin-bottom:8px;min-height:12px;"></div>
           <div id="achievements-row" style="margin-bottom:8px;"></div>
@@ -2109,7 +2109,12 @@ Hit ⚡ GENERATE NOW to compile immediately.
         html += '<div id="stats-panel-content" style="width:100%;"><div style="font-size:8px;color:var(--subtext);">Loading...</div></div>';
         loadStatsPanel();
 
+        // ── Realm Chronicle placeholder ──
+        html += '<div class="section-header">// REALM CHRONICLE</div>';
+        html += '<div id="realm-chronicle-content" style="width:100%;"><div style="font-size:8px;color:var(--subtext);padding:8px 0;">Loading narrative state...</div></div>';
+
         el.innerHTML = html;
+        loadRealmChronicle();
 
         // Re-render achievements row since it's now inside jclaw panel
         const earned = new Set((s.achievements || []).map(a => typeof a === 'string' ? a : a.id));
@@ -2134,6 +2139,55 @@ Hit ⚡ GENERATE NOW to compile immediately.
         }
 
       } catch(e) { el.innerHTML = `<div style="padding:20px;color:var(--red);font-size:8px;">Failed to load realm data: ${e.message}</div>`; }
+    }
+
+    async function loadRealmChronicle() {
+      const el = document.getElementById('realm-chronicle-content');
+      if (!el) return;
+      try {
+        const state = await fetch('/mobile/api/story/state?t=' + Date.now()).then(r => r.json());
+        const divColors = { trading:'#06b6d4', opportunity:'#f59e0b', dev_automation:'#a78bfa', personal:'#10b981', op_sec:'#ef4444', production:'#f97316' };
+        const stanceColor = { loyal:'#34d399', aligned:'#60a5fa', watchful:'#94a3b8', strained:'#f87171' };
+        const arc = state.active_arc || {};
+        const rels = Object.values(state.relationships || {});
+        const scenes = (state.recent_scenes || []).slice(-3).reverse();
+
+        let html = `<div class="pixel-box" style="margin-bottom:12px;border-color:#7c3aed44;padding:10px 12px;">`;
+        html += `<div style="font-size:9px;color:#a78bfa;letter-spacing:1px;margin-bottom:4px;">${escHtml(state.chapter_label || 'Prologue')} — ${escHtml(state.chapter_title || 'The Awakening')}</div>`;
+        html += `<div style="font-size:8px;color:#cbd5e1;margin-bottom:2px;">${escHtml(arc.name || 'The Measured Ascent')}</div>`;
+        html += `<div style="font-size:7px;color:var(--subtext);font-style:italic;margin-bottom:10px;">"${escHtml(arc.summary || state.chapter_summary || '')}"</div>`;
+
+        if (rels.length) {
+          html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-bottom:10px;">`;
+          for (const rel of rels) {
+            const c = divColors[rel.division] || '#7c3aed';
+            const sc = stanceColor[rel.stance] || '#94a3b8';
+            html += `<div style="background:#ffffff05;border:1px solid ${c}33;border-radius:6px;padding:6px 8px;">
+              <div style="font-size:8px;font-weight:700;color:${c};margin-bottom:2px;">${escHtml(rel.commander || rel.division)}</div>
+              <div style="font-size:7px;color:${sc};text-transform:uppercase;margin-bottom:2px;">${escHtml(rel.stance || 'watchful')}</div>
+              <div style="font-size:7px;color:var(--subtext);">T:${rel.trust||0} / ${rel.tension||0}</div>
+            </div>`;
+          }
+          html += `</div>`;
+        }
+
+        if (scenes.length) {
+          html += `<div style="font-size:7px;color:var(--subtext);margin-bottom:4px;letter-spacing:1px;">RECENT BEATS</div>`;
+          for (const scene of scenes) {
+            const c = divColors[scene.division] || '#7c3aed';
+            html += `<div style="border-left:2px solid ${c}55;padding:4px 8px;margin-bottom:4px;">
+              <div style="font-size:8px;color:#e2e8f0;">${escHtml(scene.title || '')}</div>
+              <div style="font-size:7px;color:var(--subtext);margin-top:1px;">${escHtml((scene.narrative || '').slice(0,90))}${(scene.narrative||'').length > 90 ? '…' : ''}</div>
+            </div>`;
+          }
+        }
+
+        html += `</div>`;
+        el.innerHTML = html;
+      } catch(e) {
+        const el2 = document.getElementById('realm-chronicle-content');
+        if (el2) el2.innerHTML = `<div style="font-size:8px;color:var(--subtext);padding:8px 0;">Narrative state unavailable.</div>`;
+      }
     }
 
     // Helper needed in panel
@@ -2847,12 +2901,12 @@ Hit ⚡ GENERATE NOW to compile immediately.
         document.getElementById('rank-title-text').textContent = s.rank.toUpperCase();
         document.getElementById('rank-level-text').textContent = `LVL ${s.level} // J_CLAW`;
 
-        const xpInLevel   = s.base_xp || 0;
-        const xpNeeded    = s.xp_to_next_level || 100;
-        const pct         = Math.min(100, Math.round(xpInLevel / xpNeeded * 100));
+        const xpInLevel   = s.xp_into_level ?? Math.min(s.base_xp || 0, s.xp_for_next_level || s.xp_to_next_level || 100);
+        const xpNeeded    = s.xp_for_next_level || ((s.xp_to_next_level || 100) + xpInLevel);
+        const pct         = Math.min(100, Math.round((xpInLevel / Math.max(1, xpNeeded)) * 100));
         const totalEarned = s.total_xp_earned != null ? s.total_xp_earned : '?';
         document.getElementById('xp-label').textContent =
-          `XP: ${xpInLevel} / ${xpNeeded}  (${totalEarned} total earned)`;
+          `XP: ${xpInLevel} / ${xpNeeded} (${s.xp_to_next_level ?? Math.max(0, xpNeeded - xpInLevel)} remaining, ${totalEarned} total earned)`;
         document.getElementById('xp-bar-fill').style.width = pct + '%';
 
         // Streak display

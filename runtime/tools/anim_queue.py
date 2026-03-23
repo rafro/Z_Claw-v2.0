@@ -37,11 +37,11 @@ _CHAPTERS = [
     (0,  "Chapter I — The Realm Awakens",
          "A new commander rises. The orders stir, watching from the shadows. The first challenges step forward."),
     (5,  "Chapter II — The Orders Convene",
-         "Word spreads between the Dawnhunt and the Iron Codex. Something is different about this one. The five orders begin to form ranks."),
+         "Word spreads between the Dawnhunt and the Iron Codex. Something is different about this one. The six orders begin to form ranks."),
     (15, "Chapter III — The Veil Thickens",
          "The realm's enemies grow bolder. Stronger threats emerge from the null spaces. The orders must evolve or fall."),
     (30, "Chapter IV — The Iron Pact",
-         "All five orders stand united. An ancient darkness gathers on the horizon. J_Claw must forge the pact before the veil breaks."),
+         "All six orders stand united. An ancient darkness gathers on the horizon. J_Claw must forge the pact before the veil breaks."),
     (50, "Chapter V — The Sovereign's Trial",
          "J_Claw faces the Sovereign's Trial. Only those who have proven mastery across every order may pass through the veil unchanged."),
     (80, "Chapter VI — Beyond the Null",
@@ -105,6 +105,14 @@ def push_skill_complete(
     rank_up_msg: str = "",
     new_rank: str = "",
     multiplier: float = 1.0,
+    status: str = "success",
+    escalate: bool = False,
+    escalation_reason: str = "",
+    summary: str = "",
+    urgency: str = "normal",
+    provider_used: str = "",
+    defeat_penalty: bool = False,
+    commander_stance: str = "watchful",
 ) -> None:
     """Queue a battle animation for a completed skill."""
     meta   = _DIV_META.get(division, {})
@@ -122,9 +130,17 @@ def push_skill_complete(
         "enemy_name":   meta.get("enemy_name", "Challenge"),
         "xp":           xp_granted,
         "multiplier":   multiplier,
+        "status":       status,
+        "escalate":     escalate,
+        "escalation_reason": escalation_reason,
+        "summary":      summary,
+        "urgency":      urgency,
+        "provider_used": provider_used,
         "rank_up":      rank_up,
         "rank_up_msg":  rank_up_msg,
         "new_rank":     new_rank,
+        "defeat_penalty": defeat_penalty,
+        "commander_stance": commander_stance,
         "chapter":      chapter,
         "total_event":  total,
         "ts":           datetime.now(timezone.utc).isoformat(),
@@ -209,6 +225,40 @@ def push_prestige(prestige: int, multiplier: float) -> None:
     queue.append(entry)
     _save_queue(queue)
     log.debug("anim_queue: queued prestige %d (×%.2f)", prestige, multiplier)
+
+
+def push_story_scene(
+    title: str,
+    narration: str,
+    division: str = "",
+    commander: str = "",
+    color: str = "#7c3aed",
+    icon: str = "✦",
+    chapter: dict | None = None,
+    story_key: str = "",
+) -> None:
+    """Queue an authored story scene for the theater."""
+    meta = _DIV_META.get(division, {})
+    total = _increment_history()
+
+    entry = {
+        "id":          str(uuid.uuid4())[:8],
+        "type":        "story_scene",
+        "title":       title,
+        "narration":   narration,
+        "division":    division,
+        "commander":   commander or meta.get("commander", division),
+        "color":       color or meta.get("color", "#7c3aed"),
+        "icon":        icon,
+        "chapter":     chapter or _chapter_for(total),
+        "story_key":   story_key,
+        "total_event": total,
+        "ts":          datetime.now(timezone.utc).isoformat(),
+    }
+    queue = _load_queue()
+    queue.append(entry)
+    _save_queue(queue)
+    log.debug("anim_queue: queued story scene %s", story_key or title)
 
 
 def get_queue() -> list:

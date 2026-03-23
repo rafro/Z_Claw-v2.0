@@ -440,10 +440,10 @@ ACHIEVEMENTS = [
     {
         "id":    "five_orders",
         "icon":  "✦",
-        "name":  "Five Orders Stand",
-        "desc":  "All five orders have opened their ledger",
+        "name":  "Six Orders Stand",
+        "desc":  "All six orders have opened their ledgers",
         "condition": {"type": "all_divisions_xp_gt", "value": 0},
-        "chronicle_lore": "All five orders of the realm have opened their ledgers. The full command structure is active.",
+        "chronicle_lore": "All six orders of the realm have opened their ledgers. The full command structure is active.",
     },
     {
         "id":    "realm_commander",

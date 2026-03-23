@@ -24,8 +24,6 @@ def run_provider_health() -> dict:
     escalate = result["healthy_count"] == 0
     urgency = "critical" if escalate else ("high" if result["healthy_count"] < 2 else "normal")
 
-    grant_skill_xp("sentinel-health")
-
     pkt = packet.build(
         division="sentinel",
         skill="provider-health",
@@ -42,6 +40,7 @@ def run_provider_health() -> dict:
         urgency=urgency,
     )
     packet.write(pkt)
+    grant_skill_xp("sentinel-health")
     return pkt
 
 
