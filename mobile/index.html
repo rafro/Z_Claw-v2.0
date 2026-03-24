@@ -1759,32 +1759,6 @@
     }
     .btn-primary:active { transform: scale(0.96); opacity: 0.9; }
 
-    /* ── Story modal ── */
-    #story-modal {
-      position: fixed; inset: 0; z-index: 8000;
-      display: flex; align-items: flex-end; justify-content: center;
-    }
-    .story-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-    .story-panel {
-      position: relative; background: var(--surface);
-      border-radius: 20px 20px 0 0; border-top: 1px solid var(--border);
-      padding: 20px 20px calc(var(--safe-bottom) + 24px);
-      width: 100%; max-height: 80dvh; overflow-y: auto;
-      animation: fadeUp 0.3s ease;
-    }
-    .story-header { margin-bottom: 12px; }
-    .story-chapter-label { font-size: 9px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.12em; display: block; margin-bottom: 4px; }
-    .story-title { font-size: 20px; font-weight: 800; color: var(--text); }
-    .story-narrative { font-size: 13px; color: var(--subtext); line-height: 1.7; font-style: italic; margin-bottom: 20px; padding: 10px 12px; background: var(--overlay); border-radius: 8px; border-left: 2px solid var(--purple); }
-    .story-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-    .story-choice-btn {
-      background: var(--overlay); border: 1px solid var(--border);
-      border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left;
-      transition: all 0.15s ease; -webkit-tap-highlight-color: transparent;
-    }
-    .story-choice-btn:active { transform: scale(0.97); background: var(--surface); }
-    .story-skip { display: block; text-align: center; font-size: 12px; color: var(--subtext); padding: 8px; cursor: pointer; width: 100%; background: none; border: none; }
-
     /* ── Intel tab sub-navigation ── */
     .intel-subnav {
       display: flex; gap: 0; background: var(--overlay); border-radius: 10px;
@@ -2373,16 +2347,6 @@
 </div>
 
 <!-- ── Story / Choice Modal ── -->
-<div id="story-modal" style="display:none;">
-  <div class="story-backdrop" onclick="dismissStoryModal()"></div>
-  <div class="story-panel">
-    <div class="story-chapter-label" id="story-chapter-label">Chapter</div>
-    <div class="story-title" id="story-title"></div>
-    <div class="story-narrative" id="story-narrative"></div>
-    <div class="story-choices" id="story-choices"></div>
-    <button class="story-skip" onclick="dismissStoryModal()">Skip for now</button>
-  </div>
-</div>
 
 <!-- Bottom tab bar (5 tabs) — J_CLAW is default/active -->
 <nav id="tab-bar">
@@ -2615,8 +2579,6 @@ function init() {
   // Theater queue polling — check every 45s, also on init
   _pollTheaterQueue();
   setInterval(_pollTheaterQueue, 45000);
-  // Story/choice check on init
-  _checkStoryState();
 
   // Pull-to-refresh + swipe tab navigation
   const screens = document.getElementById('screens');
@@ -2671,10 +2633,14 @@ let _alertSSE = null;
 let _alertSSERetry = null;
 let _approvalCount = 0; // tracked globally so SSE badge includes approvals
 
+function _mobileEventStreamUrl(endpoint) {
+  return MC_SERVER + endpoint + '?token=' + encodeURIComponent(MC_TOKEN);
+}
+
 function _connectAlertStream() {
   if (_alertSSE) { try { _alertSSE.close(); } catch(e) {} }
   // EventSource doesn't support custom headers — pass token as query param for this endpoint
-  const streamUrl = MC_SERVER + '/mobile/api/alerts/stream?token=' + encodeURIComponent(MC_TOKEN);
+  const streamUrl = _mobileEventStreamUrl('/mobile/api/alerts/stream');
   try {
     _alertSSE = new EventSource(streamUrl);
     _alertSSE.onmessage = (e) => {
@@ -2706,50 +2672,73 @@ function _connectAlertStream() {
 }
 
 let _gamifSSE = null;
+function _handleGamifRealtimeEvent(evt) {
+  if (!evt || evt.type !== 'gamif') return false;
+  const onGamifTab = _currentTab === 'home' || _currentTab === 'jclaw';
+
+  if (evt.event === 'skill_complete') {
+    haptic('success');
+    if (evt.xp_granted > 0) {
+      const divColor = (_COMMANDER_DEF[evt.division] || {}).color || '#60a5fa';
+      showXpFloat(`+${evt.xp_granted} XP`, divColor);
+    }
+    if (evt.division && Math.random() < 0.25) {
+      setTimeout(() => showCommanderQuote(evt.division, 'skill_complete'), 600);
+    }
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'xp_grant') {
+    haptic('success');
+    if (evt.amount > 0) showXpFloat(`+${evt.amount} XP`, '#f59e0b');
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'init') {
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'rank_up') {
+    showRankUpOverlay(evt);
+    if (_currentTab === 'jclaw') setTimeout(() => loadStatsTab(), 800);
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'achievement_unlock') {
+    showAchievementOverlay(evt.achievement);
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'streak_milestone') {
+    haptic('success');
+    triggerSpriteAnim('power-surge');
+    showCommanderQuote(evt.division, 'streak_7');
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'streak_multiplier_applied') {
+    haptic('success');
+    showXpFloat(`x${evt.multiplier} STREAK`, (_COMMANDER_DEF[evt.division] || {}).color || '#f59e0b');
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  if (evt.event === 'prestige') {
+    showRankUpOverlay({ new_rank: `PRESTIGE ${evt.prestige} - +${Math.round((evt.multiplier - 1) * 100)}% XP`, division: null, _prestige: true });
+    if (_currentTab === 'jclaw') setTimeout(() => loadStatsTab(), 800);
+    if (onGamifTab) refreshCurrent();
+    return true;
+  }
+  return false;
+}
+
 function _connectGamifStream() {
   if (_gamifSSE) { try { _gamifSSE.close(); } catch(e) {} }
   try {
-    _gamifSSE = new EventSource(MC_SERVER + '/mobile/api/gamif/stream');
+    _gamifSSE = new EventSource(_mobileEventStreamUrl('/mobile/api/gamif/stream'));
     _gamifSSE.onmessage = (e) => {
       try {
         const evt = JSON.parse(e.data);
-        if (!evt || evt.type !== 'gamif') return;
-        const _onGamifTab = _currentTab === 'home' || _currentTab === 'jclaw';
-        if (evt.event === 'skill_complete') {
-          haptic('success');
-          // XP float bubble
-          if (evt.xp_granted > 0) {
-            const divColor = (_COMMANDER_DEF[evt.division] || {}).color || '#60a5fa';
-            showXpFloat(`+${evt.xp_granted} XP`, divColor);
-          }
-          // Occasional commander quote (1-in-4 chance)
-          if (evt.division && Math.random() < 0.25) {
-            setTimeout(() => showCommanderQuote(evt.division, 'skill_complete'), 600);
-          }
-          if (_onGamifTab) refreshCurrent();
-        } else if (evt.event === 'xp_grant') {
-          haptic('success');
-          if (evt.amount > 0) showXpFloat(`+${evt.amount} XP`, '#f59e0b');
-          if (_onGamifTab) refreshCurrent();
-        } else if (evt.event === 'init') {
-          if (_onGamifTab) refreshCurrent();
-        } else if (evt.event === 'rank_up') {
-          showRankUpOverlay(evt);
-          if (_onGamifTab) refreshCurrent();
-        } else if (evt.event === 'achievement_unlock') {
-          showAchievementOverlay(evt.achievement);
-          if (_onGamifTab) refreshCurrent();
-        } else if (evt.event === 'streak_milestone') {
-          haptic('success');
-          triggerSpriteAnim('power-surge');
-          showCommanderQuote(evt.division, 'streak_7');
-        } else if (evt.event === 'streak_multiplier_applied') {
-          haptic('success');
-          showXpFloat(`×${evt.multiplier} STREAK`, (_COMMANDER_DEF[evt.division] || {}).color || '#f59e0b');
-        } else if (evt.event === 'prestige') {
-          showRankUpOverlay({ new_rank: `PRESTIGE ${evt.prestige} · +${Math.round((evt.multiplier-1)*100)}% XP`, division: null, _prestige: true });
-          if (_onGamifTab) refreshCurrent();
-        }
+        _handleGamifRealtimeEvent(evt);
       } catch(err) {}
     };
     _gamifSSE.onerror = () => {
@@ -3697,35 +3686,7 @@ async function loadTradingHistory() {
 }
 
 // ── Story / Choice Modal ───────────────────────────────────────────────────────
-async function _checkStoryState() {
-  try {
-    const d = await api('/mobile/api/story/state');
-    if (d && d.pending_choice) _showStoryModal(d);
-  } catch(e) { /* endpoint may not exist yet */ }
-}
-function _showStoryModal(data) {
-  document.getElementById('story-chapter-label').textContent = data.chapter_label || 'Chapter';
-  document.getElementById('story-title').textContent        = data.title || '';
-  document.getElementById('story-narrative').textContent    = data.narrative || '';
-  const choicesEl = document.getElementById('story-choices');
-  choicesEl.innerHTML = (data.choices || []).map((c, i) =>
-    `<button class="story-choice-btn" onclick="_pickStoryChoice(${i},this)">${escHtml(c.text || c)}</button>`
-  ).join('');
-  document.getElementById('story-modal').style.display = 'flex';
-  haptic('medium');
-}
-async function _pickStoryChoice(idx, btn) {
-  haptic('medium');
-  try {
-    await api('/mobile/api/story/choose', { method: 'POST', body: JSON.stringify({ choice_index: idx }) });
-    showToast('Choice made');
-    dismissStoryModal();
-  } catch(e) { showToast('Error: ' + e.message); }
-}
-function dismissStoryModal() {
-  document.getElementById('story-modal').style.display = 'none';
-}
-
+// Legacy story modal retired in favor of theater queue choices.
 // ── Chat history persistence ──────────────────────────────────────────────────
 function _saveChatHistory(mode, messages) {
   try { localStorage.setItem('mc_chat_history_' + mode, JSON.stringify(messages)); } catch(e) {}
@@ -6895,12 +6856,10 @@ async function runSkillFromMobile(skill, btnEl) {
   haptic('medium');
   if (btnEl) { btnEl.classList.add('running'); btnEl.textContent = '…'; }
   try {
-    const res = await fetch('/api/control', {
+    const data = await api('/api/control', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skill }),
     });
-    const data = await res.json();
     if (data.ok) {
       if (btnEl) { btnEl.classList.remove('running'); btnEl.classList.add('done'); btnEl.textContent = '✓'; }
       showToast(`✓ ${skill} queued`);
@@ -7973,6 +7932,7 @@ function _updateSkillDot(skill, state) {
 }
 
 function _handleWSMessage(msg) {
+  if (_handleGamifRealtimeEvent({ ...msg, event: msg.type, type: 'gamif' })) return;
   switch (msg.type) {
     case 'connected':
       break;
@@ -8050,11 +8010,7 @@ function _handleWSMessage(msg) {
       break;
     }
     case 'xp_gained':
-    case 'rank_up':
       if (_currentTab === 'jclaw') setTimeout(() => loadStatsTab(), 800);
-      break;
-    case 'story_choice_pending':
-      _checkStoryState();
       break;
   }
 }

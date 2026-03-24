@@ -4535,12 +4535,18 @@ if (WebSocketServer) {
       const provided = params.get('token') || '';
       const clientIP = req.socket.remoteAddress || '';
       const isLocalhost = clientIP === '::1' || clientIP === '127.0.0.1' || clientIP === '::ffff:127.0.0.1';
-      if (!isLocalhost && mobileToken && (!provided || !crypto.timingSafeEqual(
-        Buffer.from(provided.padEnd(64, '\0')),
-        Buffer.from(mobileToken.padEnd(64, '\0'))
-      ))) {
-        ws.close(4001, 'Unauthorized');
-        return;
+      if (!isLocalhost) {
+        if (!mobileToken) {
+          ws.close(4003, 'Mobile access not configured');
+          return;
+        }
+        if (!provided || !crypto.timingSafeEqual(
+          Buffer.from(provided.padEnd(64, '\0')),
+          Buffer.from(mobileToken.padEnd(64, '\0'))
+        )) {
+          ws.close(4001, 'Unauthorized');
+          return;
+        }
       }
     } catch(e) { ws.close(4001, 'Bad request'); return; }
 
