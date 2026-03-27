@@ -1164,7 +1164,9 @@
       <button class="run-btn" id="run-trading" onclick="runSkill('trading-report','trading')">▶ RUN</button>
       <div class="agent-list">
         <div class="agent-row"><span class="agent-name">market-scan</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-market-scan">2h</span><button class="skill-run-btn" onclick="runSkill('market-scan','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="market-scan"></div></div>
-        <div class="agent-row"><span class="agent-name">trading-report</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-trading-report">18:00</span><button class="skill-run-btn" onclick="runSkill('trading-report','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="trading-report"></div></div>
+        <div class="agent-row"><span class="agent-name">virtual-trader</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-virtual-trader">18:00</span><button class="skill-run-btn" onclick="runSkill('virtual-trader','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="virtual-trader"></div></div>
+        <div class="agent-row"><span class="agent-name">backtester</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-backtester">18:05</span><button class="skill-run-btn" onclick="runSkill('backtester','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="backtester"></div></div>
+        <div class="agent-row"><span class="agent-name">trading-report</span><span class="tag tag-blue" style="font-size:7px;" id="tag-trading-trading-report">18:10</span><button class="skill-run-btn" onclick="runSkill('trading-report','trading',this)">▶</button><div class="toggle on" data-division="trading" data-agent="trading-report"></div></div>
       </div>
     </div>
 
@@ -1241,7 +1243,8 @@
         <div class="agent-row"><span class="agent-name">cred-audit</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-cred-audit">15:00</span><button class="skill-run-btn" onclick="runSkill('cred-audit','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="cred-audit"></div></div>
         <div class="agent-row"><span class="agent-name">privacy-scan</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-privacy-scan">16:00</span><button class="skill-run-btn" onclick="runSkill('privacy-scan','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="privacy-scan"></div></div>
         <div class="agent-row"><span class="agent-name">breach-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-breach-check">14:00</span><button class="skill-run-btn" onclick="runSkill('breach-check','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="breach-check"></div></div>
-        <div class="agent-row"><span class="agent-name">opsec-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-opsec-digest">08:30</span><button class="skill-run-btn" onclick="runSkill('opsec-digest','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="opsec-digest"></div></div>
+        <div class="agent-row"><span class="agent-name">opsec-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-opsec-digest">16:30</span><button class="skill-run-btn" onclick="runSkill('opsec-digest','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="opsec-digest"></div></div>
+        <div class="agent-row"><span class="agent-name">mobile-audit-review</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-mobile-audit-review">23:00</span><button class="skill-run-btn" onclick="runSkill('mobile-audit-review','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="mobile-audit-review"></div></div>
       </div>
     </div>
 
@@ -1280,20 +1283,24 @@
       <div class="pixel-box">
         <ul class="queue-list" id="task-queue">
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">SCH</span> &nbsp;artifact-manager</span><span class="queue-time">03:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-teal" style="font-size:7px;">SCH</span> &nbsp;morning briefing</span><span class="queue-time">06:00</span></li>
           <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;device-posture</span><span class="queue-time">08:00</span></li>
           <li><span class="queue-task"><span class="tag tag-teal" style="font-size:7px;">SCH</span> &nbsp;agent-network</span><span class="queue-time">09:05 M-F</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;market-scan</span><span class="queue-time">2h 8a-10p</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;virtual-trader</span><span class="queue-time">18:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;backtester</span><span class="queue-time">18:05</span></li>
+          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;trading-report</span><span class="queue-time">18:10</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;job-intake</span><span class="queue-time">every 3h</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;repo-monitor</span><span class="queue-time">every 3h</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;funding-finder</span><span class="queue-time">14:00</span></li>
           <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;dev-digest</span><span class="queue-time">15:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;health-logger</span><span class="queue-time">18:00</span></li>
-          <li><span class="queue-task"><span class="tag tag-blue" style="font-size:7px;">SCH</span> &nbsp;trading-report</span><span class="queue-time">18:00</span></li>
           <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;threat-surface</span><span class="queue-time">19:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;perf-correlation</span><span class="queue-time">20:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;burnout-monitor</span><span class="queue-time">21:00</span></li>
           <li><span class="queue-task"><span class="tag tag-purple" style="font-size:7px;">SCH</span> &nbsp;personal-digest</span><span class="queue-time">21:30</span></li>
           <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;daily briefing</span><span class="queue-time">22:00</span></li>
+          <li><span class="queue-task"><span class="tag tag-green" style="font-size:7px;">SCH</span> &nbsp;mobile-audit-review</span><span class="queue-time">23:00</span></li>
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">TMP</span> &nbsp;refactor-scan</span><span class="queue-time">10:00 daily</span></li>
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">TMP</span> &nbsp;security-scan</span><span class="queue-time">11:00 daily</span></li>
           <li><span class="queue-task"><span class="tag tag-yellow" style="font-size:7px;">TMP</span> &nbsp;doc-update</span><span class="queue-time">13:00 daily</span></li>
@@ -1355,7 +1362,9 @@ Hit ⚡ GENERATE NOW to compile immediately.
       <div class="intel-mission">Mission: Monitor financial markets, build and test strategies, execute trades, and optimize returns over time.</div>
       <ul class="intel-agent-list">
         <li class="intel-agent-item"><span class="intel-agent-name">market-scan (2h)</span><span class="intel-agent-desc">Scans live market data for entry signals, volatility shifts, and anomalies across multiple assets.</span></li>
-        <li class="intel-agent-item"><span class="intel-agent-name">trading-report (18:00)</span><span class="intel-agent-desc">Synthesizes daily trading performance — win rate, P&amp;L, strategy review, and recommendations.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">virtual-trader (18:00)</span><span class="intel-agent-desc">Executes simulated paper trades based on the active strategy signals from market-scan — tracks PnL, win rate, and R-multiples.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">backtester (18:05)</span><span class="intel-agent-desc">Evaluates strategy candidates against historical data and selects the top-performing strategy for the next trading cycle.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">trading-report (18:10)</span><span class="intel-agent-desc">Synthesizes daily trading performance — win rate, P&amp;L, strategy review, and recommendations.</span></li>
         <li class="intel-agent-item"><span class="intel-agent-name">Agent Network (09:05 M–F)</span><span class="intel-agent-desc">Multi-agent trading cycle: Strategy Builder builds the playbook, Backtester validates it, Trader executes, Trading Coach reviews the session.</span></li>
       </ul>
       <div class="intel-orch-note">SEREN synthesizes all trading data and escalates any breach of risk thresholds (drawdown, win rate floor) directly to J_Claw.</div>
@@ -1436,7 +1445,8 @@ Hit ⚡ GENERATE NOW to compile immediately.
         <li class="intel-agent-item"><span class="intel-agent-name">cred-audit (15:00)</span><span class="intel-agent-desc">Reviews API keys, secrets, and credentials for rotation compliance and exposure risk.</span></li>
         <li class="intel-agent-item"><span class="intel-agent-name">privacy-scan (16:00)</span><span class="intel-agent-desc">Checks for data exposure, PII leaks, third-party tracking, and excessive data collection.</span></li>
         <li class="intel-agent-item"><span class="intel-agent-name">breach-check (14:00)</span><span class="intel-agent-desc">Monitors known breach databases (HaveIBeenPwned, etc.) for compromised credentials.</span></li>
-        <li class="intel-agent-item"><span class="intel-agent-name">opsec-digest (08:30)</span><span class="intel-agent-desc">Daily security summary with overall threat level, top priority fixes, and compliance status.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">opsec-digest (16:30)</span><span class="intel-agent-desc">Daily security summary with overall threat level, top priority fixes, and compliance status.</span></li>
+        <li class="intel-agent-item"><span class="intel-agent-name">mobile-audit-review (23:00)</span><span class="intel-agent-desc">Reviews the daily mobile session audit log — validates authentication events, detects anomalous access patterns, and flags suspicious mobile activity.</span></li>
       </ul>
       <div class="intel-orch-note">ZETH operates in silence. Any high-severity finding (breach detected, critical CVE, credential exposure) escalates to J_Claw without delay.</div>
     </div>
@@ -2361,6 +2371,8 @@ Hit ⚡ GENERATE NOW to compile immediately.
     const SKILL_DIV = {
       'trading-report':   'trading',
       'market-scan':      'trading',
+      'virtual-trader':   'trading',
+      'backtester':       'trading',
       'job-intake':       'opportunity',
       'hard-filter':      'opportunity',
       'funding-finder':   'opportunity',
@@ -2380,7 +2392,8 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'cred-audit':       'op_sec',
       'privacy-scan':     'op_sec',
       'security-scan':    'op_sec',
-      'opsec-digest':     'op_sec',
+      'opsec-digest':          'op_sec',
+      'mobile-audit-review':   'op_sec',
       'image-generate':     'production',
       'sprite-generate':    'production',
       'video-generate':     'production',

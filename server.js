@@ -4406,7 +4406,7 @@ cron.schedule('0 * * * *', async () => {
 }, { timezone: TZ });
 
 cron.schedule('0 11 * * *', async () => {
-  await runSkillViaPython('security-scan', 'DEV');
+  await runSkillViaPython('security-scan', 'OP_SEC');
 }, { timezone: TZ });
 
 // doc-update at 13:00 — 2h after refactor-scan to ensure VRAM is clear
