@@ -1,0 +1,9 @@
+{
+  "_comment": "Instrument registry — name, yfinance ticker, futures symbol. One source of truth for all trading skills.",
+  "instruments": [
+    { "name": "SPX500", "ticker": "^GSPC",  "futures": "MES" },
+    { "name": "NAS100", "ticker": "^NDX",   "futures": "MNQ" },
+    { "name": "XAUUSD", "ticker": "GC=F",   "futures": "MGC" },
+    { "name": "US30",   "ticker": "^DJI",   "futures": "MYM" }
+  ]
+}

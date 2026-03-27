@@ -14,6 +14,7 @@ from runtime.tools.trading import load_cycle_state, load_active_strategy
 log = logging.getLogger(__name__)
 
 PACKET_PATH = Path("divisions/trading/packets/backtester.json")
+OOS_MIN_TRADES = 50
 
 
 def run() -> dict:
@@ -98,6 +99,7 @@ def run() -> dict:
     empirical_ev   = strat.get("empirical_ev_r")
     ev_drift       = strat.get("ev_drift_r")
     total_pnl_usd  = strat.get("total_pnl_usd")
+    slippage_adjusted_pnl = round(total_pnl_usd * (1 - 0.001), 2) if total_pnl_usd is not None else None
     annualised_ret = strat.get("annualised_return_pct")
     oos_sharpe     = strat.get("oos_sharpe")
     oos_win_rate   = strat.get("oos_win_rate")
@@ -107,11 +109,14 @@ def run() -> dict:
     score          = strat.get("score")
     score_detail   = strat.get("score_detail", {})
     direction      = strat.get("direction", "")
+    mc_p95_dd      = strat.get("mc_p95_dd")
+    mc_risk_class  = strat.get("mc_risk_class")
 
     # ── Step 4: Quality flags ──────────────────────────────────────────────────
     oos_weak      = bool(
         (oos_sharpe is not None and oos_sharpe < 0.3) or
-        (oos_win_rate is not None and oos_win_rate < 0.35)
+        (oos_win_rate is not None and oos_win_rate < 0.35) or
+        (oos_trade_count is not None and oos_trade_count < OOS_MIN_TRADES)
     )
     high_ev_drift = bool(
         ev_drift is not None and abs(ev_drift) > 0.1
@@ -121,11 +126,12 @@ def run() -> dict:
     healthy        = not (oos_weak or high_ev_drift or low_confidence or poor_drawdown)
 
     quality_flags = {
-        "oos_weak":       oos_weak,
-        "high_ev_drift":  high_ev_drift,
-        "low_confidence": low_confidence,
-        "poor_drawdown":  poor_drawdown,
-        "healthy":        healthy,
+        "oos_weak":              oos_weak,
+        "high_ev_drift":         high_ev_drift,
+        "low_confidence":        low_confidence,
+        "poor_drawdown":         poor_drawdown,
+        "healthy":               healthy,
+        "walk_forward_performed": False,  # agent-network uses single 80/20 split, not rolling WF
     }
 
     # ── Step 5: Escalation ────────────────────────────────────────────────────
@@ -142,6 +148,10 @@ def run() -> dict:
         escalation_reasons.append(
             f"OOS validation weak: Sharpe {oos_sharpe}, Win Rate {oos_win_rate}"
         )
+        if oos_trade_count is not None and oos_trade_count < OOS_MIN_TRADES:
+            escalation_reasons.append(
+                f"Insufficient OOS trades: {oos_trade_count} (minimum {OOS_MIN_TRADES} required)"
+            )
     if high_ev_drift:
         escalate = True
         escalation_reasons.append(
@@ -183,6 +193,7 @@ def run() -> dict:
         "empirical_ev_r":        empirical_ev,
         "ev_drift_r":            ev_drift,
         "total_pnl_usd":         total_pnl_usd,
+        "slippage_adjusted_pnl": slippage_adjusted_pnl,
         "annualised_return_pct": annualised_ret,
         "oos_sharpe":            oos_sharpe,
         "oos_win_rate":          oos_win_rate,
@@ -190,6 +201,8 @@ def run() -> dict:
         "oos_penalty":           oos_penalty,
         "confidence_rating":     confidence,
         "score":                 score,
+        "mc_p95_dd":             mc_p95_dd,
+        "mc_risk_class":         mc_risk_class,
         "quality_flags":         quality_flags,
     }
 
