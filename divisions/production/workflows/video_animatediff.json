@@ -1,41 +1,59 @@
 {
-  "_comment": "AnimateDiff-Evolved workflow for ComfyUI — SDXL pipeline, 16 frames @ 8fps",
+  "_comment": "AnimateDiff-Evolved workflow — SDXL, 16 frames at 8fps. _comment/_requires keys are stripped at runtime.",
   "_requires": [
-    "ComfyUI-AnimateDiff-Evolved (https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved)",
+    "ComfyUI-AnimateDiff-Evolved: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved",
     "mm_sdxl_v10_beta.ckpt in ComfyUI/models/animatediff_models/",
     "animagine-xl-3.1.safetensors in ComfyUI/models/checkpoints/"
   ],
-  "loader": {
+  "1": {
     "class_type": "CheckpointLoaderSimple",
     "inputs": { "ckpt_name": "animagine-xl-3.1.safetensors" }
   },
-  "animatediff_loader": {
-    "class_type": "ADE_AnimateDiffLoaderWithContext",
+  "2": {
+    "class_type": "CLIPTextEncode",
     "inputs": {
-      "model":         ["loader", 0],
-      "model_name":    "mm_sdxl_v10_beta.ckpt",
-      "beta_schedule": "sqrt_linear (AnimateDiff)"
+      "text": "cinematic scene, masterpiece, best quality, highly detailed, smooth animation",
+      "clip": ["1", 1]
     }
   },
-  "positive_prompt": {
+  "3": {
     "class_type": "CLIPTextEncode",
-    "inputs": { "clip": ["loader", 1], "text": "{{POSITIVE_PROMPT}}" }
+    "inputs": {
+      "text": "worst quality, low quality, blurry, static, frozen frame, watermark, text, nsfw, deformed",
+      "clip": ["1", 1]
+    }
   },
-  "negative_prompt": {
-    "class_type": "CLIPTextEncode",
-    "inputs": { "clip": ["loader", 1], "text": "{{NEGATIVE_PROMPT}}" }
+  "4": {
+    "class_type": "ADE_AnimateDiffUniformContextOptions",
+    "inputs": {
+      "context_length": 16,
+      "context_stride": 1,
+      "context_overlap": 4,
+      "closed_loop": false
+    }
   },
-  "latent": {
+  "5": {
+    "class_type": "ADE_AnimateDiffLoaderWithContext",
+    "inputs": {
+      "model": ["1", 0],
+      "context_options": ["4", 0],
+      "motion_model": "mm_sdxl_v10_beta.ckpt",
+      "beta_schedule": "sqrt_linear (AnimateDiff)",
+      "motion_scale": 1.0,
+      "apply_v2_models_properly": true
+    }
+  },
+  "6": {
     "class_type": "EmptyLatentImage",
-    "inputs": { "width": 768, "height": 512, "batch_size": 16 }
+    "inputs": { "width": 512, "height": 512, "batch_size": 16 }
   },
-  "sampler": {
+  "7": {
     "class_type": "KSampler",
     "inputs": {
-      "model":        ["animatediff_loader", 0],
-      "positive":     ["positive_prompt", 0],
-      "negative":     ["negative_prompt", 0],
-      "latent_image": ["latent", 0],
+      "model":        ["5", 0],
+      "positive":     ["2", 0],
+      "negative":     ["3", 0],
+      "latent_image": ["6", 0],
       "seed":         42,
       "steps":        20,
       "cfg":          7.0,
@@ -44,16 +62,16 @@
       "denoise":      1.0
     }
   },
-  "decode": {
+  "8": {
     "class_type": "VAEDecode",
-    "inputs": { "samples": ["sampler", 0], "vae": ["loader", 2] }
+    "inputs": { "samples": ["7", 0], "vae": ["1", 2] }
   },
-  "save": {
+  "9": {
     "class_type": "SaveAnimatedWEBP",
     "inputs": {
-      "images":          ["decode", 0],
-      "filename_prefix": "vid_output",
-      "fps":             8,
+      "images":          ["8", 0],
+      "filename_prefix": "animatediff_",
+      "fps":             8.0,
       "lossless":        false,
       "quality":         85,
       "method":          "default"
