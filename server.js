@@ -975,6 +975,14 @@ function handleGetPackets(res) {
       } catch(e) {}
     }
   }
+  // Augment production with hot/cold asset counts from filesystem
+  try {
+    const hotDir  = path.join(ROOT, 'divisions', 'production', 'hot');
+    const coldDir = path.join(ROOT, 'divisions', 'production', 'cold');
+    const dirCount = (d) => { try { return fs.readdirSync(d, { withFileTypes: true }).filter(f => f.isFile()).length; } catch(e) { return 0; } };
+    result['production']._hot_count  = dirCount(hotDir);
+    result['production']._cold_count = dirCount(coldDir);
+  } catch(e) {}
   jsonOk(res, result);
 }
 
@@ -2685,6 +2693,11 @@ function _readDivisionMetrics() {
       const ff = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'opportunity', 'packets', 'funding-finder.json'), 'utf8'));
       m.opportunity.funding_opportunities = ff.metrics?.funding_opportunities || 0;
     } catch(e) {}
+    try {
+      const at = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'opportunity', 'packets', 'application-tracker.json'), 'utf8'));
+      m.opportunity.apps_sent    = at.metrics?.applications_sent  ?? at.metrics?.total_sent   ?? null;
+      m.opportunity.pending_reply = at.metrics?.pending_reply      ?? at.metrics?.awaiting_reply ?? null;
+    } catch(e) {}
   } catch(e) {}
 
   // Personal
@@ -2729,6 +2742,16 @@ function _readDivisionMetrics() {
       breach_status:  bc.status || 'unknown',
     };
   } catch(e) {}
+  // OP-Sec — privacy scan
+  try {
+    const ps = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'op-sec', 'packets', 'privacy-scan.json'), 'utf8'));
+    if (m.op_sec) m.op_sec.privacy_risk = ps.metrics?.risk_level || ps.metrics?.severity || ps.status || 'unknown';
+  } catch(e) { if (m.op_sec) m.op_sec.privacy_risk = null; }
+  // OP-Sec — network monitor
+  try {
+    const nm = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'op-sec', 'packets', 'network-monitor.json'), 'utf8'));
+    if (m.op_sec) m.op_sec.network_anomalies = nm.metrics?.anomalies ?? nm.metrics?.flagged_hosts ?? nm.metrics?.anomaly_count ?? 0;
+  } catch(e) { if (m.op_sec) m.op_sec.network_anomalies = null; }
 
   // Production — The Lykeon Forge
   try {

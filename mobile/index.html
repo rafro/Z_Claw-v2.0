@@ -5477,6 +5477,8 @@ async function loadOverview(silent = false) {
           <span class="dm-item"><span class="dm-val">${m.new_jobs_found ?? '—'}</span><span class="dm-lbl">JOBS</span></span>
           <span class="dm-item"><span class="dm-val">${srcOk}</span><span class="dm-lbl">SRC</span></span>
           <span class="dm-item"><span class="dm-val">${m.funding_opportunities ?? '—'}</span><span class="dm-lbl">FUND</span></span>
+          ${m.apps_sent != null ? `<span class="dm-item"><span class="dm-val">${m.apps_sent}</span><span class="dm-lbl">SENT</span></span>` : ''}
+          ${m.pending_reply != null ? `<span class="dm-item"><span class="dm-val" style="color:var(--yellow)">${m.pending_reply}</span><span class="dm-lbl">WAIT</span></span>` : ''}
         </div>`;
 
       } else if (key === 'personal') {
@@ -5501,10 +5503,14 @@ async function loadOverview(silent = false) {
         const threatWarn = m.threat_level === 'warning';
         cardClass = threatWarn ? 'warning' : '';
         if (m.high_severity > 0) cardClass = 'danger';
+        const netAnomVal = m.network_anomalies ?? '—';
+        const privRiskVal = m.privacy_risk ? String(m.privacy_risk).toUpperCase().slice(0,4) : '—';
         metricsHtml = `<div class="div-metrics">
           <span class="dm-item"><span class="dm-val" ${m.anomaly_count > 0 ? 'style="color:var(--red)"' : ''}>${m.anomaly_count ?? '—'}</span><span class="dm-lbl">ANML</span></span>
           <span class="dm-item"><span class="dm-val">${m.device_posture || '—'}</span><span class="dm-lbl">POST</span></span>
           <span class="dm-item"><span class="dm-val">${m.breach_status || '—'}</span><span class="dm-lbl">BRCH</span></span>
+          <span class="dm-item"><span class="dm-val" ${netAnomVal > 0 ? 'style="color:var(--yellow)"' : ''}>${netAnomVal}</span><span class="dm-lbl">NET</span></span>
+          <span class="dm-item"><span class="dm-val">${privRiskVal}</span><span class="dm-lbl">PRIV</span></span>
         </div>`;
 
       } else if (key === 'production') {
@@ -5522,12 +5528,13 @@ async function loadOverview(silent = false) {
         cardClass = isCrit ? 'danger' : isWarn ? 'warning' : '';
         const provColor = isCrit ? 'var(--red)' : isWarn ? 'var(--yellow)' : 'var(--green)';
         const qDepth    = m.queue_depth ?? '—';
+        const failedC   = m.failed_count ?? 0;
         const provStr   = m.healthy_count != null ? `${m.healthy_count}/${m.total_count}` : '—';
-        const urgStr    = (m.urgency || 'ok').toUpperCase();
+        const failColor = failedC > 0 ? 'var(--red)' : 'var(--green)';
         metricsHtml = `<div class="div-metrics">
           <span class="dm-item"><span class="dm-val" style="color:${provColor};">${provStr}</span><span class="dm-lbl">PROVID</span></span>
           <span class="dm-item"><span class="dm-val" style="${qDepth > 0 ? 'color:var(--yellow)' : ''}">${qDepth}</span><span class="dm-lbl">QUEUE</span></span>
-          <span class="dm-item"><span class="dm-val" style="color:${provColor};">${urgStr}</span><span class="dm-lbl">STATUS</span></span>
+          <span class="dm-item"><span class="dm-val" style="color:${failColor};">${failedC}</span><span class="dm-lbl">FAILED</span></span>
         </div>`;
       } else {
         // unknown

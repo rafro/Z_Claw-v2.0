@@ -1032,6 +1032,9 @@
     <span style="color:var(--subtext);">QUEUE:</span>
     <span id="sentinel-queue-depth" style="color:var(--text);font-weight:bold;">—</span>
     <span style="color:var(--border);">|</span>
+    <span style="color:var(--subtext);">FAILED:</span>
+    <span id="sentinel-failed-count" style="color:var(--text);font-weight:bold;">—</span>
+    <span style="color:var(--border);">|</span>
     <div id="sentinel-provider-pills" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
     <button onclick="refreshSentinel()" style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--subtext);font-size:6px;padding:1px 6px;cursor:pointer;font-family:inherit;letter-spacing:1px;">↺ REFRESH</button>
   </div>
@@ -1253,7 +1256,8 @@
       <!-- live metrics from packets -->
       <div id="metrics-op_sec" style="margin:6px 0;display:none;">
         <div class="div-row"><span style="color:var(--red);">ANOMALIES: <strong id="m-opsec-anomalies">—</strong></span> &nbsp;|&nbsp; POSTURE: <strong id="m-opsec-posture">—</strong></div>
-        <div class="div-row" style="font-size:7px;">BREACH: <strong id="m-opsec-breach">—</strong> &nbsp;|&nbsp; <span id="m-opsec-actions" style="color:var(--red);display:none;"></span></div>
+        <div class="div-row" style="font-size:7px;">BREACH: <strong id="m-opsec-breach">—</strong> &nbsp;|&nbsp; NET: <strong id="m-opsec-net">—</strong> &nbsp;|&nbsp; PRIVACY: <strong id="m-opsec-privacy">—</strong></div>
+        <div class="div-row" style="font-size:7px;"><span id="m-opsec-actions" style="color:var(--red);display:none;"></span></div>
       </div>
       <button class="run-btn" id="run-op_sec" onclick="runSkill('device-posture','op_sec')">▶ RUN</button>
       <div class="agent-list">
@@ -1278,7 +1282,7 @@
       <!-- live metrics from packets -->
       <div id="metrics-production" style="margin:6px 0;display:none;">
         <div class="div-row" style="color:#f97316;">ASSETS: <strong id="m-prod-assets">—</strong> &nbsp;|&nbsp; PENDING: <strong id="m-prod-pending" style="color:var(--yellow);">—</strong> &nbsp;|&nbsp; DELIVERED: <strong id="m-prod-delivered" style="color:var(--green);">—</strong></div>
-        <div class="div-row" style="font-size:7px;"><span id="m-prod-actions" style="color:var(--red);display:none;"></span></div>
+        <div class="div-row" style="font-size:7px;">HOT: <strong id="m-prod-hot" style="color:var(--yellow);">—</strong> &nbsp;|&nbsp; COLD: <strong id="m-prod-cold" style="color:var(--subtext);">—</strong> &nbsp;|&nbsp; <span id="m-prod-actions" style="color:var(--red);display:none;"></span></div>
       </div>
       <button class="run-btn" id="run-production" onclick="runSkill('production-digest','production')" style="border-color:#f97316;color:#f97316;">▶ RUN</button>
       <div class="agent-list">
@@ -2632,7 +2636,16 @@ Hit ⚡ GENERATE NOW to compile immediately.
         _setText('m-opp-tiera',   m.tier_a ?? '—');
         _setText('m-opp-funding', (ff.metrics||{}).funding_opportunities ?? '—');
         _setText('m-opp-sources', srcTotal ? `${srcOk}/${srcTotal} ok` : '—');
-        if (aiHigh > 0) _showEl('m-opp-actions', `${aiHigh} HIGH ACTION${aiHigh>1?'S':''}`);
+        // Application tracker
+        const at = (d.opportunity || {})['application-tracker'] || {};
+        const appsSent  = (at.metrics||{}).applications_sent  ?? (at.metrics||{}).total_sent   ?? null;
+        const appsPend  = (at.metrics||{}).pending_reply       ?? (at.metrics||{}).awaiting_reply ?? null;
+        if (appsSent != null || appsPend != null) {
+          const appStr = [appsSent != null ? `APPS: ${appsSent}` : null, appsPend != null ? `WAITING: ${appsPend}` : null].filter(Boolean).join(' | ');
+          _showEl('m-opp-actions', appStr + (aiHigh > 0 ? ` · ${aiHigh} HIGH` : ''));
+        } else if (aiHigh > 0) {
+          _showEl('m-opp-actions', `${aiHigh} HIGH ACTION${aiHigh>1?'S':''}`);
+        }
         _showEl('metrics-opportunity');
       } catch(e) {}
 
@@ -2687,6 +2700,15 @@ Hit ⚡ GENERATE NOW to compile immediately.
         _setText('m-opsec-breach',    String(bc.status    || '—').toUpperCase());
         const anomEl = document.getElementById('m-opsec-anomalies');
         if (anomEl) anomEl.style.color = anomalies > 0 ? 'var(--red)' : 'var(--green)';
+        // privacy + network (from _readDivisionMetrics via /api/packets — not in packet files, so skip gracefully)
+        const ps = (d.op_sec || {})['privacy-scan'] || {};
+        const nm = (d.op_sec || {})['network-monitor'] || {};
+        const privRisk  = (ps.metrics||{}).risk_level || (ps.metrics||{}).severity || ps.status || null;
+        const netAnom   = (nm.metrics||{}).anomalies ?? (nm.metrics||{}).flagged_hosts ?? (nm.metrics||{}).anomaly_count ?? null;
+        _setText('m-opsec-privacy', privRisk ? String(privRisk).toUpperCase() : '—');
+        _setText('m-opsec-net',     netAnom  != null ? netAnom : '—');
+        const netEl = document.getElementById('m-opsec-net');
+        if (netEl && netAnom > 0) netEl.style.color = 'var(--yellow)';
         if (aiHigh > 0) _showEl('m-opsec-actions', `${aiHigh} HIGH ACTION${aiHigh>1?'S':''}`);
         _showEl('metrics-op_sec');
       } catch(e) {}
@@ -2699,6 +2721,11 @@ Hit ⚡ GENERATE NOW to compile immediately.
         _setText('m-prod-assets',    m.total_assets   ?? m.total   ?? '—');
         _setText('m-prod-pending',   m.pending_review ?? m.pending ?? '—');
         _setText('m-prod-delivered', m.delivered      ?? '—');
+        // hot/cold counts injected into /api/packets as _hot_count/_cold_count
+        const hotC  = (d.production || {})._hot_count  ?? null;
+        const coldC = (d.production || {})._cold_count ?? null;
+        _setText('m-prod-hot',  hotC  != null ? hotC  : '—');
+        _setText('m-prod-cold', coldC != null ? coldC : '—');
         if (aiHigh > 0) _showEl('m-prod-actions', `${aiHigh} HIGH ACTION${aiHigh>1?'S':''}`);
         _showEl('metrics-production');
       } catch(e) {}
@@ -3019,9 +3046,12 @@ Hit ⚡ GENERATE NOW to compile immediately.
         }
         if (qmRes.ok) {
           const qm = await qmRes.json();
-          const depth = Array.isArray(qm.queue) ? qm.queue.filter(t => t.status !== 'completed').length : '?';
+          const depth  = Array.isArray(qm.queue) ? qm.queue.filter(t => t.status !== 'completed').length : '?';
+          const failed = qm.failed ?? 0;
           document.getElementById('sentinel-queue-depth').textContent = depth;
           document.getElementById('sentinel-queue-depth').style.color = depth > 5 ? 'var(--yellow)' : 'var(--green)';
+          document.getElementById('sentinel-failed-count').textContent = failed;
+          document.getElementById('sentinel-failed-count').style.color = failed > 0 ? 'var(--red)' : 'var(--green)';
         }
       } catch(e) {}
     }
