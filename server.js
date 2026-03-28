@@ -346,6 +346,7 @@ const SKILL_TASK_MAP = {
   'personal-digest':  { divState: 'personal',       division: 'personal',       task: 'personal-digest'  },
   'repo-monitor':     { divState: 'dev_automation', division: 'dev-automation', task: 'repo-monitor'     },
   'debug-agent':      { divState: 'dev_automation', division: 'dev-automation', task: 'debug-agent'      },
+  'dev-pipeline':     { divState: 'dev_automation', division: 'dev-automation', task: 'dev-pipeline'     },
   'refactor-scan':    { divState: 'dev_automation', division: 'dev-automation', task: 'refactor-scan'    },
   'doc-update':       { divState: 'dev_automation', division: 'dev-automation', task: 'doc-update'       },
   'artifact-manager': { divState: 'dev_automation', division: 'dev-automation', task: 'artifact-manager' },
@@ -3612,6 +3613,28 @@ const server = http.createServer(async (req, res) => {
           }
           return jsonOk(res, { status: 'no_data', message: 'Run sentinel provider-health first' });
         } catch(e) { return jsonError(res, 500, e.message); }
+      }
+      // ── State file API endpoints (safe JSON wrappers for PC dashboard) ────
+      if (method === 'GET' && reqPath === '/api/orchestrator-state') {
+        return jsonOk(res, readState('orchestrator-state.json') || { divisions: {} });
+      }
+      if (method === 'GET' && reqPath === '/api/agent-overrides') {
+        return jsonOk(res, readState('agent-overrides.json') || {});
+      }
+      if (method === 'GET' && reqPath === '/api/jobs-seen') {
+        return jsonOk(res, readState('jobs-seen.json') || { jobs: [], total_seen: 0 });
+      }
+      if (method === 'GET' && reqPath === '/api/applications') {
+        return jsonOk(res, readState('applications.json') || { pipeline: [], stats: {} });
+      }
+      if (method === 'GET' && reqPath === '/api/trade-log') {
+        return jsonOk(res, readState('trade-log.json') || { stats: {} });
+      }
+      if (method === 'GET' && reqPath === '/api/health-log') {
+        return jsonOk(res, readState('health-log.json') || {});
+      }
+      if (method === 'GET' && reqPath === '/api/activity') {
+        return jsonOk(res, readState('activity-log.json') || { entries: [] });
       }
       // ── Task Queue depth (used by Sentinel bar) ──────────────────────────
       if (method === 'GET' && reqPath === '/api/queue') {

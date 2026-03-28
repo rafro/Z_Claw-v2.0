@@ -1185,7 +1185,8 @@
       <!-- live metrics from packets -->
       <div id="metrics-opportunity" style="margin:6px 0;display:none;">
         <div class="div-row">JOBS: <strong id="m-opp-jobs">—</strong> &nbsp;|&nbsp; TIER-A: <strong id="m-opp-tiera">—</strong> &nbsp;|&nbsp; FUNDING: <strong id="m-opp-funding">—</strong></div>
-        <div class="div-row" style="font-size:7px;">SOURCES: <strong id="m-opp-sources">—</strong> &nbsp;|&nbsp; <span id="m-opp-actions" style="color:var(--red);display:none;"></span></div>
+        <div class="div-row" style="font-size:7px;">B: <strong id="m-opp-tierb">—</strong> &nbsp;|&nbsp; C: <strong id="m-opp-tierc">—</strong> &nbsp;|&nbsp; D: <strong id="m-opp-tierd">—</strong> &nbsp;|&nbsp; SOURCES: <strong id="m-opp-sources">—</strong></div>
+        <div class="div-row" style="font-size:7px;"><span id="m-opp-actions" style="color:var(--red);display:none;"></span></div>
       </div>
       <button class="run-btn" id="run-opportunity" onclick="runSkill('job-intake','opportunity')">▶ RUN</button>
       <div class="agent-list">
@@ -1226,6 +1227,7 @@
       <!-- live metrics from packets -->
       <div id="metrics-personal" style="margin:6px 0;display:none;">
         <div class="div-row">SLEEP: <strong id="m-pers-sleep">—</strong> &nbsp;|&nbsp; BURNOUT: <strong id="m-pers-burnout">—</strong> &nbsp;|&nbsp; LOGS: <strong id="m-pers-logs">—</strong></div>
+        <div class="div-row" style="font-size:7px;">PERF-CORR: <strong id="m-pers-corr">—</strong> &nbsp;|&nbsp; FOCUS: <strong id="m-pers-focus">—</strong></div>
         <div class="div-row" style="font-size:7px;"><span id="m-pers-actions" style="color:var(--red);display:none;"></span></div>
       </div>
       <button class="run-btn" id="run-personal" onclick="runSkill('health-logger','personal')">▶ RUN</button>
@@ -2634,6 +2636,9 @@ Hit ⚡ GENERATE NOW to compile immediately.
                        (ff.action_items||[]).filter(a=>a.priority==='high').length;
         _setText('m-opp-jobs',    m.new_jobs_found ?? '—');
         _setText('m-opp-tiera',   m.tier_a ?? '—');
+        _setText('m-opp-tierb',   m.tier_b ?? '—');
+        _setText('m-opp-tierc',   m.tier_c ?? '—');
+        _setText('m-opp-tierd',   m.tier_d ?? '—');
         _setText('m-opp-funding', (ff.metrics||{}).funding_opportunities ?? '—');
         _setText('m-opp-sources', srcTotal ? `${srcOk}/${srcTotal} ok` : '—');
         // Application tracker
@@ -2671,15 +2676,21 @@ Hit ⚡ GENERATE NOW to compile immediately.
       try {
         const hl  = (d.personal || {})['health-logger']   || {};
         const bm  = (d.personal || {})['burnout-monitor'] || {};
+        const pc  = (d.personal || {})['perf-correlation'] || {};
         const hlM = hl.metrics || {};
         const bmM = bm.metrics || {};
+        const pcM = pc.metrics || {};
         const sleep   = hlM.sleep_hours ?? bmM.avg_sleep_hours ?? '—';
         const burnout = bmM.burnout_level || ((bmM.negative_emotions||0) > 2 ? 'check' : 'normal');
         const aiHigh  = (hl.action_items||[]).filter(a=>a.priority==='high').length +
-                        (bm.action_items||[]).filter(a=>a.priority==='high').length;
+                        (bm.action_items||[]).filter(a=>a.priority==='high').length +
+                        (pc.action_items||[]).filter(a=>a.priority==='high').length;
         _setText('m-pers-sleep',   sleep !== '—' ? sleep + 'h' : '—');
         _setText('m-pers-burnout', String(burnout).toUpperCase());
         _setText('m-pers-logs',    bmM.health_entries ?? '—');
+        const corrScore = pcM.correlation_score ?? pcM.performance_score ?? null;
+        _setText('m-pers-corr',  corrScore != null ? corrScore.toFixed(2) : '—');
+        _setText('m-pers-focus', pcM.focus_score ?? pcM.avg_focus ?? '—');
         const burnEl = document.getElementById('m-pers-burnout');
         if (burnEl) burnEl.style.color = burnout === 'elevated' ? 'var(--red)' : burnout === 'check' ? 'var(--yellow)' : 'var(--green)';
         if (aiHigh > 0) _showEl('m-pers-actions', `${aiHigh} HIGH ACTION${aiHigh>1?'S':''}`);
@@ -2738,7 +2749,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Orchestrator state
       try {
-        const res = await fetch('../state/orchestrator-state.json?t=' + Date.now());
+        const res = await fetch('/api/orchestrator-state?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           const divs = ['trading', 'opportunity', 'dev_automation', 'personal', 'op_sec', 'production'];
@@ -2789,7 +2800,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Agent overrides — sync toggles to real enabled state
       try {
-        const res = await fetch('../state/agent-overrides.json?t=' + Date.now());
+        const res = await fetch('/api/agent-overrides?t=' + Date.now());
         if (res.ok) {
           const overrides = await res.json();
           document.querySelectorAll('.toggle[data-division]').forEach(el => {
@@ -2811,7 +2822,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Jobs seen
       try {
-        const res = await fetch('../state/jobs-seen.json?t=' + Date.now());
+        const res = await fetch('/api/jobs-seen?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           document.getElementById('stat-jobs').textContent = data.total_seen || 0;
@@ -2820,7 +2831,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Applications
       try {
-        const res = await fetch('../state/applications.json?t=' + Date.now());
+        const res = await fetch('/api/applications?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           const pending = data.stats.pending_review || 0;
@@ -2847,7 +2858,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Trade log
       try {
-        const res = await fetch('../state/trade-log.json?t=' + Date.now());
+        const res = await fetch('/api/trade-log?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           document.getElementById('stat-trades').textContent = data.stats.total_trades || 0;
@@ -2860,7 +2871,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
       // Health log
       try {
-        const res = await fetch('../state/health-log.json?t=' + Date.now());
+        const res = await fetch('/api/health-log?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
           const lastLogged = data.last_logged;
@@ -2977,7 +2988,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
     async function loadActivityLog() {
       try {
-        const res = await fetch('../state/activity-log.json?t=' + Date.now());
+        const res = await fetch('/api/activity?t=' + Date.now());
         if (!res.ok) return;
         const data = await res.json();
         const entries = data.entries || [];
