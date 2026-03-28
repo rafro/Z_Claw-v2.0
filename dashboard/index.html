@@ -2614,7 +2614,10 @@ Hit ⚡ GENERATE NOW to compile immediately.
     }
 
     function renderDivisionMetrics() {
-      const d = window._reportData || {};
+      // /api/packets uses hyphenated folder names as keys; normalise to underscores
+      const _raw = window._reportData || {};
+      const d = {};
+      for (const [k, v] of Object.entries(_raw)) d[k.replace(/-/g, '_')] = v;
 
       // Opportunity
       try {
