@@ -1,0 +1,266 @@
+<!--
+=============================================================================
+  WIDGET-01: VIX CIRCUIT BREAKER
+  File: dashboard-patches/widget-01-vix-circuit-breaker.html
+=============================================================================
+
+  INTEGRATION INSTRUCTIONS
+  ─────────────────────────────────────────────────────────────────────────
+
+  1. HTML PLACEMENT
+     In index.html, locate line ~1094 (end of #an-page-0), just BEFORE the
+     closing </div> of #an-page-0. Insert the widget div after the "CYCLE
+     PERFORMANCE" block, like so:
+
+       <!-- inside #an-page-0, after the CYCLE PERFORMANCE block (~line 1093) -->
+       <div style="border-top:1px solid var(--border);margin:3px 0;"></div>
+       <!-- PASTE widget div here (everything between the HTML-WIDGET-START /
+            HTML-WIDGET-END markers below) -->
+     </div>  <!-- closes #an-page-0 -->
+
+  2. JS FUNCTION PLACEMENT
+     Paste updateVixCircuitBreakerWidget() anywhere in the <script> block
+     near the other trading helpers (e.g., after loadTradingAccounts ~line 1921).
+
+  3. WIRING INTO THE REFRESH CYCLE
+     Inside loadTradingAccounts() (index.html ~line 1857), after the existing
+     `const data = await r.json();` line, add:
+
+       if (data.accounts && data.accounts.virtual) {
+         updateVixCircuitBreakerWidget(data.accounts.virtual);
+       }
+
+     This piggybacks on the existing fetch to /api/trading/accounts that fires
+     every 30 s (setInterval ~line 3135) and on every manualRefresh() call.
+     No extra fetch required.
+
+=============================================================================
+-->
+
+<!-- HTML-WIDGET-START ======================================================-->
+<div id="vix-circuit-breaker-widget"
+     style="background:var(--panel);border:1px solid var(--border);padding:6px;border-radius:3px;margin-top:4px;">
+
+  <!-- Header row -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <span style="font-size:6px;color:var(--subtext);letter-spacing:0.5px;">VIX / CIRCUIT BREAKER</span>
+    <!-- Circuit breaker status badge -->
+    <span id="vcb-status-badge"
+          style="font-size:6px;padding:1px 5px;border-radius:2px;font-weight:bold;
+                 background:#0a2a0a;color:var(--teal);border:1px solid var(--teal);">
+      ACTIVE
+    </span>
+  </div>
+
+  <!-- VIX level + sizing factor on one row -->
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+    <div>
+      <span style="font-size:7px;color:var(--subtext);">VIX </span>
+      <strong id="vcb-vix-value" style="font-size:11px;color:var(--teal);">—</strong>
+    </div>
+    <div style="text-align:right;">
+      <span style="font-size:6px;color:var(--subtext);">SIZE FACTOR </span>
+      <strong id="vcb-size-factor" style="font-size:9px;color:var(--teal);">—</strong>
+    </div>
+  </div>
+
+  <!-- VIX colour bar (4-segment) -->
+  <div style="display:flex;gap:2px;margin-bottom:4px;">
+    <div id="vcb-bar-green"
+         style="flex:1;height:3px;border-radius:1px;background:#1a3a1a;transition:background 0.3s;"
+         title="VIX < 20 — Normal"></div>
+    <div id="vcb-bar-yellow"
+         style="flex:1;height:3px;border-radius:1px;background:#1a1a0a;transition:background 0.3s;"
+         title="VIX 20–25 — Elevated"></div>
+    <div id="vcb-bar-orange"
+         style="flex:1;height:3px;border-radius:1px;background:#1a1505;transition:background 0.3s;"
+         title="VIX 25–35 — High"></div>
+    <div id="vcb-bar-red"
+         style="flex:1;height:3px;border-radius:1px;background:#2a0a0a;transition:background 0.3s;"
+         title="VIX > 35 — Extreme"></div>
+  </div>
+
+  <!-- Halt countdown row (hidden unless halted) -->
+  <div id="vcb-halt-row"
+       style="display:none;background:#1a0505;border:1px solid var(--red);border-radius:2px;
+              padding:3px 5px;margin-bottom:3px;font-size:7px;color:var(--red);">
+    RESUME IN: <strong id="vcb-halt-countdown">—</strong>
+  </div>
+
+  <!-- Loss streak + daily P&L -->
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <span style="font-size:6px;color:var(--subtext);">LOSS STREAK </span>
+      <strong id="vcb-loss-streak" style="font-size:8px;color:var(--text);">0/5</strong>
+    </div>
+    <div style="text-align:right;">
+      <span style="font-size:6px;color:var(--subtext);">DAY P&amp;L </span>
+      <strong id="vcb-daily-pnl" style="font-size:8px;color:var(--teal);">$0.00</strong>
+    </div>
+  </div>
+
+</div>
+<!-- HTML-WIDGET-END ========================================================-->
+
+
+<!-- JS-WIDGET-START ========================================================-->
+<script>
+(function() {
+
+  // Countdown interval handle — cleared whenever we re-render
+  let _vcbCountdownTimer = null;
+
+  /**
+   * updateVixCircuitBreakerWidget(virtual)
+   *
+   * Accepts the `accounts.virtual` object returned by /api/trading/accounts
+   * and refreshes all widget elements.
+   *
+   * Integration:
+   *   Inside loadTradingAccounts(), after `const data = await r.json();`:
+   *
+   *     if (data.accounts && data.accounts.virtual) {
+   *       updateVixCircuitBreakerWidget(data.accounts.virtual);
+   *     }
+   */
+  window.updateVixCircuitBreakerWidget = function(virtual) {
+    if (!virtual) return;
+
+    const vix         = virtual.vix          ?? null;
+    const sizeFactor  = virtual.vix_size_factor ?? null;
+    const halted      = !!virtual.trading_halted;
+    const resumeTime  = virtual.halt_resume_time ?? null;
+    const lossStreak  = virtual.loss_streak  ?? 0;
+    const dailyPnl    = virtual.daily_pnl    ?? 0;
+
+    // ── VIX value + colour ────────────────────────────────────────────────
+    const vixEl = document.getElementById('vcb-vix-value');
+    if (vixEl) {
+      if (vix === null || vix === undefined) {
+        vixEl.textContent = '—';
+        vixEl.style.color = 'var(--subtext)';
+      } else {
+        vixEl.textContent = Number(vix).toFixed(1);
+        vixEl.style.color = _vcbVixColor(vix);
+      }
+    }
+
+    // ── Colour bar (light the correct segment) ────────────────────────────
+    const segments = [
+      { id: 'vcb-bar-green',  active: '#22c55e', inactive: '#1a3a1a', test: vix !== null && vix < 20       },
+      { id: 'vcb-bar-yellow', active: '#eab308', inactive: '#1a1a0a', test: vix !== null && vix >= 20 && vix < 25  },
+      { id: 'vcb-bar-orange', active: '#f97316', inactive: '#1a1505', test: vix !== null && vix >= 25 && vix < 35  },
+      { id: 'vcb-bar-red',    active: '#ff4444', inactive: '#2a0a0a', test: vix !== null && vix >= 35       }
+    ];
+    segments.forEach(function(s) {
+      const el = document.getElementById(s.id);
+      if (el) el.style.background = s.test ? s.active : s.inactive;
+    });
+
+    // ── Position sizing factor ─────────────────────────────────────────────
+    const sfEl = document.getElementById('vcb-size-factor');
+    if (sfEl) {
+      if (halted) {
+        sfEl.textContent = 'HALTED';
+        sfEl.style.color = 'var(--red)';
+      } else if (sizeFactor === null || sizeFactor === undefined) {
+        sfEl.textContent = '—';
+        sfEl.style.color = 'var(--subtext)';
+      } else {
+        const pct = Number(sizeFactor);
+        sfEl.textContent = pct.toFixed(1) + 'x';
+        sfEl.style.color = pct >= 1.0 ? 'var(--teal)' : pct >= 0.5 ? '#eab308' : 'var(--warn)';
+      }
+    }
+
+    // ── Circuit breaker status badge ──────────────────────────────────────
+    const badge = document.getElementById('vcb-status-badge');
+    if (badge) {
+      if (halted) {
+        badge.textContent = '\u26a0 HALTED';
+        badge.style.background  = '#2a0505';
+        badge.style.color       = 'var(--red)';
+        badge.style.borderColor = 'var(--red)';
+      } else {
+        badge.textContent = 'ACTIVE';
+        badge.style.background  = '#0a2a0a';
+        badge.style.color       = 'var(--teal)';
+        badge.style.borderColor = 'var(--teal)';
+      }
+    }
+
+    // ── Halt countdown ────────────────────────────────────────────────────
+    const haltRow = document.getElementById('vcb-halt-row');
+    if (_vcbCountdownTimer) { clearInterval(_vcbCountdownTimer); _vcbCountdownTimer = null; }
+
+    if (haltRow) {
+      if (halted && resumeTime) {
+        haltRow.style.display = '';
+        _vcbRenderCountdown(resumeTime);                      // paint immediately
+        _vcbCountdownTimer = setInterval(function() {
+          _vcbRenderCountdown(resumeTime);
+        }, 1000);
+      } else {
+        haltRow.style.display = 'none';
+      }
+    }
+
+    // ── Loss streak ───────────────────────────────────────────────────────
+    const streakEl = document.getElementById('vcb-loss-streak');
+    if (streakEl) {
+      const streak = Math.max(0, parseInt(lossStreak, 10) || 0);
+      streakEl.textContent = streak + '/5';
+      streakEl.style.color = streak >= 4 ? 'var(--red)'
+                           : streak >= 3 ? 'var(--warn)'
+                           : 'var(--text)';
+    }
+
+    // ── Daily P&L ─────────────────────────────────────────────────────────
+    const pnlEl = document.getElementById('vcb-daily-pnl');
+    if (pnlEl) {
+      const pnl = parseFloat(dailyPnl) || 0;
+      const sign = pnl >= 0 ? '+' : '';
+      pnlEl.textContent = sign + '$' + Math.abs(pnl).toLocaleString('en-US', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+      pnlEl.style.color = pnl >= 0 ? 'var(--teal)' : 'var(--red)';
+      if (pnl < 0) pnlEl.textContent = '-$' + Math.abs(pnl).toLocaleString('en-US', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+    }
+  };
+
+  // ── Internal helpers ─────────────────────────────────────────────────────
+
+  function _vcbVixColor(vix) {
+    if (vix < 20)  return '#22c55e';   // green
+    if (vix < 25)  return '#eab308';   // yellow
+    if (vix < 35)  return '#f97316';   // orange
+    return 'var(--red)';               // red
+  }
+
+  function _vcbRenderCountdown(resumeTimeIso) {
+    const cdEl = document.getElementById('vcb-halt-countdown');
+    if (!cdEl) return;
+    const msLeft = new Date(resumeTimeIso).getTime() - Date.now();
+    if (isNaN(msLeft) || msLeft <= 0) {
+      cdEl.textContent = 'IMMINENT';
+      if (_vcbCountdownTimer) { clearInterval(_vcbCountdownTimer); _vcbCountdownTimer = null; }
+      return;
+    }
+    const totalSec = Math.floor(msLeft / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) {
+      cdEl.textContent = h + 'h ' + _pad(m) + 'm ' + _pad(s) + 's';
+    } else {
+      cdEl.textContent = _pad(m) + 'm ' + _pad(s) + 's';
+    }
+  }
+
+  function _pad(n) { return n < 10 ? '0' + n : String(n); }
+
+})();
+</script>
+<!-- JS-WIDGET-END ==========================================================-->

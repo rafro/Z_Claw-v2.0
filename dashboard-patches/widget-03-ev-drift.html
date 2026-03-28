@@ -1,0 +1,209 @@
+<!--
+  ════════════════════════════════════════════════════════════════════
+  PATCH: widget-03-ev-drift.html — EV Health Section for an-page-1
+  ════════════════════════════════════════════════════════════════════
+
+  INTEGRATION INSTRUCTIONS
+  ────────────────────────
+  1. LOCATE the existing EV stub in index.html (~line 1105):
+       <div class="div-row" style="font-size:6px;color:var(--subtext);">THEORETICAL EV: ...
+
+  2. REPLACE that single div with the HTML block below (marked PATCH HTML).
+
+  3. LOCATE the JS that calls /api/trading/cycle and populates an-page-1.
+     After the block that sets an-theo-ev / an-emp-ev, ADD a call to:
+       updateEvDriftDisplay(data.active_strategy);
+     where `data` is the parsed JSON response body.
+
+  4. COPY the <script> block below into index.html (or a linked .js file)
+     anywhere before </body>.
+
+  5. The function is safe to call on every poll tick — null-guards are built in.
+  ════════════════════════════════════════════════════════════════════
+-->
+
+<!-- ── PATCH HTML: replace the old EV stub inside #an-page-1 ── -->
+<div style="border-top:1px solid var(--border);margin:3px 0;"></div>
+
+<!-- EV Health header -->
+<div style="font-size:6px;color:var(--subtext);letter-spacing:0.5px;margin-bottom:2px;">EV HEALTH</div>
+
+<!-- Row 1: Theoretical vs Empirical -->
+<div class="div-row" style="font-size:6px;">
+  THEORETICAL:&nbsp;<strong id="ev-theoretical" style="color:var(--teal);">—</strong>R
+  &nbsp;|&nbsp;
+  EMPIRICAL:&nbsp;<strong id="ev-empirical" style="color:var(--teal);">—</strong>R
+</div>
+
+<!-- Row 2: Drift (color-coded dynamically) -->
+<div class="div-row" style="font-size:6px;">
+  DRIFT:&nbsp;<strong id="ev-drift" style="color:var(--subtext);">—</strong>
+  &nbsp;
+  <span id="ev-drift-badge" class="tag" style="font-size:5px;display:none;"></span>
+</div>
+
+<!-- Row 3: OOS Penalty + Slippage-Adjusted PnL -->
+<div class="div-row" style="font-size:6px;">
+  OOS PENALTY:&nbsp;<strong id="ev-oos-penalty" style="color:var(--subtext);">—</strong>
+  &nbsp;|&nbsp;
+  SLIP-ADJ PnL:&nbsp;<strong id="ev-slip-pnl" style="color:var(--subtext);">—</strong>
+</div>
+
+<!-- Row 4: Health interpretation -->
+<div id="ev-health-interp"
+     style="font-size:6px;margin-top:3px;padding:2px 4px;
+            border-left:2px solid var(--border);
+            color:var(--subtext);
+            letter-spacing:0.3px;
+            display:none;">
+</div>
+<!-- ── END PATCH HTML ── -->
+
+
+<!-- ── PATCH SCRIPT ── -->
+<script>
+/**
+ * updateEvDriftDisplay(strategy)
+ *
+ * Populates the EV Health section of #an-page-1.
+ *
+ * @param {object|null} strategy  — active_strategy object from /api/trading/cycle
+ *   Expected fields (all optional — null-guarded):
+ *     theoretical_ev_r    {number}  e.g. 0.85
+ *     empirical_ev_r      {number}  e.g. 0.72
+ *     ev_drift_r          {number}  e.g. -0.13
+ *     oos_penalty         {number}  e.g. 0.92
+ *     slippage_adjusted_pnl {number} e.g. 2487.50
+ */
+function updateEvDriftDisplay(strategy) {
+  // ── Element refs ──────────────────────────────────────────────────
+  const elTheo    = document.getElementById('ev-theoretical');
+  const elEmp     = document.getElementById('ev-empirical');
+  const elDrift   = document.getElementById('ev-drift');
+  const elBadge   = document.getElementById('ev-drift-badge');
+  const elOos     = document.getElementById('ev-oos-penalty');
+  const elSlip    = document.getElementById('ev-slip-pnl');
+  const elInterp  = document.getElementById('ev-health-interp');
+
+  // Guard: if any element is missing, bail silently (panel not rendered yet)
+  if (!elTheo || !elEmp || !elDrift || !elBadge || !elOos || !elSlip || !elInterp) return;
+
+  // Guard: no strategy data yet
+  if (!strategy || typeof strategy !== 'object') {
+    [elTheo, elEmp, elDrift, elOos, elSlip].forEach(el => { el.textContent = '—'; el.style.color = 'var(--subtext)'; });
+    elBadge.style.display  = 'none';
+    elInterp.style.display = 'none';
+    return;
+  }
+
+  // ── CSS variable shortcuts (resolved at call time for safety) ──────
+  const C_TEAL    = 'var(--teal)';
+  const C_GREEN   = 'var(--green)';
+  const C_YELLOW  = 'var(--yellow)';   // used as "warn / orange" per palette
+  const C_RED     = 'var(--red)';
+  const C_SUBTEXT = 'var(--subtext)';
+  const C_TEXT    = 'var(--text)';
+
+  // ── Helper: format an R-value with sign ───────────────────────────
+  function fmtR(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    const sign = val >= 0 ? '+' : '';
+    return sign + parseFloat(val).toFixed(2);
+  }
+
+  // ── Helper: format currency ────────────────────────────────────────
+  function fmtUSD(val) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    const n = parseFloat(val);
+    const sign = n >= 0 ? '+' : '-';
+    return sign + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ── Parse values ──────────────────────────────────────────────────
+  const theo   = (strategy.theoretical_ev_r   !== undefined) ? parseFloat(strategy.theoretical_ev_r)   : null;
+  const emp    = (strategy.empirical_ev_r      !== undefined) ? parseFloat(strategy.empirical_ev_r)      : null;
+  const drift  = (strategy.ev_drift_r          !== undefined) ? parseFloat(strategy.ev_drift_r)          : null;
+  const oos    = (strategy.oos_penalty         !== undefined) ? parseFloat(strategy.oos_penalty)         : null;
+  const slip   = (strategy.slippage_adjusted_pnl !== undefined) ? parseFloat(strategy.slippage_adjusted_pnl) : null;
+
+  // ── Row 1: Theoretical & Empirical ───────────────────────────────
+  elTheo.textContent = (theo !== null && !isNaN(theo)) ? fmtR(theo) : '—';
+  elTheo.style.color = (theo !== null && !isNaN(theo)) ? C_TEAL : C_SUBTEXT;
+
+  elEmp.textContent  = (emp !== null && !isNaN(emp))  ? fmtR(emp)  : '—';
+  elEmp.style.color  = (emp !== null && !isNaN(emp))  ? C_TEAL : C_SUBTEXT;
+
+  // ── Row 2: Drift — color + badge ──────────────────────────────────
+  if (drift === null || isNaN(drift)) {
+    elDrift.textContent  = '—';
+    elDrift.style.color  = C_SUBTEXT;
+    elBadge.style.display = 'none';
+  } else {
+    const absDrift = Math.abs(drift);
+    let driftColor, badgeText, badgeBorderColor, badgeColorVar, interpText, interpBorder;
+
+    if (absDrift < 0.05) {
+      // Healthy
+      driftColor      = C_GREEN;
+      badgeText       = 'HEALTHY';
+      badgeColorVar   = C_GREEN;
+      badgeBorderColor = 'var(--green)';
+      interpText      = 'EV stable — strategy performing within tolerance';
+      interpBorder    = 'var(--green)';
+    } else if (absDrift <= 0.15) {
+      // Mild degradation
+      driftColor      = C_YELLOW;
+      badgeText       = 'MILD DEGRADATION';
+      badgeColorVar   = C_YELLOW;
+      badgeBorderColor = 'var(--yellow)';
+      interpText      = 'EV is degrading — monitor closely, consider strategy refresh';
+      interpBorder    = 'var(--yellow)';
+    } else {
+      // Significant degradation
+      driftColor      = C_RED;
+      badgeText       = 'SIGNIFICANT DEGRADATION \u26a0';
+      badgeColorVar   = C_RED;
+      badgeBorderColor = 'var(--red)';
+      interpText      = 'EV significantly degraded \u26a0 — strategy refresh strongly advised';
+      interpBorder    = 'var(--red)';
+    }
+
+    // Drift label: show "DRIFT: -0.13R ⚠" when degraded, no icon when healthy
+    const driftLabel = fmtR(drift) + 'R' + (absDrift > 0.05 ? ' \u26a0' : '');
+    elDrift.textContent = driftLabel;
+    elDrift.style.color = driftColor;
+
+    // Badge
+    elBadge.textContent         = badgeText;
+    elBadge.style.display       = 'inline-block';
+    elBadge.style.color         = badgeColorVar;
+    elBadge.style.borderColor   = badgeBorderColor;
+
+    // Interpretation bar
+    elInterp.textContent              = interpText;
+    elInterp.style.color              = badgeColorVar;
+    elInterp.style.borderLeftColor    = interpBorder;
+    elInterp.style.display            = 'block';
+  }
+
+  // ── Row 3: OOS Penalty ────────────────────────────────────────────
+  if (oos !== null && !isNaN(oos)) {
+    const oosPct = (oos * 100).toFixed(0) + '%';
+    elOos.textContent = oosPct;
+    elOos.style.color = (oos >= 0.95) ? C_GREEN : (oos >= 0.85) ? C_YELLOW : C_RED;
+  } else {
+    elOos.textContent = '—';
+    elOos.style.color = C_SUBTEXT;
+  }
+
+  // ── Row 3: Slippage-Adjusted PnL ─────────────────────────────────
+  if (slip !== null && !isNaN(slip)) {
+    elSlip.textContent = fmtUSD(slip);
+    elSlip.style.color = (slip >= 0) ? C_GREEN : C_RED;
+  } else {
+    elSlip.textContent = '—';
+    elSlip.style.color = C_SUBTEXT;
+  }
+}
+</script>
+<!-- ── END PATCH SCRIPT ── -->

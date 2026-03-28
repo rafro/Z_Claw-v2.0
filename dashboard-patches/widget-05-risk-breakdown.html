@@ -1,0 +1,251 @@
+<!--
+  ============================================================
+  WIDGET-05: Risk Breakdown Table — Page 5
+  ============================================================
+
+  INTEGRATION INSTRUCTIONS
+  ─────────────────────────
+
+  STEP 1 — HTML (Page 5 div): Paste the block marked
+  "HTML PATCH — PAGE 5 DIV" immediately BEFORE the closing
+  </div> of #agent-network-block (currently the </div> that
+  follows the Page 4 block at ~line 1161 in index.html):
+
+    <!-- Page 4: Return Projections -->
+    <div id="an-page-4" style="display:none;">
+      ...
+    </div>
+    ← INSERT PAGE 5 DIV HERE, before </div> (end of block)
+
+  STEP 2 — Nav Dot: Inside the <div id="an-page-nav"> block
+  (~line 1061-1067), add the dot for Page 5 at the end, after
+  the existing Page 4 dot:
+
+    <span class="an-dot" onclick="anSetPage(4)" ...></span>
+    ← ADD DOT 5 HERE (see "NAV DOT PATCH" below)
+
+  STEP 3 — anSetPage(): In the existing anSetPage() function
+  (~line 1788-1797), expand the page index array from
+  [0,1,2,3,4] to [0,1,2,3,4,5] (see "ANSETPAGE PATCH" below).
+
+  STEP 4 — JavaScript: Paste the JS block (marked "JS PATCH")
+  inside your trading-cycle update handler, alongside the other
+  page-update calls (e.g. after updateMcRiskDisplay(s) or after
+  the updateProjections block). Call:
+    updateRiskBreakdownPage(s);
+  where `s` is the active_strategy object from /api/trading/cycle.
+
+  STEP 5 — No new CSS required. All styles use existing CSS
+  variables (--teal, --green, --yellow, --red, --subtext,
+  --text, --border, --surface, --base) defined in :root.
+
+  ============================================================
+-->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HTML PATCH — PAGE 5 DIV                                 -->
+<!-- Paste inside #agent-network-block, after #an-page-4    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<!-- Page 5: Risk Breakdown -->
+<div id="an-page-5" style="display:none;">
+  <div style="font-size:7px;color:var(--subtext);margin-bottom:3px;letter-spacing:0.5px;">RISK BREAKDOWN (MONTE CARLO)</div>
+
+  <!-- Table wrapper with horizontal scroll guard -->
+  <div style="overflow-x:auto;">
+    <table id="an-risk-table" style="
+      width:100%;
+      border-collapse:collapse;
+      font-size:6.5px;
+      font-family:monospace;
+      color:var(--text);
+    ">
+      <thead>
+        <tr style="color:var(--subtext);border-bottom:1px solid var(--border);">
+          <th style="text-align:left;padding:2px 3px;font-weight:normal;">RISK%</th>
+          <th style="text-align:right;padding:2px 3px;font-weight:normal;">ANN RET</th>
+          <th style="text-align:right;padding:2px 3px;font-weight:normal;">MAX DD</th>
+          <th style="text-align:right;padding:2px 3px;font-weight:normal;">SHARPE</th>
+          <th style="text-align:right;padding:2px 3px;font-weight:normal;">MC P95</th>
+          <th style="text-align:right;padding:2px 3px;font-weight:normal;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="an-risk-tbody">
+        <!-- populated by updateRiskBreakdownPage() -->
+        <tr>
+          <td colspan="6" style="text-align:center;padding:4px;color:var(--subtext);">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer: selected risk summary -->
+  <div id="an-risk-footer" style="
+    margin-top:4px;
+    font-size:6px;
+    color:var(--subtext);
+    border-top:1px solid var(--border);
+    padding-top:3px;
+    line-height:1.5;
+  ">Selected: —% risk | Highest Sharpe at acceptable drawdown</div>
+</div>
+
+<!-- END HTML PATCH — PAGE 5 DIV -->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- NAV DOT PATCH                                           -->
+<!-- Add this span inside <div id="an-page-nav">, after     -->
+<!-- the existing Page 4 dot.                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--
+  <span class="an-dot" onclick="anSetPage(5)"
+    style="cursor:pointer;width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;"
+    title="Risk Breakdown"></span>
+-->
+<!-- END NAV DOT PATCH -->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ANSETPAGE PATCH                                         -->
+<!-- In the existing anSetPage() function, change the array  -->
+<!-- from [0,1,2,3,4] to [0,1,2,3,4,5]:                    -->
+<!--                                                         -->
+<!--   BEFORE:  [0,1,2,3,4].forEach(i => {                  -->
+<!--   AFTER:   [0,1,2,3,4,5].forEach(i => {                -->
+<!--                                                         -->
+<!-- No other changes to that function are needed; the dot   -->
+<!-- highlight logic (querySelectorAll('.an-dot')) already   -->
+<!-- handles any number of dots by index.                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- END ANSETPAGE PATCH -->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- JS PATCH — paste as <script> block or merge inline     -->
+<!-- Call updateRiskBreakdownPage(s) from the cycle handler -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+/**
+ * updateRiskBreakdownPage(strategy)
+ *
+ * Renders the risk breakdown table on Page 5.
+ *
+ * @param {Object} strategy — active_strategy from /api/trading/cycle
+ *   Expected fields:
+ *     risk_breakdown  {Array}  — array of risk scenario objects:
+ *       { risk_pct, total_return_pct, annual_return_pct,
+ *         max_drawdown_pct, sharpe, mc_p95_dd }
+ *     best_risk_pct   {number} — recommended risk level (%)
+ */
+function updateRiskBreakdownPage(strategy) {
+  if (!strategy) return;
+
+  const tbody   = document.getElementById('an-risk-tbody');
+  const footer  = document.getElementById('an-risk-footer');
+  if (!tbody) return;
+
+  const rows     = Array.isArray(strategy.risk_breakdown) ? strategy.risk_breakdown : [];
+  const bestRisk = strategy.best_risk_pct != null ? parseFloat(strategy.best_risk_pct) : null;
+
+  // ── Helper: color for Annual Return ─────────────────────
+  function annRetColor(v) {
+    return v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--subtext)';
+  }
+
+  // ── Helper: color for Max Drawdown ───────────────────────
+  // green <5%, orange/warn 5-15%, red >15%
+  function maxDdColor(v) {
+    if (v < 5)  return 'var(--green)';
+    if (v < 15) return 'var(--yellow)';
+    return 'var(--red)';
+  }
+
+  // ── Helper: color for MC P95 ─────────────────────────────
+  // green <8%, orange 8-12%, red >12%
+  function mcP95Color(v) {
+    if (v < 8)  return 'var(--green)';
+    if (v <= 12) return 'var(--yellow)';
+    return 'var(--red)';
+  }
+
+  // ── Helper: status tag for a row ─────────────────────────
+  function rowStatus(row, isSelected) {
+    if (isSelected) {
+      return '<span style="color:var(--teal);font-weight:bold;">SELECTED</span>';
+    }
+    // Flag rows with extreme drawdown as risky
+    if (row.max_drawdown_pct >= 20 || row.mc_p95_dd >= 25) {
+      return '<span style="color:var(--red);">HIGH RISK</span>';
+    }
+    if (row.max_drawdown_pct >= 10 || row.mc_p95_dd >= 12) {
+      return '<span style="color:var(--yellow);">MODERATE</span>';
+    }
+    return '<span style="color:var(--subtext);">OK</span>';
+  }
+
+  // ── Render rows ──────────────────────────────────────────
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:4px;color:var(--subtext);">No data</td></tr>';
+    if (footer) footer.textContent = 'Selected: —% risk | Highest Sharpe at acceptable drawdown';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(function(row) {
+    const riskPct   = parseFloat(row.risk_pct);
+    const annRet    = parseFloat(row.annual_return_pct);
+    const maxDd     = parseFloat(row.max_drawdown_pct);
+    const sharpe    = parseFloat(row.sharpe);
+    const mcP95     = parseFloat(row.mc_p95_dd);
+    const isSelected = bestRisk !== null && Math.abs(riskPct - bestRisk) < 0.001;
+
+    // Row border highlight for selected
+    const rowStyle = isSelected
+      ? 'border:1px solid var(--teal);border-radius:2px;background:rgba(var(--teal-rgb, 42,161,152), 0.07);'
+      : 'border-bottom:1px solid var(--border);';
+
+    const tdBase = 'padding:2px 3px;';
+
+    return [
+      '<tr style="' + rowStyle + '">',
+        '<td style="' + tdBase + 'text-align:left;color:' + (isSelected ? 'var(--teal)' : 'var(--text)') + ';font-weight:' + (isSelected ? 'bold' : 'normal') + ';">',
+          riskPct.toFixed(2) + '%',
+        '</td>',
+        '<td style="' + tdBase + 'text-align:right;color:' + annRetColor(annRet) + ';">',
+          (annRet >= 0 ? '+' : '') + annRet.toFixed(1) + '%',
+        '</td>',
+        '<td style="' + tdBase + 'text-align:right;color:' + maxDdColor(maxDd) + ';">',
+          maxDd.toFixed(1) + '%',
+        '</td>',
+        '<td style="' + tdBase + 'text-align:right;color:var(--text);">',
+          isNaN(sharpe) ? '—' : sharpe.toFixed(2),
+        '</td>',
+        '<td style="' + tdBase + 'text-align:right;color:' + mcP95Color(mcP95) + ';">',
+          mcP95.toFixed(1) + '%',
+        '</td>',
+        '<td style="' + tdBase + 'text-align:right;">',
+          rowStatus(row, isSelected),
+        '</td>',
+      '</tr>'
+    ].join('');
+  }).join('');
+
+  // ── Footer ───────────────────────────────────────────────
+  if (footer) {
+    if (bestRisk !== null) {
+      // Find the selected row's sharpe for the footer note
+      const sel = rows.find(function(r) {
+        return Math.abs(parseFloat(r.risk_pct) - bestRisk) < 0.001;
+      });
+      const sharpeNote = sel ? ' (Sharpe ' + parseFloat(sel.sharpe).toFixed(2) + ')' : '';
+      footer.innerHTML =
+        'Selected: <strong style="color:var(--teal);">' + bestRisk.toFixed(2) + '%</strong> risk' +
+        ' | Highest Sharpe at acceptable drawdown' + sharpeNote;
+    } else {
+      footer.textContent = 'Selected: —% risk | Highest Sharpe at acceptable drawdown';
+    }
+  }
+}
+</script>
+<!-- END JS PATCH -->

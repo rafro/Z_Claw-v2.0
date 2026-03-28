@@ -1,0 +1,424 @@
+<!--
+  ════════════════════════════════════════════════════════════════════
+  PATCH: widget-06-strategy-rules.html — Strategy Rules Page (an-page-6)
+  ════════════════════════════════════════════════════════════════════
+
+  INTEGRATION INSTRUCTIONS
+  ────────────────────────
+
+  STEP 1 — ADD THE NAV DOT
+  ~~~~~~~~~~~~~~~~~~~~~~~~
+  Locate the page navigation dots block in index.html (~line 1061):
+    <div id="an-page-nav" style="display:flex;gap:4px;...">
+
+  Append a sixth dot inside that div:
+    <span class="an-dot" onclick="anSetPage(6)"
+          style="cursor:pointer;width:6px;height:6px;border-radius:50%;
+                 background:var(--border);display:inline-block;"
+          title="Strategy Rules"></span>
+
+  STEP 2 — ADD THE PAGE DIV
+  ~~~~~~~~~~~~~~~~~~~~~~~~~
+  Locate the end of the last page div in index.html, just before:
+    </div><!-- closes the division-card inner wrapper -->
+  (currently after <!-- Page 4: Return Projections --> ~line 1161)
+
+  Paste the HTML block below (marked PATCH HTML) directly after
+  the closing </div> of #an-page-4.
+
+  STEP 3 — PATCH anSetPage()
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Locate the anSetPage function (~line 1788):
+    [0,1,2,3,4].forEach(i => {
+
+  Change it to:
+    [0,1,2,3,4,6].forEach(i => {
+
+  (Page 5 is reserved — skip it; 6 is strategy rules.)
+
+  Also update the dot highlight logic. The dot index maps are:
+    dot 0 → page 0, dot 1 → page 1, ..., dot 4 → page 4, dot 5 → page 6
+  Replace the dot loop:
+    document.querySelectorAll('.an-dot').forEach((d,i) => {
+      d.style.background = i === n ? 'var(--teal)' : 'var(--border)';
+    });
+  With:
+    const PAGE_DOT_MAP = [0,1,2,3,4,6];
+    document.querySelectorAll('.an-dot').forEach((d,i) => {
+      d.style.background = PAGE_DOT_MAP[i] === n ? 'var(--teal)' : 'var(--border)';
+    });
+
+  STEP 4 — WIRE THE UPDATER
+  ~~~~~~~~~~~~~~~~~~~~~~~~~
+  Find the location in the polling/fetch block where active_strategy
+  data is consumed and other an-page functions are called, e.g.:
+    updateEvDriftDisplay(data.active_strategy);
+
+  Add after it:
+    updateStrategyRulesPage(data);
+
+  STEP 5 — ADD THE SCRIPT BLOCK
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Copy the <script> block below anywhere before </body> in index.html,
+  or add it to a linked .js file.
+
+  The function is idempotent — safe to call on every poll tick.
+  ════════════════════════════════════════════════════════════════════
+-->
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     PATCH HTML: paste after the closing </div> of #an-page-4
+     ════════════════════════════════════════════════════════════════════ -->
+
+<!-- Page 6: Strategy Rules -->
+<div id="an-page-6" style="display:none;">
+
+  <!-- Strategy header -->
+  <div style="border-bottom:1px solid var(--border);padding-bottom:3px;margin-bottom:5px;">
+    <div style="font-size:8px;color:var(--teal);letter-spacing:0.5px;" id="sr-name">—</div>
+    <div style="font-size:6px;color:var(--subtext);margin-top:1px;">
+      ID:&nbsp;<span id="sr-id" style="color:var(--text);">—</span>
+      &nbsp;|&nbsp;
+      <span id="sr-direction-badge" class="tag" style="font-size:5px;display:none;"></span>
+    </div>
+  </div>
+
+  <!-- ENTRY section -->
+  <div style="font-size:6px;color:var(--purple);letter-spacing:0.8px;margin-bottom:2px;">ENTRY</div>
+  <div id="sr-entry-rows">
+    <div class="div-row" style="font-size:7px;">
+      TRIGGER:&nbsp;<strong id="sr-entry-trigger" style="color:var(--text);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      PRIMARY:&nbsp;<strong id="sr-primary-indicator" style="color:var(--teal);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      CONFIRMATION:&nbsp;<strong id="sr-confirm-indicator" style="color:var(--teal);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      FILTER:&nbsp;<strong id="sr-entry-filter" style="color:var(--text);">—</strong>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+
+  <!-- EXIT section -->
+  <div style="font-size:6px;color:var(--purple);letter-spacing:0.8px;margin-bottom:2px;">EXIT</div>
+  <div id="sr-exit-rows">
+    <div class="div-row" style="font-size:7px;">
+      STOP LOSS:&nbsp;<strong id="sr-stop-loss" style="color:var(--red);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      TAKE PROFIT:&nbsp;<strong id="sr-take-profit" style="color:var(--green);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      TRAILING STOP:&nbsp;<strong id="sr-trailing-stop" style="color:var(--yellow);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      TIME EXIT:&nbsp;<strong id="sr-time-exit" style="color:var(--subtext);">—</strong>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+
+  <!-- RISK / META section -->
+  <div style="font-size:6px;color:var(--purple);letter-spacing:0.8px;margin-bottom:2px;">RISK &amp; META</div>
+  <div id="sr-risk-rows">
+    <div class="div-row" style="font-size:7px;">
+      MAX POSITIONS:&nbsp;<strong id="sr-max-positions" style="color:var(--text);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      TIMEFRAME:&nbsp;<strong id="sr-timeframe" style="color:var(--blue);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      MARKET TYPE:&nbsp;<strong id="sr-market-type" style="color:var(--blue);">—</strong>
+    </div>
+    <div class="div-row" style="font-size:7px;">
+      DIRECTION:&nbsp;<strong id="sr-direction" style="color:var(--text);">—</strong>
+    </div>
+  </div>
+
+  <!-- No-data fallback (shown when schema is absent) -->
+  <div id="sr-no-data"
+       style="display:none;font-size:7px;color:var(--subtext);
+              padding:4px 0;letter-spacing:0.3px;">
+    NO STRATEGY SCHEMA AVAILABLE
+  </div>
+
+</div>
+<!-- ── END PATCH HTML ── -->
+
+
+<!-- ── PATCH SCRIPT ── -->
+<script>
+/**
+ * updateStrategyRulesPage(data)
+ *
+ * Renders the full strategy schema into #an-page-6.
+ *
+ * @param {object} data  — full /api/trading/cycle response object
+ *   Reads: data.active_strategy.strategy_schema  (full schema object)
+ *          data.active_strategy.direction         (e.g. "LONG" / "SHORT")
+ *
+ * All fields are optional — null-guarded throughout.
+ * Safe to call on every poll tick.
+ */
+function updateStrategyRulesPage(data) {
+  // ── Element refs ──────────────────────────────────────────────────
+  const elName      = document.getElementById('sr-name');
+  const elId        = document.getElementById('sr-id');
+  const elDirBadge  = document.getElementById('sr-direction-badge');
+  const elTrigger   = document.getElementById('sr-entry-trigger');
+  const elPrimary   = document.getElementById('sr-primary-indicator');
+  const elConfirm   = document.getElementById('sr-confirm-indicator');
+  const elFilter    = document.getElementById('sr-entry-filter');
+  const elStop      = document.getElementById('sr-stop-loss');
+  const elTP        = document.getElementById('sr-take-profit');
+  const elTrail     = document.getElementById('sr-trailing-stop');
+  const elTimeExit  = document.getElementById('sr-time-exit');
+  const elMaxPos    = document.getElementById('sr-max-positions');
+  const elTimeframe = document.getElementById('sr-timeframe');
+  const elMarket    = document.getElementById('sr-market-type');
+  const elDirection = document.getElementById('sr-direction');
+  const elNoData    = document.getElementById('sr-no-data');
+  const elEntryRows = document.getElementById('sr-entry-rows');
+  const elExitRows  = document.getElementById('sr-exit-rows');
+  const elRiskRows  = document.getElementById('sr-risk-rows');
+
+  // Bail silently if page hasn't been injected yet
+  if (!elName) return;
+
+  // ── Null-safe helpers ─────────────────────────────────────────────
+  function safe(val, fallback) {
+    if (val === null || val === undefined || val === '') return fallback !== undefined ? fallback : '—';
+    return val;
+  }
+
+  function num(val) {
+    const n = parseFloat(val);
+    return isNaN(n) ? null : n;
+  }
+
+  // ── Human-readable indicator trigger / filter labels ──────────────
+  const TRIGGER_LABELS = {
+    'PRICE_ABOVE_EMA'      : 'Price crosses above EMA',
+    'PRICE_BELOW_EMA'      : 'Price crosses below EMA',
+    'PRICE_ABOVE_SMA'      : 'Price crosses above SMA',
+    'PRICE_BELOW_SMA'      : 'Price crosses below SMA',
+    'RSI_OVERSOLD'         : 'RSI enters oversold zone',
+    'RSI_OVERBOUGHT'       : 'RSI enters overbought zone',
+    'RSI_CROSS_UP'         : 'RSI crosses up through midline',
+    'RSI_CROSS_DOWN'       : 'RSI crosses down through midline',
+    'MACD_CROSS_ABOVE'     : 'MACD crosses above signal',
+    'MACD_CROSS_BELOW'     : 'MACD crosses below signal',
+    'MACD_HISTOGRAM_EXPAND': 'MACD histogram expanding',
+    'BOLLINGER_BREAKOUT'   : 'Price breaks out of Bollinger Band',
+    'BOLLINGER_SQUEEZE'    : 'Bollinger Band squeeze detected',
+    'VWAP_CROSS_ABOVE'     : 'Price crosses above VWAP',
+    'VWAP_CROSS_BELOW'     : 'Price crosses below VWAP',
+    'STOCH_CROSS_UP'       : 'Stochastic crosses up',
+    'STOCH_CROSS_DOWN'     : 'Stochastic crosses down',
+    'ATR_EXPANDING'        : 'ATR expanding (volatility rising)',
+    'ATR_CONTRACTING'      : 'ATR contracting (volatility falling)',
+    'VOLUME_SPIKE'         : 'Volume spike detected',
+    'CANDLESTICK_ENGULF'   : 'Engulfing candlestick pattern',
+    'CANDLESTICK_HAMMER'   : 'Hammer candlestick pattern',
+    'CANDLESTICK_DOJI'     : 'Doji indecision candle',
+    'SUPPORT_BOUNCE'       : 'Price bounces off support level',
+    'RESISTANCE_BREAK'     : 'Price breaks above resistance',
+    'TREND_PULLBACK'       : 'Pullback in trending market',
+    'OPEN_RANGE_BREAK'     : 'Opening range breakout',
+  };
+
+  function humanLabel(raw) {
+    if (!raw) return '—';
+    const key = String(raw).toUpperCase();
+    if (TRIGGER_LABELS[key]) return TRIGGER_LABELS[key];
+    // Fallback: convert SNAKE_CASE to Title Case
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ── Market type display ───────────────────────────────────────────
+  const MARKET_LABELS = {
+    'equity_futures'     : 'Equity Futures',
+    'equity'             : 'Equities',
+    'forex'              : 'Forex',
+    'crypto'             : 'Crypto',
+    'options'            : 'Options',
+    'commodities'        : 'Commodities',
+    'fixed_income'       : 'Fixed Income',
+    'etf'                : 'ETF',
+  };
+
+  function humanMarket(raw) {
+    if (!raw) return '—';
+    return MARKET_LABELS[String(raw).toLowerCase()] || String(raw).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ── Extract strategy fields ───────────────────────────────────────
+  const strat  = (data && data.active_strategy) ? data.active_strategy : null;
+  const schema = (strat && strat.strategy_schema) ? strat.strategy_schema : null;
+
+  if (!schema) {
+    // Show no-data state
+    if (elNoData)    { elNoData.style.display = ''; }
+    if (elEntryRows) { elEntryRows.style.display = 'none'; }
+    if (elExitRows)  { elExitRows.style.display = 'none'; }
+    if (elRiskRows)  { elRiskRows.style.display = 'none'; }
+    elName.textContent = '—';
+    elId.textContent   = '—';
+    if (elDirBadge) elDirBadge.style.display = 'none';
+    return;
+  }
+
+  // Restore rows if they were hidden
+  if (elNoData)    { elNoData.style.display = 'none'; }
+  if (elEntryRows) { elEntryRows.style.display = ''; }
+  if (elExitRows)  { elExitRows.style.display = ''; }
+  if (elRiskRows)  { elRiskRows.style.display = ''; }
+
+  // ── HEADER ────────────────────────────────────────────────────────
+  elName.textContent = safe(schema.name, '(unnamed strategy)');
+  elId.textContent   = safe(schema.id, '—');
+
+  // Direction badge (from active_strategy.direction, not schema)
+  const direction = strat.direction ? String(strat.direction).toUpperCase() : null;
+  if (direction && elDirBadge) {
+    elDirBadge.textContent   = direction;
+    elDirBadge.style.display = 'inline-block';
+    if (direction === 'LONG') {
+      elDirBadge.style.color       = 'var(--green)';
+      elDirBadge.style.borderColor = 'var(--green)';
+    } else if (direction === 'SHORT') {
+      elDirBadge.style.color       = 'var(--red)';
+      elDirBadge.style.borderColor = 'var(--red)';
+    } else {
+      elDirBadge.style.color       = 'var(--subtext)';
+      elDirBadge.style.borderColor = 'var(--border)';
+    }
+  } else if (elDirBadge) {
+    elDirBadge.style.display = 'none';
+  }
+
+  // ── ENTRY ─────────────────────────────────────────────────────────
+  const entry = schema.entry || {};
+
+  // Primary indicator: "EMA(20)"
+  const pi = schema.primary_indicator || {};
+  const piType   = safe(pi.type, null);
+  const piParams = pi.params || {};
+  let piStr = '—';
+  if (piType) {
+    const paramParts = Object.entries(piParams).map(([k, v]) => `${k.toUpperCase()}:${v}`);
+    piStr = paramParts.length
+      ? piType + '(' + paramParts.join(', ') + ')'
+      : piType;
+  }
+  elPrimary.textContent = piStr;
+
+  // Confirmation indicator: "ATR(14)"
+  const ci = schema.confirmation_indicator || {};
+  const ciType   = safe(ci.type, null);
+  const ciParams = ci.params || {};
+  let ciStr = '—';
+  if (ciType) {
+    const paramParts = Object.entries(ciParams).map(([k, v]) => `${k.toUpperCase()}:${v}`);
+    ciStr = paramParts.length
+      ? ciType + '(' + paramParts.join(', ') + ')'
+      : ciType;
+  }
+  elConfirm.textContent = ciStr;
+
+  // Entry trigger
+  elTrigger.textContent = entry.trigger ? humanLabel(entry.trigger) : '—';
+
+  // Entry filter
+  elFilter.textContent = entry.filter ? humanLabel(entry.filter) : '—';
+
+  // ── EXIT ──────────────────────────────────────────────────────────
+  const exit = schema.exit || {};
+
+  // Stop loss: "1.5× ATR" | "X% fixed" | fallback raw
+  const sl = exit.stop_loss || {};
+  let slStr = '—';
+  if (sl.type === 'atr_multiple' && sl.value != null) {
+    slStr = sl.value + '\u00d7 ATR';
+  } else if (sl.type === 'fixed_percent' && sl.value != null) {
+    slStr = sl.value + '% fixed';
+  } else if (sl.type === 'fixed_points' && sl.value != null) {
+    slStr = sl.value + ' pts fixed';
+  } else if (sl.type && sl.value != null) {
+    slStr = sl.value + ' (' + sl.type.replace(/_/g, ' ') + ')';
+  } else if (sl.type) {
+    slStr = sl.type.replace(/_/g, ' ');
+  }
+  elStop.textContent = slStr;
+
+  // Take profit: "2.5R" (r_multiple) | "X× ATR" | fallback raw
+  const tp = exit.take_profit || {};
+  let tpStr = '—';
+  if (tp.type === 'r_multiple' && tp.value != null) {
+    tpStr = tp.value + 'R';
+  } else if (tp.type === 'atr_multiple' && tp.value != null) {
+    tpStr = tp.value + '\u00d7 ATR';
+  } else if (tp.type === 'fixed_percent' && tp.value != null) {
+    tpStr = tp.value + '% fixed';
+  } else if (tp.type && tp.value != null) {
+    tpStr = tp.value + ' (' + tp.type.replace(/_/g, ' ') + ')';
+  } else if (tp.type) {
+    tpStr = tp.type.replace(/_/g, ' ');
+  }
+  elTP.textContent = tpStr;
+
+  // Trailing stop: "2.0× ATR" | "X%"
+  let trailStr = '—';
+  if (exit.trailing_stop_atr != null) {
+    trailStr = exit.trailing_stop_atr + '\u00d7 ATR';
+  } else if (exit.trailing_stop_pct != null) {
+    trailStr = exit.trailing_stop_pct + '% trail';
+  } else if (exit.trailing_stop != null) {
+    trailStr = String(exit.trailing_stop);
+  }
+  elTrail.textContent = trailStr;
+
+  // Time exit: "72 bars" | "X candles" | "—"
+  let timeExitStr = '—';
+  if (exit.time_exit_bars != null) {
+    timeExitStr = exit.time_exit_bars + ' bars';
+  } else if (exit.time_exit_candles != null) {
+    timeExitStr = exit.time_exit_candles + ' candles';
+  } else if (exit.time_exit_hours != null) {
+    timeExitStr = exit.time_exit_hours + 'h';
+  }
+  elTimeExit.textContent = timeExitStr;
+
+  // ── RISK & META ───────────────────────────────────────────────────
+  const risk = schema.risk || {};
+  const meta = schema.metadata || {};
+
+  elMaxPos.textContent = risk.max_open_positions != null
+    ? String(risk.max_open_positions)
+    : '—';
+
+  elTimeframe.textContent = safe(meta.timeframe, '—');
+
+  elMarket.textContent = meta.market_type
+    ? humanMarket(meta.market_type)
+    : '—';
+
+  // Direction text (full label beside the badge)
+  if (direction) {
+    elDirection.textContent = direction;
+    elDirection.style.color = direction === 'LONG'
+      ? 'var(--green)'
+      : direction === 'SHORT'
+        ? 'var(--red)'
+        : 'var(--text)';
+  } else {
+    elDirection.textContent = '—';
+    elDirection.style.color = 'var(--subtext)';
+  }
+}
+</script>
+<!-- ── END PATCH SCRIPT ── -->

@@ -1,0 +1,455 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  WIDGET-04: SLIPPAGE AUDIT                                          ║
+  ║  File: dashboard-patches/widget-04-slippage-audit.html              ║
+  ║                                                                      ║
+  ║  INTEGRATION INSTRUCTIONS                                           ║
+  ║  ─────────────────────────────────────────────────────────────────  ║
+  ║  1. HTML — Insert the <div id="slippage-audit-widget"> block        ║
+  ║     inside index.html at the end of Page 2 (Trade History),         ║
+  ║     just before the closing </div> of #an-page-2 (line ~1119).      ║
+  ║                                                                      ║
+  ║     Paste immediately after:                                         ║
+  ║       <div id="an-trades" ...></div>                                ║
+  ║     And before:                                                      ║
+  ║       </div>  <!-- end #an-page-2 -->                               ║
+  ║                                                                      ║
+  ║  2. CSS — Paste the <style> block into the dashboard <style> tag    ║
+  ║     (anywhere in the existing block is fine).                        ║
+  ║                                                                      ║
+  ║  3. JS — Paste the <script> block at the bottom of index.html       ║
+  ║     before the closing </script> of the main script tag, OR add     ║
+  ║     it as a separate <script> tag just before </body>.              ║
+  ║                                                                      ║
+  ║  4. Call site — In the existing polling/update loop that fetches    ║
+  ║     /api/trading/accounts, add:                                      ║
+  ║       if (data.virtual) updateSlippageAuditWidget(data.virtual);    ║
+  ║                                                                      ║
+  ║     Typical location: the fetch callback inside anRefresh() or      ║
+  ║     wherever accounts data is processed (search for "fill_tracking" ║
+  ║     or "virtual" in the JS section to confirm the exact spot).      ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
+
+<!-- ═══════════════════════════ STYLES ═══════════════════════════════ -->
+<style>
+  /* ── Slippage Audit Widget ── */
+  #slippage-audit-widget {
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 5px;
+  }
+
+  #slippage-audit-widget .sau-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  #slippage-audit-widget .sau-title {
+    font-size: 7px;
+    color: var(--subtext);
+    letter-spacing: 1px;
+  }
+
+  #slippage-audit-widget .sau-status {
+    font-size: 6px;
+    padding: 1px 4px;
+    border: 1px solid var(--border);
+    color: var(--subtext);
+  }
+
+  #slippage-audit-widget .sau-status.excellent {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  #slippage-audit-widget .sau-status.good {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  #slippage-audit-widget .sau-status.poor {
+    border-color: var(--red);
+    color: var(--red);
+    animation: sau-blink 1.4s step-end infinite;
+  }
+
+  @keyframes sau-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  #slippage-audit-widget .sau-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3px;
+    margin-bottom: 5px;
+  }
+
+  #slippage-audit-widget .sau-stat {
+    background: var(--overlay);
+    border: 1px solid var(--border);
+    padding: 3px 4px;
+    text-align: center;
+  }
+
+  #slippage-audit-widget .sau-stat-label {
+    font-size: 5px;
+    color: var(--subtext);
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  #slippage-audit-widget .sau-stat-value {
+    font-size: 8px;
+    color: var(--teal);
+  }
+
+  #slippage-audit-widget .sau-stat-value.warn {
+    color: var(--yellow);
+  }
+
+  #slippage-audit-widget .sau-stat-value.danger {
+    color: var(--red);
+  }
+
+  /* ── Sparkline ── */
+  #slippage-audit-widget .sau-spark-label {
+    font-size: 6px;
+    color: var(--subtext);
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  #slippage-audit-widget .sau-sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 28px;
+    background: #0d0d1a;
+    border: 1px solid var(--overlay);
+    padding: 2px 3px 2px 3px;
+    box-sizing: border-box;
+  }
+
+  #slippage-audit-widget .sau-bar {
+    flex: 1;
+    min-width: 4px;
+    max-width: 14px;
+    /* height set inline by JS */
+    position: relative;
+    cursor: default;
+  }
+
+  #slippage-audit-widget .sau-bar.green  { background: var(--green); }
+  #slippage-audit-widget .sau-bar.yellow { background: var(--yellow); }
+  #slippage-audit-widget .sau-bar.red    { background: var(--red); }
+
+  #slippage-audit-widget .sau-empty {
+    font-size: 6px;
+    color: var(--subtext);
+    text-align: center;
+    padding: 6px 0;
+    letter-spacing: 1px;
+  }
+
+  #slippage-audit-widget .sau-spark-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1px;
+  }
+
+  #slippage-audit-widget .sau-spark-axis span {
+    font-size: 5px;
+    color: var(--subtext);
+  }
+</style>
+
+<!-- ═══════════════════════════ HTML ════════════════════════════════ -->
+<!--
+  Paste this block inside #an-page-2, after #an-trades:
+-->
+<div id="slippage-audit-widget">
+  <!-- Header row: title + fill quality badge -->
+  <div class="sau-header">
+    <span class="sau-title">FILL AUDIT</span>
+    <span class="sau-status" id="sau-fill-quality">FILL QUALITY: —</span>
+  </div>
+
+  <!-- Three stat cells: entry slippage / exit slippage / cost est. -->
+  <div class="sau-stats">
+    <div class="sau-stat">
+      <div class="sau-stat-label">AVG ENTRY BPS</div>
+      <div class="sau-stat-value" id="sau-entry-bps">—</div>
+    </div>
+    <div class="sau-stat">
+      <div class="sau-stat-label">AVG EXIT BPS</div>
+      <div class="sau-stat-value" id="sau-exit-bps">—</div>
+    </div>
+    <div class="sau-stat">
+      <div class="sau-stat-label">EST. SLIP COST</div>
+      <div class="sau-stat-value" id="sau-cost-usd">—</div>
+    </div>
+  </div>
+
+  <!-- Sparkline: last 10 fills -->
+  <div class="sau-spark-label">LAST 10 FILLS (bps) &nbsp;▸&nbsp; <span style="color:var(--green);">■</span>&lt;3 &nbsp;<span style="color:var(--yellow);">■</span>3–7 &nbsp;<span style="color:var(--red);">■</span>&gt;7</div>
+  <div class="sau-sparkline" id="sau-sparkline">
+    <div class="sau-empty" style="width:100%;">NO DATA</div>
+  </div>
+  <div class="sau-spark-axis">
+    <span>OLDEST</span>
+    <span>0 ──── 10 bps</span>
+    <span>NEWEST</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ JAVASCRIPT ══════════════════════════ -->
+<script>
+/**
+ * updateSlippageAuditWidget
+ *
+ * Accepts the `virtual` object returned by /api/trading/accounts.
+ * Expected shape:
+ *   {
+ *     fill_tracking: [
+ *       {
+ *         type: "entry" | "exit",
+ *         symbol: string,
+ *         expected_price: number,
+ *         actual_fill: number,
+ *         slippage_bps: number,
+ *         timestamp: string  // ISO-8601
+ *       },
+ *       ...  // up to 20 entries, newest last
+ *     ],
+ *     // optional — used to estimate cost
+ *     balance: number          // account value used as proxy for avg position
+ *   }
+ *
+ * Call from your existing accounts fetch, e.g.:
+ *   if (data.virtual) updateSlippageAuditWidget(data.virtual);
+ */
+(function () {
+  /**
+   * Classify a slippage_bps value into a CSS class name.
+   * @param {number} bps
+   * @returns {'green'|'yellow'|'red'}
+   */
+  function _bpsColor(bps) {
+    if (bps < 3)  return 'green';
+    if (bps <= 7) return 'yellow';
+    return 'red';
+  }
+
+  /**
+   * Compute average of a numeric array, or null if empty.
+   * @param {number[]} arr
+   * @returns {number|null}
+   */
+  function _avg(arr) {
+    if (!arr.length) return null;
+    return arr.reduce(function (s, v) { return s + v; }, 0) / arr.length;
+  }
+
+  /**
+   * Format a bps number for display: "1.4 bps" or "—" if null.
+   * @param {number|null} v
+   * @returns {string}
+   */
+  function _fmtBps(v) {
+    if (v === null) return '—';
+    return v.toFixed(1);
+  }
+
+  /**
+   * Format a USD cost: "$12.30" or "—" if null.
+   * @param {number|null} v
+   * @returns {string}
+   */
+  function _fmtUsd(v) {
+    if (v === null) return '—';
+    if (Math.abs(v) >= 1000) return '$' + (v / 1000).toFixed(1) + 'k';
+    return '$' + v.toFixed(2);
+  }
+
+  /**
+   * Apply a colour class + warn/danger modifier to a stat-value element.
+   * @param {HTMLElement} el
+   * @param {number|null} bps
+   */
+  function _applyBpsStyle(el, bps) {
+    el.classList.remove('warn', 'danger');
+    if (bps === null) return;
+    if (bps > 7)      el.classList.add('danger');
+    else if (bps > 3) el.classList.add('warn');
+  }
+
+  /**
+   * Determine fill quality tier from overall average bps.
+   * @param {number|null} avgBps
+   * @returns {{ label: string, cls: string }}
+   */
+  function _fillQuality(avgBps) {
+    if (avgBps === null)  return { label: 'FILL QUALITY: —',       cls: '' };
+    if (avgBps < 3)       return { label: 'FILL QUALITY: EXCELLENT', cls: 'excellent' };
+    if (avgBps <= 7)      return { label: 'FILL QUALITY: GOOD',      cls: 'good' };
+    return                       { label: 'FILL QUALITY: POOR',      cls: 'poor' };
+  }
+
+  /**
+   * Render sparkline bars into #sau-sparkline.
+   * Shows up to 10 most-recent fills.
+   * Bar height is proportional: slippage_bps / 10 × inner height.
+   * @param {Array} fills  — full fill_tracking array (newest last assumed)
+   */
+  function _renderSparkline(fills) {
+    var container = document.getElementById('sau-sparkline');
+    if (!container) return;
+
+    // Take last 10
+    var slice = fills.slice(-10);
+
+    if (!slice.length) {
+      container.innerHTML = '<div class="sau-empty" style="width:100%;">NO DATA</div>';
+      return;
+    }
+
+    // Inner drawable height in px (container is 28px, 2px padding top+bottom = 24px usable)
+    var MAX_H = 24;
+    var MAX_BPS = 10;
+
+    var html = '';
+    for (var i = 0; i < slice.length; i++) {
+      var f   = slice[i];
+      var bps = typeof f.slippage_bps === 'number' ? f.slippage_bps : 0;
+      var pct = Math.min(bps / MAX_BPS, 1);
+      var h   = Math.max(Math.round(pct * MAX_H), 2);  // minimum 2px so bar is visible
+      var cls = _bpsColor(bps);
+
+      // Tooltip via title attribute (works in all browsers, no JS needed)
+      var ts     = f.timestamp ? f.timestamp.replace('T', ' ').replace('Z', '') : '?';
+      var sym    = f.symbol    || '?';
+      var ftype  = f.type      || '?';
+      var title  = sym + ' (' + ftype + ')  ' + bps.toFixed(1) + ' bps @ ' + ts;
+
+      html += '<div class="sau-bar ' + cls + '" style="height:' + h + 'px;" title="' + title + '"></div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  /**
+   * Main widget update function — attach to window so the dashboard can call it.
+   *
+   * @param {Object} virtualAccount  — the `virtual` key from /api/trading/accounts
+   */
+  window.updateSlippageAuditWidget = function (virtualAccount) {
+    // ── Guard ──────────────────────────────────────────────────────────
+    var fills = (virtualAccount && Array.isArray(virtualAccount.fill_tracking))
+      ? virtualAccount.fill_tracking
+      : [];
+
+    // ── Split by type ──────────────────────────────────────────────────
+    var entryBpsArr = [];
+    var exitBpsArr  = [];
+    var allBpsArr   = [];
+
+    for (var i = 0; i < fills.length; i++) {
+      var f = fills[i];
+      var b = typeof f.slippage_bps === 'number' ? f.slippage_bps : null;
+      if (b === null) continue;
+
+      allBpsArr.push(b);
+      if (f.type === 'exit') {
+        exitBpsArr.push(b);
+      } else {
+        // treat "entry" and any unknown type as entry
+        entryBpsArr.push(b);
+      }
+    }
+
+    var avgEntry = _avg(entryBpsArr);
+    var avgExit  = _avg(exitBpsArr);
+    var avgAll   = _avg(allBpsArr);
+
+    // ── Cost estimate ──────────────────────────────────────────────────
+    // Formula: (avgAll_bps / 10000) × avg_position_value × n_fills
+    // avg_position_value proxy: use balance * 0.02 (2% risk per trade default)
+    // or fall back to $5000 if balance unavailable.
+    var costUsd = null;
+    if (avgAll !== null && fills.length > 0) {
+      var balance = (virtualAccount && typeof virtualAccount.balance === 'number')
+        ? virtualAccount.balance
+        : 0;
+      var avgPositionValue = balance > 0 ? balance * 0.02 : 5000;
+      costUsd = (avgAll / 10000) * avgPositionValue * fills.length;
+    }
+
+    // ── Update DOM ─────────────────────────────────────────────────────
+    var elEntry  = document.getElementById('sau-entry-bps');
+    var elExit   = document.getElementById('sau-exit-bps');
+    var elCost   = document.getElementById('sau-cost-usd');
+    var elStatus = document.getElementById('sau-fill-quality');
+
+    if (elEntry) {
+      elEntry.textContent = _fmtBps(avgEntry);
+      _applyBpsStyle(elEntry, avgEntry);
+    }
+
+    if (elExit) {
+      elExit.textContent = _fmtBps(avgExit);
+      _applyBpsStyle(elExit, avgExit);
+    }
+
+    if (elCost) {
+      elCost.textContent = _fmtUsd(costUsd);
+      // Cost warning thresholds (arbitrary; adjust to taste)
+      elCost.classList.remove('warn', 'danger');
+      if (costUsd !== null) {
+        if (costUsd > 500) elCost.classList.add('danger');
+        else if (costUsd > 100) elCost.classList.add('warn');
+      }
+    }
+
+    if (elStatus) {
+      var q = _fillQuality(avgAll);
+      elStatus.textContent = q.label;
+      elStatus.className   = 'sau-status ' + q.cls;
+    }
+
+    // ── Sparkline ─────────────────────────────────────────────────────
+    _renderSparkline(fills);
+  };
+
+  // ── Self-test with demo data in standalone preview mode ──────────────
+  // This block only fires when the file is opened directly as a standalone
+  // HTML page (no parent dashboard context). Remove or guard with a flag
+  // if you don't want demo data in production.
+  if (typeof window._slippageDemoSuppressed === 'undefined' &&
+      document.getElementById('slippage-audit-widget')) {
+    // Check we are NOT inside an iframe / the real dashboard
+    // (the real dashboard will call updateSlippageAuditWidget itself)
+    if (window.self === window.top) {
+      var _demo = {
+        balance: 12500,
+        fill_tracking: [
+          { type:'entry', symbol:'SPX500', expected_price:5420.50, actual_fill:5421.04, slippage_bps:1.0,  timestamp:'2026-03-27T13:00:00Z' },
+          { type:'exit',  symbol:'SPX500', expected_price:5435.00, actual_fill:5434.12, slippage_bps:1.6,  timestamp:'2026-03-27T13:45:00Z' },
+          { type:'entry', symbol:'NAS100', expected_price:18700,   actual_fill:18703.5, slippage_bps:1.9,  timestamp:'2026-03-27T14:00:00Z' },
+          { type:'exit',  symbol:'NAS100', expected_price:18750,   actual_fill:18743.2, slippage_bps:3.6,  timestamp:'2026-03-27T14:30:00Z' },
+          { type:'entry', symbol:'SPX500', expected_price:5440.00, actual_fill:5441.80, slippage_bps:3.3,  timestamp:'2026-03-27T14:32:00Z' },
+          { type:'entry', symbol:'GER40',  expected_price:18200,   actual_fill:18207.3, slippage_bps:4.0,  timestamp:'2026-03-27T15:00:00Z' },
+          { type:'exit',  symbol:'GER40',  expected_price:18220,   actual_fill:18211.0, slippage_bps:4.9,  timestamp:'2026-03-27T15:20:00Z' },
+          { type:'entry', symbol:'SPX500', expected_price:5450.00, actual_fill:5454.4,  slippage_bps:8.1,  timestamp:'2026-03-27T15:45:00Z' },
+          { type:'exit',  symbol:'SPX500', expected_price:5460.00, actual_fill:5452.6,  slippage_bps:13.5, timestamp:'2026-03-27T16:00:00Z' },
+          { type:'entry', symbol:'NAS100', expected_price:18800,   actual_fill:18801.5, slippage_bps:0.8,  timestamp:'2026-03-27T16:15:00Z' }
+        ]
+      };
+      setTimeout(function () { window.updateSlippageAuditWidget(_demo); }, 100);
+    }
+  }
+})();
+</script>

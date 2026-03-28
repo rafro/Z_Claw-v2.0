@@ -1,0 +1,175 @@
+<!--
+  ============================================================
+  WIDGET-02: MC Risk Classification — Page 1 Enhancement
+  ============================================================
+
+  INTEGRATION INSTRUCTIONS
+  ─────────────────────────
+
+  STEP 1 — HTML: Inside `<div id="an-page-1">`, paste the
+  block marked "HTML PATCH" immediately BEFORE the closing
+  </div> tag (after the "THEORETICAL EV" div-row).
+
+  Target location in index.html (~line 1105):
+    <div class="div-row" style="font-size:6px;color:var(--subtext);">THEORETICAL EV: ...
+    ← INSERT HERE BEFORE the next </div>
+
+  STEP 2 — JAVASCRIPT: Paste the JS block (marked "JS PATCH")
+  inside the existing trading-cycle update handler, after the
+  line that sets `an-emp-ev` (~line 1976 in index.html):
+    document.getElementById('an-emp-ev').textContent = ...;
+    ← CALL updateMcRiskDisplay(s); HERE
+
+  STEP 3 — No new CSS required. All styles use existing
+  CSS variables (--teal, --warn/--yellow, --red, --subtext,
+  --text, --border, --surface) already defined in :root.
+
+  ============================================================
+-->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HTML PATCH — paste into #an-page-1 before closing </div> -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div style="border-top:1px solid var(--border);margin:3px 0;"></div>
+
+<!-- MC Risk Classification -->
+<div class="div-row">
+  MC RISK CLASS:
+  <strong
+    id="an-mc-risk-class"
+    style="color:var(--subtext);"
+  >—</strong>
+</div>
+
+<!-- Prop Firm 8% Rule Compliance -->
+<div class="div-row">
+  8% RULE:
+  <strong
+    id="an-prop-firm-8pct"
+    style="color:var(--subtext);"
+  >—</strong>
+</div>
+
+<!-- MC P95 Drawdown (may already exist as an-mc-dd; this is
+     the dedicated risk-section copy with full label) -->
+<div class="div-row">
+  MC P95 DD:
+  <strong
+    id="an-mc-p95-dd-risk"
+    style="color:var(--red);"
+  >—</strong>%
+</div>
+
+<!-- OOS Penalty Multiplier -->
+<div class="div-row" style="font-size:8px;color:var(--subtext);">
+  OOS PENALTY:
+  <strong
+    id="an-oos-penalty"
+    style="color:var(--subtext);"
+  >—</strong>
+</div>
+
+<!-- Best Risk Level -->
+<div class="div-row" style="font-size:8px;color:var(--subtext);">
+  BEST RISK:
+  <strong
+    id="an-best-risk-pct"
+    style="color:var(--teal);"
+  >—</strong>%
+</div>
+
+<!-- END HTML PATCH -->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- JS PATCH — paste as a <script> block or inline function -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+/**
+ * updateMcRiskDisplay(strategy)
+ *
+ * Updates the MC risk classification widget rows on Page 1.
+ *
+ * @param {Object} strategy  — active_strategy object from /api/trading/cycle
+ *   Expected fields:
+ *     mc_p95_dd      {number}   — P95 max drawdown from Monte Carlo (%)
+ *     mc_risk_class  {string}   — "Low" | "Medium" | "High"
+ *     prop_firm_8pct {boolean}  — true = PASS, false = FAIL
+ *     oos_penalty    {number}   — score multiplier, e.g. 0.92
+ *     best_risk_pct  {number}   — recommended position size (%)
+ */
+function updateMcRiskDisplay(strategy) {
+  if (!strategy) return;
+
+  // ── MC Risk Class ────────────────────────────────────────
+  const riskClassEl = document.getElementById('an-mc-risk-class');
+  if (riskClassEl) {
+    const rc = (strategy.mc_risk_class || '').trim();
+    if (rc) {
+      riskClassEl.textContent = rc.toUpperCase();
+      // Color map: Low=teal, Medium=orange(--yellow), High=red
+      const colorMap = {
+        'low':    'var(--teal)',
+        'medium': 'var(--yellow)',
+        'high':   'var(--red)'
+      };
+      riskClassEl.style.color = colorMap[rc.toLowerCase()] || 'var(--subtext)';
+    } else {
+      riskClassEl.textContent = '—';
+      riskClassEl.style.color = 'var(--subtext)';
+    }
+  }
+
+  // ── Prop Firm 8% Rule ────────────────────────────────────
+  const propFirmEl = document.getElementById('an-prop-firm-8pct');
+  if (propFirmEl) {
+    if (strategy.prop_firm_8pct == null) {
+      propFirmEl.textContent = '—';
+      propFirmEl.style.color = 'var(--subtext)';
+    } else if (strategy.prop_firm_8pct) {
+      propFirmEl.textContent = '✓ PASS';
+      propFirmEl.style.color = 'var(--teal)';
+    } else {
+      propFirmEl.textContent = '✗ FAIL';
+      propFirmEl.style.color = 'var(--red)';
+    }
+  }
+
+  // ── MC P95 Drawdown (risk section copy) ─────────────────
+  const mcP95El = document.getElementById('an-mc-p95-dd-risk');
+  if (mcP95El) {
+    mcP95El.textContent = strategy.mc_p95_dd != null
+      ? strategy.mc_p95_dd.toFixed(1)
+      : '—';
+  }
+
+  // ── OOS Penalty ──────────────────────────────────────────
+  const oosPenaltyEl = document.getElementById('an-oos-penalty');
+  if (oosPenaltyEl) {
+    if (strategy.oos_penalty != null) {
+      const p = parseFloat(strategy.oos_penalty);
+      oosPenaltyEl.textContent = p.toFixed(2) + '× score';
+      // Visually flag severe penalties (< 0.80)
+      oosPenaltyEl.style.color = p >= 0.90
+        ? 'var(--teal)'
+        : p >= 0.80
+          ? 'var(--yellow)'
+          : 'var(--red)';
+    } else {
+      oosPenaltyEl.textContent = '—';
+      oosPenaltyEl.style.color = 'var(--subtext)';
+    }
+  }
+
+  // ── Best Risk Level ───────────────────────────────────────
+  const bestRiskEl = document.getElementById('an-best-risk-pct');
+  if (bestRiskEl) {
+    bestRiskEl.textContent = strategy.best_risk_pct != null
+      ? parseFloat(strategy.best_risk_pct).toFixed(1)
+      : '—';
+  }
+}
+</script>
+<!-- END JS PATCH -->

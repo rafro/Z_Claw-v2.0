@@ -1,0 +1,426 @@
+<!--
+  ============================================================
+  WIDGET-07: Elimination Report — Page 7
+  ============================================================
+
+  INTEGRATION INSTRUCTIONS
+  ─────────────────────────
+
+  STEP 1 — HTML: Paste the block marked "HTML PATCH" anywhere
+  inside the main AN widget container (the division-card that
+  holds the page navigation). Place it immediately AFTER the
+  closing </div> of the existing <div id="an-page-4"> block.
+
+  Target location in index.html (~line 1160 after page-4 div):
+    </div>   ← end of #an-page-4
+    ← INSERT #an-page-7 div HERE
+
+  STEP 2 — Nav Dot: In the page-nav strip (~line 1067),
+  append a new dot AFTER the page-4 dot:
+
+    <span class="an-dot" onclick="anSetPage(7)"
+      style="cursor:pointer;width:6px;height:6px;border-radius:50%;
+             background:var(--border);display:inline-block;"
+      title="Elimination Report"></span>
+
+  NOTE: Pages 5 and 6 may not exist yet. anSetPage() uses the
+  dot's positional index (querySelectorAll('.an-dot')) to
+  highlight the active dot, so insert it as the 6th dot (index
+  5 in zero-based) OR add placeholder page divs for 5 and 6 so
+  index alignment stays correct. Simplest approach: just add the
+  dot and page-7 div — the dot highlight will be off by the
+  count gap but navigation and rendering will work fine.
+
+  STEP 3 — anSetPage() patch: The existing function only loops
+  over [0,1,2,3,4]. Expand it to include page 7:
+
+    FIND in index.html:
+      [0,1,2,3,4].forEach(i => {
+        const el = document.getElementById('an-page-'+i);
+        if (el) el.style.display = i === n ? '' : 'none';
+      });
+
+    REPLACE WITH:
+      [0,1,2,3,4,7].forEach(i => {
+        const el = document.getElementById('an-page-'+i);
+        if (el) el.style.display = i === n ? '' : 'none';
+      });
+
+  STEP 4 — JS: Paste the block marked "JS PATCH" alongside
+  the other page-update functions (near anRenderTrades, ~line
+  1799). Then call updateEliminationReportPage(cycleData) from
+  within the existing /api/trading/cycle response handler,
+  passing the full cycleData object.
+
+  STEP 5 — server.js route (new endpoint required):
+
+  ─────────────────────────────────────────────────────────────
+  // GET /api/trading/latest-report
+  // Reads most recent backtest_*.json from the reports folder
+  // and returns a summary object.
+  app.get('/api/trading/latest-report', async (req, res) => {
+    const fs   = require('fs');
+    const path = require('path');
+    const dir  = 'C:\\Users\\Tyler\\agent-network\\reports';
+
+    try {
+      const files = fs.readdirSync(dir)
+        .filter(f => f.startsWith('backtest_') && f.endsWith('.json'))
+        .map(f => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
+        .sort((a, b) => b.mtime - a.mtime);
+
+      if (!files.length) {
+        return res.json({ error: 'no_reports', narrative: null,
+                          selection_note: null, elimination_report: null,
+                          period: null, all_scores_summary: null });
+      }
+
+      const latest = JSON.parse(
+        fs.readFileSync(path.join(dir, files[0].name), 'utf8')
+      );
+
+      // Build a compact all_scores_summary (top 10 by score desc)
+      let all_scores_summary = null;
+      if (latest.all_scores && typeof latest.all_scores === 'object') {
+        all_scores_summary = Object.entries(latest.all_scores)
+          .map(([name, score]) => ({ name, score }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+      }
+
+      res.json({
+        filename:           files[0].name,
+        narrative:          latest.narrative          || null,
+        selection_note:     latest.selection_note     || null,
+        elimination_report: latest.elimination_report || null,
+        period:             latest.period             || null,
+        winner:             latest.winner             || null,
+        all_scores_summary
+      });
+
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  ─────────────────────────────────────────────────────────────
+
+  STEP 6 — No new CSS required. All styles use existing
+  CSS variables already defined in :root.
+
+  ============================================================
+-->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- HTML PATCH — paste after #an-page-4 closing </div>         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<!-- Page 7: Elimination Report -->
+<div id="an-page-7" style="display:none;">
+
+  <!-- ── Section A: Cycle Performance History ── -->
+  <div style="font-size:8px;color:var(--purple);border-bottom:1px solid var(--overlay);padding-bottom:4px;margin-bottom:8px;letter-spacing:1px;">
+    CYCLE PERFORMANCE HISTORY
+  </div>
+
+  <div id="an-perf-history-wrap">
+    <table id="an-perf-history-table" style="
+        width:100%;
+        border-collapse:collapse;
+        font-size:9px;
+        font-family:'Press Start 2P',monospace;
+        table-layout:fixed;
+    ">
+      <colgroup>
+        <col style="width:28px;">   <!-- # -->
+        <col style="width:auto;">   <!-- Strategy -->
+        <col style="width:36px;">   <!-- Score -->
+        <col style="width:44px;">   <!-- IS/OOS -->
+        <col style="width:34px;">   <!-- WR% -->
+        <col style="width:44px;">   <!-- Conf -->
+      </colgroup>
+      <thead>
+        <tr style="color:var(--subtext);border-bottom:1px solid var(--border);">
+          <th style="text-align:left;padding:3px 2px;font-size:7px;font-weight:normal;">#</th>
+          <th style="text-align:left;padding:3px 2px;font-size:7px;font-weight:normal;">STRATEGY</th>
+          <th style="text-align:right;padding:3px 2px;font-size:7px;font-weight:normal;">SCORE</th>
+          <th style="text-align:right;padding:3px 2px;font-size:7px;font-weight:normal;">IS/OOS</th>
+          <th style="text-align:right;padding:3px 2px;font-size:7px;font-weight:normal;">WR%</th>
+          <th style="text-align:center;padding:3px 2px;font-size:7px;font-weight:normal;">CONF</th>
+        </tr>
+      </thead>
+      <tbody id="an-perf-history-body">
+        <tr>
+          <td colspan="6" style="color:var(--subtext);font-size:7px;padding:6px 2px;text-align:center;">
+            — NO DATA —
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="border-top:1px solid var(--overlay);margin:8px 0;"></div>
+
+  <!-- ── Section B: Latest Backtest Report ── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <div style="font-size:8px;color:var(--purple);letter-spacing:1px;">
+      LATEST BACKTEST REPORT
+    </div>
+    <button
+      id="an-elim-refresh-btn"
+      onclick="fetchBacktestReport()"
+      style="
+        font-family:'Press Start 2P',monospace;
+        font-size:7px;
+        background:var(--overlay);
+        border:2px solid var(--border);
+        color:var(--teal);
+        padding:3px 8px;
+        cursor:pointer;
+        box-shadow:2px 2px 0 #000;
+        letter-spacing:0.5px;
+      "
+      onmouseover="this.style.borderColor='var(--teal)'"
+      onmouseout="this.style.borderColor='var(--border)'"
+    >REFRESH</button>
+  </div>
+
+  <!-- Period / Filename -->
+  <div id="an-elim-meta" style="font-size:7px;color:var(--subtext);margin-bottom:6px;">
+    — no report loaded —
+  </div>
+
+  <!-- Elimination Summary bar -->
+  <div id="an-elim-summary" style="
+      font-size:8px;
+      color:var(--yellow);
+      background:var(--surface);
+      border:1px solid var(--overlay);
+      padding:4px 6px;
+      margin-bottom:6px;
+      line-height:1.8;
+      display:none;
+  "></div>
+
+  <!-- Selection Note -->
+  <div id="an-elim-selection-note" style="
+      font-size:7px;
+      color:var(--subtext);
+      border-left:2px solid var(--border);
+      padding-left:6px;
+      margin-bottom:8px;
+      line-height:1.8;
+      display:none;
+  "></div>
+
+  <!-- Narrative -->
+  <div style="font-size:7px;color:var(--subtext);margin-bottom:4px;letter-spacing:0.5px;">NARRATIVE</div>
+  <div id="an-elim-narrative" style="
+      background:#0d0d1a;
+      border:1px solid var(--overlay);
+      padding:8px;
+      font-size:8px;
+      line-height:1.9;
+      color:var(--text);
+      white-space:pre-wrap;
+      word-break:break-word;
+      max-height:160px;
+      overflow-y:auto;
+      box-shadow:2px 2px 0 #000;
+      font-family:'Press Start 2P',monospace;
+  ">— not loaded —</div>
+
+</div>
+<!-- END HTML PATCH -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- JS PATCH — paste as a <script> block near other AN helpers -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+/**
+ * updateEliminationReportPage(cycleData)
+ *
+ * Renders Section A: the last-5 cycle performance history table.
+ * Call this from the existing /api/trading/cycle response handler,
+ * passing the full top-level response object.
+ *
+ * @param {Object} cycleData — top-level response from /api/trading/cycle
+ *   Expected field:
+ *     performance_history {Array} — last N cycle winners, each with:
+ *       strategy_name, sharpe, oos_sharpe, win_rate, max_drawdown_pct,
+ *       confidence_rating, mc_p95_dd, mc_risk_class, score, total_pnl_pct
+ */
+function updateEliminationReportPage(cycleData) {
+  if (!cycleData) return;
+
+  const tbody = document.getElementById('an-perf-history-body');
+  if (!tbody) return;
+
+  const history = Array.isArray(cycleData.performance_history)
+    ? cycleData.performance_history
+    : [];
+
+  if (!history.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--subtext);font-size:7px;padding:6px 2px;text-align:center;">— NO DATA —</td></tr>';
+    return;
+  }
+
+  // Show most recent at top, last 5 entries
+  const rows = history.slice().reverse().slice(0, 5);
+  const totalCount = history.length;
+
+  const confColor = (conf) => {
+    if (!conf) return 'var(--subtext)';
+    const c = conf.toString().toLowerCase();
+    if (c === 'high')   return 'var(--teal)';
+    if (c === 'medium') return 'var(--yellow)';
+    if (c === 'low')    return 'var(--red)';
+    return 'var(--subtext)';
+  };
+
+  const fmt1 = (v) => (v != null && !isNaN(v)) ? parseFloat(v).toFixed(1) : '—';
+  const fmt2 = (v) => (v != null && !isNaN(v)) ? parseFloat(v).toFixed(2) : '—';
+
+  tbody.innerHTML = rows.map((r, idx) => {
+    // Estimate cycle number from total history length minus reversed offset
+    const cycleNum = totalCount - idx;
+
+    // Truncate strategy name to 25 chars
+    const rawName  = (r.strategy_name || '—').toString();
+    const dispName = rawName.length > 25 ? rawName.slice(0, 22) + '...' : rawName;
+
+    const score    = fmt2(r.score);
+    const isOos    = `${fmt2(r.sharpe)} / ${fmt2(r.oos_sharpe)}`;
+    const wr       = r.win_rate != null ? (parseFloat(r.win_rate) * 100).toFixed(0) : '—';
+    const conf     = (r.confidence_rating || '—').toString().toUpperCase().slice(0, 3);
+    const cColor   = confColor(r.confidence_rating);
+
+    return `<tr style="border-bottom:1px solid var(--overlay);">
+      <td style="padding:3px 2px;color:var(--subtext);font-size:7px;">${cycleNum}</td>
+      <td style="padding:3px 2px;color:var(--text);font-size:7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="${rawName}">${dispName}</td>
+      <td style="padding:3px 2px;text-align:right;color:var(--teal);font-size:8px;">${score}</td>
+      <td style="padding:3px 2px;text-align:right;color:var(--subtext);font-size:7px;">${isOos}</td>
+      <td style="padding:3px 2px;text-align:right;color:var(--green);font-size:8px;">${wr}</td>
+      <td style="padding:3px 2px;text-align:center;font-size:7px;color:${cColor};">${conf}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+/**
+ * fetchBacktestReport()
+ *
+ * Fetches from GET /api/trading/latest-report and populates
+ * Section B of Page 7 (narrative, selection_note, elimination summary).
+ *
+ * The server.js route for this endpoint is defined in the
+ * integration instructions at the top of this file (STEP 5).
+ */
+async function fetchBacktestReport() {
+  const btn = document.getElementById('an-elim-refresh-btn');
+  if (btn) btn.textContent = '...';
+
+  const setEl = (id, html, show) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (html !== null) el.innerHTML = html;
+    if (show !== undefined) el.style.display = show ? '' : 'none';
+  };
+
+  try {
+    const resp = await fetch('/api/trading/latest-report');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    if (data.error && !data.narrative) {
+      setEl('an-elim-meta', `<span style="color:var(--red);">ERROR: ${data.error}</span>`);
+      setEl('an-elim-summary', null, false);
+      setEl('an-elim-selection-note', null, false);
+      setEl('an-elim-narrative', '— no report available —');
+      return;
+    }
+
+    // Meta line: period + filename
+    const period   = data.period   ? `PERIOD: ${data.period}` : '';
+    const filename = data.filename ? `FILE: ${data.filename.slice(0, 40)}` : '';
+    const winner   = data.winner   ? `WINNER: ${data.winner}` : '';
+    const metaParts = [period, winner, filename].filter(Boolean);
+    setEl('an-elim-meta', metaParts.join('&nbsp;&nbsp;|&nbsp;&nbsp;') || '— unknown period —');
+
+    // ── Elimination summary ───────────────────────────────────
+    const elim = data.elimination_report;
+    let summaryHtml = '';
+
+    if (elim && typeof elim === 'object') {
+      // Try to extract common elimination reason
+      const eliminated = elim.eliminated_strategies
+        || elim.eliminated
+        || (Array.isArray(elim) ? elim : null);
+
+      const elimCount = Array.isArray(eliminated)
+        ? eliminated.length
+        : (elim.count != null ? elim.count : '?');
+
+      // Most common reason — look for a reason/rule field on any entry
+      let mostCommon = elim.most_common_reason || elim.primary_reason || null;
+      if (!mostCommon && Array.isArray(eliminated) && eliminated.length) {
+        // Tally reasons
+        const tally = {};
+        eliminated.forEach(e => {
+          const reason = e.reason || e.rule || e.elimination_reason || 'unknown';
+          tally[reason] = (tally[reason] || 0) + 1;
+        });
+        const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+        if (sorted.length) mostCommon = sorted[0][0];
+      }
+
+      summaryHtml = `<span style="color:var(--red);">${elimCount} ELIMINATED</span>`;
+      if (mostCommon) {
+        summaryHtml += `&nbsp;&nbsp;|&nbsp;&nbsp;<span style="color:var(--subtext);">MOST COMMON: ${mostCommon}</span>`;
+      }
+
+    } else if (typeof elim === 'string' && elim.trim()) {
+      // If the server returns a plain string summary
+      summaryHtml = elim.trim();
+    }
+
+    if (summaryHtml) {
+      setEl('an-elim-summary', summaryHtml, true);
+    } else {
+      setEl('an-elim-summary', null, false);
+    }
+
+    // ── Selection note ────────────────────────────────────────
+    if (data.selection_note && data.selection_note.trim()) {
+      setEl('an-elim-selection-note',
+        `NOTE: ${data.selection_note.trim()}`,
+        true);
+    } else {
+      setEl('an-elim-selection-note', null, false);
+    }
+
+    // ── Narrative ─────────────────────────────────────────────
+    if (data.narrative && data.narrative.trim()) {
+      // Escape HTML, preserve line breaks
+      const escaped = data.narrative
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      setEl('an-elim-narrative', escaped);
+    } else {
+      setEl('an-elim-narrative', '— no narrative in report —');
+    }
+
+  } catch (err) {
+    setEl('an-elim-meta',
+      `<span style="color:var(--red);">FETCH ERROR: ${err.message}</span>`);
+    setEl('an-elim-summary', null, false);
+    setEl('an-elim-selection-note', null, false);
+    setEl('an-elim-narrative', '— fetch failed —');
+  } finally {
+    if (btn) btn.textContent = 'REFRESH';
+  }
+}
+</script>
+<!-- END JS PATCH -->
