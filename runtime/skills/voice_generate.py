@@ -62,7 +62,7 @@ def _get_tts_model():
     global _tts_model
     if _tts_model is None:
         log.info("voice_generate: loading XTTS v2 model (CPU) — first run may be slow...")
-        _tts_model = _CoquiTTS(_XTTS_MODEL_ID).to("cpu")
+        _tts_model = _CoquiTTS(_XTTS_MODEL_ID, gpu=False)
         log.info("voice_generate: XTTS v2 model ready.")
     return _tts_model
 
@@ -175,7 +175,6 @@ def _synthesize(entry: dict) -> Optional[str]:
             tts.tts_with_vc(
                 text=text,
                 speaker_wav=str(ref),
-                language=_DEFAULT_LANG,
                 file_path=str(out_path),
             )
         else:

@@ -179,7 +179,6 @@ def _generate_audio(entry: dict) -> str | None:
     """Generate audio for one queue entry. Returns output path or None on failure."""
     try:
         import torch
-        import scipy.io.wavfile as wavfile  # noqa: F401
         import numpy as np
 
         processor, model = _load_musicgen()
