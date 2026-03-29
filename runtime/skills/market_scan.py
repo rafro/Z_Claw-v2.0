@@ -92,7 +92,7 @@ def _llm_interpret(market_data: list) -> str:
             "role": "system",
             "content": (
                 "You are the Trading Division market scanner for J_Claw. "
-                "You track SPX500/MES, NAS100/MNQ, XAUUSD/MGC, US30/MYM. "
+                "You track SPX500/MES, XAUUSD/MGC, CRUDE/MCL, BONDS/MBT. "
                 "Write 1–2 sentences summarising today's price action for Matthew. "
                 "Be direct. No filler."
             ),

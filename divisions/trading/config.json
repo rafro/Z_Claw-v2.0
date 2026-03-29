@@ -30,7 +30,7 @@
       "enabled": true,
       "last_run": null,
       "status": "idle",
-      "notes": "Runs before trading-report. Simulates trades on instruments in assets.json (SPX500/MES, NAS100/MNQ, XAUUSD/MGC, US30/MYM) using real yfinance data. No broker, no KYC. Writes virtual_account.json."
+      "notes": "Runs 4x daily. Simulates trades on instruments in assets.json (SPX500/MES, XAUUSD/MGC, CRUDE/MCL, BONDS/MBT) using real yfinance data. No broker, no KYC. Writes virtual_account.json."
     },
     "backtester": {
       "schedule": "daily 18:00",
