@@ -6933,6 +6933,8 @@ const DIVISION_AGENTS = {
     { skill: 'sfx-generate',     label: 'SFX Generate',     schedule: 'demand' },
     { skill: 'asset-optimize',   label: 'Asset Optimize',   schedule: 'demand' },
     { skill: 'voice-catalog',    label: 'Voice Catalog',    schedule: 'demand' },
+    { skill: 'model-trainer',    label: 'Model Trainer',    schedule: 'demand' },
+    { skill: 'adapter-manager',  label: 'Adapter Manager',  schedule: 'demand' },
   ],
   sentinel:       [
     { skill: 'provider-health',       label: 'Provider Health',    schedule: '2h' },
@@ -7091,7 +7093,7 @@ function _renderDivisionPackets(key, divData) {
     personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation', personal_digest: 'Personal Digest', weekly_retrospective: 'Weekly Retro' },
     dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager' },
     op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest', network_monitor: 'Network Monitor' },
-    production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog' },
+    production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog', model_trainer: 'Model Trainer', adapter_manager: 'Adapter Manager' },
     sentinel:       { provider_health: 'Provider Health', queue_monitor: 'Queue Monitor', agent_network_monitor: 'Agent Net Monitor', sentinel_digest: 'Sentinel Digest' },
   };
   // Schedule hints for packets that only run on specific triggers / cadences

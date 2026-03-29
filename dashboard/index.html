@@ -1313,6 +1313,8 @@
         <div class="agent-row"><span class="agent-name">sfx-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-sfx-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('sfx-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="sfx-generate"></div></div>
         <div class="agent-row"><span class="agent-name">asset-optimize</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-optimize">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-optimize','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-optimize"></div></div>
         <div class="agent-row"><span class="agent-name">voice-catalog</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-voice-catalog">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('voice-catalog','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="voice-catalog"></div></div>
+        <div class="agent-row"><span class="agent-name">model-trainer</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-model-trainer">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('model-trainer','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="model-trainer"></div></div>
+        <div class="agent-row"><span class="agent-name">adapter-manager</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-adapter-manager">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('adapter-manager','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="adapter-manager"></div></div>
       </div>
     </div>
 
@@ -2461,6 +2463,8 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'sfx-generate':        'production',
       'asset-optimize':      'production',
       'voice-catalog':       'production',
+      'model-trainer':       'production',
+      'adapter-manager':     'production',
       'provider-health':     'sentinel',
       'queue-monitor':       'sentinel',
       'agent-network-monitor': 'sentinel',
@@ -2474,7 +2478,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'dev-automation': { label: 'DEV',       agents: ['repo-monitor', 'refactor-scan', 'doc-update', 'artifact-manager', 'dev-digest'] },
       'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest', 'weekly-retrospective'] },
       'op-sec':         { label: 'OP-SEC',    agents: ['device-posture', 'threat-surface', 'breach-check', 'cred-audit', 'privacy-scan', 'security-scan', 'opsec-digest', 'network-monitor'] },
-      'production':     { label: 'FORGE',     agents: ['image-generate', 'sprite-generate', 'graphic-design', 'prompt-craft', 'style-check', 'image-review', 'audio-test', 'video-review', 'storyboard-compose', 'continuity-check', 'asset-catalog', 'asset-deliver', 'production-digest', 'voice-generate', 'music-compose', 'qa-pipeline', 'art-director', 'narrative-craft', 'sfx-generate', 'asset-optimize', 'voice-catalog'] },
+      'production':     { label: 'FORGE',     agents: ['image-generate', 'sprite-generate', 'graphic-design', 'prompt-craft', 'style-check', 'image-review', 'audio-test', 'video-review', 'storyboard-compose', 'continuity-check', 'asset-catalog', 'asset-deliver', 'production-digest', 'voice-generate', 'music-compose', 'qa-pipeline', 'art-director', 'narrative-craft', 'sfx-generate', 'asset-optimize', 'voice-catalog', 'model-trainer', 'adapter-manager'] },
       'sentinel':       { label: 'SENTINEL',  agents: ['provider-health', 'queue-monitor', 'agent-network-monitor', 'sentinel-digest'] },
     };
 

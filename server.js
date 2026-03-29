@@ -2701,6 +2701,8 @@ function handleMobileDivisions(res) {
           sfx_generate: readPkt('production', 'sfx-generate'),
           asset_optimize: readPkt('production', 'asset-optimize'),
           voice_catalog: readPkt('production', 'voice-catalog'),
+          model_trainer: readPkt('production', 'model-trainer'),
+          adapter_manager: readPkt('production', 'adapter-manager'),
           hot_count:  dirCount(hotDir),
           cold_count: dirCount(coldDir),
         };
