@@ -2417,6 +2417,9 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'market-scan':      'trading',
       'virtual-trader':   'trading',
       'backtester':       'trading',
+      'strategy-builder': 'trading',
+      'strategy-tester':  'trading',
+      'strategy-search':  'trading',
       'job-intake':       'opportunity',
       'hard-filter':      'opportunity',
       'funding-finder':   'opportunity',
@@ -2473,7 +2476,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
 
     // ── Reports Panel ──
     const REPORT_DIVISIONS = {
-      'trading':        { label: 'TRADING',   agents: ['market-scan', 'trading-report', 'virtual-trader', 'backtester'] },
+      'trading':        { label: 'TRADING',   agents: ['market-scan', 'trading-report', 'virtual-trader', 'backtester', 'strategy-builder', 'strategy-tester', 'strategy-search'] },
       'opportunity':    { label: 'OPPS',      agents: ['job-intake', 'funding-finder', 'application-tracker'] },
       'dev-automation': { label: 'DEV',       agents: ['repo-monitor', 'refactor-scan', 'doc-update', 'artifact-manager', 'dev-digest'] },
       'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest', 'weekly-retrospective'] },

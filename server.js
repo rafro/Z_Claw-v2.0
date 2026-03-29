@@ -2679,6 +2679,10 @@ function handleMobileDivisions(res) {
         market_scan:    readPkt('trading', 'market-scan'),
         trading_report: readPkt('trading', 'trading-report'),
         virtual_trader: readPkt('trading', 'virtual-trader'),
+        backtester:       readPkt('trading', 'backtester'),
+        strategy_builder: readPkt('trading', 'strategy-builder'),
+        strategy_tester:  readPkt('trading', 'strategy-tester'),
+        strategy_search:  readPkt('trading', 'strategy-search'),
       },
       production: (() => {
         const hotDir  = path.join(ROOT, 'divisions', 'production', 'hot');
