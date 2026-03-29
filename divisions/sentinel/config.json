@@ -1,0 +1,46 @@
+{
+  "division": "sentinel",
+  "description": "Sentinel — provider health, queue monitoring, agent-network oversight, system diagnostics",
+  "orchestrator_type": "python_runtime",
+  "model": {
+    "tier1_model": "qwen2.5:7b-instruct-q4_K_M",
+    "tier0_skills": ["provider-health", "queue-monitor"],
+    "notes": "Tier 0 pure Python for provider-health and queue-monitor (no LLM needed). Tier 1 local for agent-network-monitor and sentinel-digest. Cross-division XP feeds op_sec."
+  },
+  "artifact_policy": {
+    "ttl_hours": 168,
+    "archive_schedule": "weekly sunday 23:00",
+    "max_hot_mb": 32
+  },
+  "packet_output_path": "divisions/sentinel/packets/",
+  "agents": {
+    "provider-health": {
+      "schedule": "every 2h",
+      "skill": "provider-health",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "queue-monitor": {
+      "schedule": "every 2h offset 30m",
+      "skill": "queue-monitor",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "agent-network-monitor": {
+      "schedule": "every 4h",
+      "skill": "agent-network-monitor",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "sentinel-digest": {
+      "schedule": "every 6h",
+      "skill": "sentinel-digest",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    }
+  }
+}

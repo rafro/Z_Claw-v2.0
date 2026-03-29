@@ -311,6 +311,11 @@ const SKILL_XP = {
   'mobile-audit-review':{ division: 'op_sec',         amount:  5 },
   'sentinel-health':    { division: 'op_sec',         amount:  5 },
   'security-scan':      { division: 'op_sec',         amount: 10 },
+  // Sentinel — cross-division system health (XP feeds op_sec)
+  'provider-health':       { division: 'op_sec',      amount:  8 },
+  'queue-monitor':         { division: 'op_sec',      amount:  5 },
+  'agent-network-monitor': { division: 'op_sec',      amount:  8 },
+  'sentinel-digest':       { division: 'op_sec',      amount:  5 },
   // Production — The Lykeon Forge
   'image-generate':     { division: 'production',     amount: 15 },
   'sprite-generate':    { division: 'production',     amount: 20 },
@@ -362,6 +367,11 @@ const SKILL_TASK_MAP = {
   'opsec-digest':     { divState: 'op_sec', division: 'op-sec', task: 'opsec-digest'    },
   'network-monitor':  { divState: 'op_sec', division: 'op-sec', task: 'network-monitor' },
   'application-tracker': { divState: 'opportunity', division: 'opportunity', task: 'application-tracker' },
+  // Sentinel Division — system health (cross-division, feeds op_sec)
+  'provider-health':       { divState: 'op_sec', division: 'sentinel', task: 'provider-health'       },
+  'queue-monitor':         { divState: 'op_sec', division: 'sentinel', task: 'queue-monitor'         },
+  'agent-network-monitor': { divState: 'op_sec', division: 'sentinel', task: 'agent-network-monitor' },
+  'sentinel-digest':       { divState: 'op_sec', division: 'sentinel', task: 'sentinel-digest'       },
   // Production Division — The Lykeon Forge
   'image-generate':     { divState: 'production', division: 'production', task: 'image-generate'     },
   'sprite-generate':    { divState: 'production', division: 'production', task: 'sprite-generate'    },
@@ -4659,6 +4669,27 @@ cron.schedule('30 16 * * *', async () => {
 // network-monitor at 3:30 AM
 cron.schedule('30 3 * * *', async () => {
   await runSkillViaPython('network-monitor', 'OP_SEC');
+}, { timezone: TZ });
+
+// ── Sentinel Division ─────────────────────────────────────────────────────
+// provider-health every 2 hours
+cron.schedule('0 */2 * * *', async () => {
+  await runSkillViaPython('provider-health', 'OP_SEC');
+}, { timezone: TZ });
+
+// queue-monitor every 2 hours (offset 30 min from provider-health)
+cron.schedule('30 */2 * * *', async () => {
+  await runSkillViaPython('queue-monitor', 'OP_SEC');
+}, { timezone: TZ });
+
+// agent-network-monitor every 4 hours
+cron.schedule('15 */4 * * *', async () => {
+  await runSkillViaPython('agent-network-monitor', 'OP_SEC');
+}, { timezone: TZ });
+
+// sentinel-digest every 6 hours
+cron.schedule('45 */6 * * *', async () => {
+  await runSkillViaPython('sentinel-digest', 'OP_SEC');
 }, { timezone: TZ });
 
 // ── Opportunity Division ────────────────────────────────────────────────────
