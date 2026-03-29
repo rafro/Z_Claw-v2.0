@@ -9,7 +9,7 @@ import logging
 
 from runtime.config import SKILL_MODELS, OLLAMA_HOST
 from runtime.ollama_client import chat, is_available
-from runtime.skills import trading_report, market_scan, virtual_trader, backtester, strategy_builder
+from runtime.skills import trading_report, market_scan, virtual_trader, backtester, strategy_builder, strategy_tester, strategy_search
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
 from runtime.tools.trading import load_cycle_state, load_active_strategy
@@ -316,4 +316,40 @@ def run_strategy_builder(num_strategies: int = 5, timeframe: str = "1d") -> dict
     packet.write(pkt)
     if result.get("status") in ("success", "partial"):
         grant_skill_xp("strategy-builder")
+    return pkt
+
+
+def run_strategy_tester(strategies: list = None, timeframe: str = "1d") -> dict:
+    """Backtest generated strategies against historical data."""
+    log.info("=== Trading Division: strategy-tester run ===")
+    result = strategy_tester.run(strategies=strategies or [], timeframe=timeframe)
+    pkt = packet.build(
+        division="trading", skill="strategy-tester",
+        status=result.get("status", "failed"),
+        summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result.get("status") in ("success", "partial"):
+        grant_skill_xp("strategy-tester")
+    return pkt
+
+
+def run_strategy_search(max_attempts: int = 10, timeframe: str = "1d") -> dict:
+    """Search loop: generate → test → filter → repeat until prop-firm winner found."""
+    log.info("=== Trading Division: strategy-search run ===")
+    result = strategy_search.run(max_attempts=max_attempts, timeframe=timeframe)
+    pkt = packet.build(
+        division="trading", skill="strategy-search",
+        status=result.get("status", "failed"),
+        summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result.get("status") == "success":
+        grant_skill_xp("strategy-search")
     return pkt
