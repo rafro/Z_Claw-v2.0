@@ -93,11 +93,13 @@ DIVISIONS = {
             {"name": "Mark the Quarry",  "desc": "Scans the field for new targets and marks them for pursuit"},
             {"name": "The Arbiter's Cut","desc": "Cuts weak leads from strong — only worthy targets survive the filter"},
             {"name": "Strike the Vein",  "desc": "Uncovers hidden funding potential in every opportunity"},
+            {"name": "Track the Quarry","desc": "Tracks active pursuits — follow-ups, responses, and cold trails"},
         ],
         "skills": {
             "job-intake":     {"xp": 10, "soldier": "The Tracker",    "icon": "⟶", "anim": "arrow",  "label": "Mark the Quarry"},
             "hard-filter":    {"xp":  5, "soldier": "The Arbiter",    "icon": "⟁", "anim": "slash",  "label": "The Arbiter's Cut"},
             "funding-finder": {"xp":  5, "soldier": "The Prospector", "icon": "◈", "anim": "scan",   "label": "Strike the Vein"},
+            "application-tracker": {"xp": 8, "soldier": "The Pursuer", "icon": "◫", "anim": "arrow", "label": "Track the Quarry"},
         },
         "vocabulary": {
             "quest":       "on the hunt",
@@ -228,12 +230,14 @@ DIVISIONS = {
             {"name": "Read the Ashes",  "desc": "Watches for signs of burnout before they spread beyond control"},
             {"name": "Inner Sight",     "desc": "Connects health patterns to performance and operational output"},
             {"name": "The Covenant's Voice", "desc": "Delivers the weekly personal health and vitality digest"},
+            {"name": "The Weekly Reckoning", "desc": "Monday morning cross-division retrospective — patterns, wins, risks, and focus"},
         ],
         "skills": {
             "health-logger":    {"xp": 15, "soldier": "The Tender",   "icon": "◉", "anim": "sparkle", "label": "Tend the Flame"},
             "perf-correlation": {"xp": 10, "soldier": "The Lens",     "icon": "◈", "anim": "sparkle", "label": "Inner Sight"},
             "burnout-monitor":  {"xp":  5, "soldier": "The Watchfire","icon": "⟁", "anim": "sparkle", "label": "Read the Ashes"},
             "personal-digest":  {"xp":  5, "soldier": "The Voice",    "icon": "◫", "anim": "sparkle", "label": "The Covenant's Voice"},
+            "weekly-retrospective": {"xp": 10, "soldier": "The Chronicler", "icon": "◉", "anim": "sparkle", "label": "The Weekly Reckoning"},
         },
         "vocabulary": {
             "quest":       "tending the flame",
@@ -274,6 +278,7 @@ DIVISIONS = {
             {"name": "Credential Sweep",  "desc": "Audits credential hygiene across all realm systems"},
             {"name": "Privacy Ward",      "desc": "Scans for PII exposure and privacy risk across the perimeter"},
             {"name": "Null Report",       "desc": "Delivers the weekly threat assessment and security posture brief"},
+            {"name": "Watch the Wires", "desc": "Monitors network connections for anomalies and unauthorized traffic"},
         ],
         "skills": {
             "device-posture":     {"xp": 10, "soldier": "The Posture Guard",       "icon": "⬡", "anim": "shield", "label": "Inspect the Veil"},
@@ -285,6 +290,7 @@ DIVISIONS = {
             "mobile-audit-review":{"xp":  5, "soldier": "The Mobile Warden",       "icon": "◈", "anim": "shield", "label": "Audit the Mobile Veil"},
             "sentinel-health":    {"xp":  5, "soldier": "The Sentinel",            "icon": "⬢", "anim": "shield", "label": "Sentinel Watch"},
             "security-scan":      {"xp": 10, "soldier": "The Code Sentinel",       "icon": "⬡", "anim": "shield", "label": "Audit the Veil"},
+            "network-monitor":    {"xp":  8, "soldier": "The Net Warden",         "icon": "⬢", "anim": "shield", "label": "Watch the Wires"},
         },
         "vocabulary": {
             "quest":       "watching the veil",

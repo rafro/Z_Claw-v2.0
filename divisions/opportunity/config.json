@@ -43,6 +43,13 @@
       "last_run": null,
       "status": "idle",
       "note": "Placeholder — skill and orchestrator not yet implemented"
+    },
+    "application-tracker": {
+      "schedule": "daily 10:00",
+      "skill": "application-tracker",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
     }
   }
 }

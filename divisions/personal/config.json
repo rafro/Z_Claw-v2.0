@@ -44,6 +44,13 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
+    },
+    "weekly-retrospective": {
+      "schedule": "weekly monday 08:00",
+      "skill": "weekly-retrospective",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
     }
   }
 }

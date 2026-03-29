@@ -63,6 +63,13 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
+    },
+    "network-monitor": {
+      "schedule": "daily 03:30",
+      "skill": "network-monitor",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
     }
   }
 }

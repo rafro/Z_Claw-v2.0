@@ -5,12 +5,14 @@ Called by J_Claw (via shell tool) before reading the executive packet.
 Usage:
   python run_division.py opportunity job-intake
   python run_division.py opportunity funding-finder
+  python run_division.py opportunity application-tracker
   python run_division.py trading trading-report
   python run_division.py trading market-scan
   python run_division.py personal health-logger <reply_text>
   python run_division.py personal perf-correlation
   python run_division.py personal burnout-monitor
   python run_division.py personal personal-digest
+  python run_division.py personal weekly-retrospective
   python run_division.py dev-automation repo-monitor
   python run_division.py dev-automation debug-agent <error_text> [context_file ...]
   python run_division.py dev-automation refactor-scan
@@ -20,6 +22,7 @@ Usage:
   python run_division.py dev-automation dev-digest
   python run_division.py dev pipeline '<json_spec>'
   python run_division.py op-sec mobile-audit-review
+  python run_division.py op-sec network-monitor
   python run_division.py production image-generate portrait_bust vael
   python run_division.py production sprite-generate vael chibi_sprite
   python run_division.py production prompt-craft portrait_bust seren
@@ -65,11 +68,13 @@ def run(division: str, task: str, args: list) -> dict:
 
     # ── Opportunity ───────────────────────────────────────────────────────────
     if division == "opportunity":
-        from runtime.orchestrators.opportunity import run_job_intake, run_funding_finder
+        from runtime.orchestrators.opportunity import run_job_intake, run_funding_finder, run_application_tracker
         if task == "job-intake":
             return run_job_intake()
         if task == "funding-finder":
             return run_funding_finder()
+        if task == "application-tracker":
+            return run_application_tracker()
         raise ValueError(f"Unknown task for opportunity: {task}")
 
     # ── Trading ───────────────────────────────────────────────────────────────
@@ -104,6 +109,9 @@ def run(division: str, task: str, args: list) -> dict:
             return run_burnout_monitor()
         if task == "personal-digest":
             return run_personal_digest()
+        if task == "weekly-retrospective":
+            from runtime.skills.weekly_retrospective import run as run_weekly_retro
+            return run_weekly_retro()
         raise ValueError(f"Unknown task for personal: {task}")
 
     # ── OP-Sec ────────────────────────────────────────────────────────────────
@@ -129,6 +137,9 @@ def run(division: str, task: str, args: list) -> dict:
         if task == "mobile-audit-review":
             from runtime.skills.mobile_audit_review import run as run_mobile_audit
             return run_mobile_audit()
+        if task == "network-monitor":
+            from runtime.skills.network_monitor import run as run_network_monitor
+            return run_network_monitor()
         raise ValueError(f"Unknown task for op-sec: {task}")
 
     # ── Dev Automation ────────────────────────────────────────────────────────

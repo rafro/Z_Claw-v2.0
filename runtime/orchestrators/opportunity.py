@@ -8,7 +8,7 @@ import logging
 
 from providers.router import ProviderRouter
 from providers.base import ProviderError
-from runtime.skills import job_intake, hard_filter, funding_finder
+from runtime.skills import job_intake, hard_filter, funding_finder, application_tracker
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
 from runtime.tools.state import load_applications, save_applications, add_to_pipeline
@@ -268,4 +268,33 @@ def run_funding_finder() -> dict:
     packet.write(pkt)
     grant_skill_xp("funding-finder")
     log.info("Funding-finder packet written. Found=%d", counts["opportunities_found"])
+    return pkt
+
+
+def run_application_tracker() -> dict:
+    """Daily 10:00 — track application pipeline status, follow-ups, responses."""
+    log.info("=== Opportunity Division: application-tracker run ===")
+
+    result = application_tracker.run()
+
+    action_items = result.get("action_items", [])
+
+    pkt = packet.build(
+        division="opportunity",
+        skill="application-tracker",
+        status=result["status"],
+        summary=result["summary"],
+        action_items=action_items,
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    grant_skill_xp("application-tracker")
+    log.info(
+        "Application-tracker packet written. Sent=%d AwaitingReply=%d",
+        result.get("metrics", {}).get("total_sent", 0),
+        result.get("metrics", {}).get("awaiting_reply", 0),
+    )
     return pkt
