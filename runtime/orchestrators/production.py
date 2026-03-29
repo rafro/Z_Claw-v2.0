@@ -32,6 +32,8 @@ from runtime.skills import (
     sfx_generate,
     asset_optimize,
     voice_catalog,
+    model_trainer,
+    adapter_manager,
 )
 
 log = logging.getLogger(__name__)
@@ -97,6 +99,24 @@ def run_voice_catalog() -> dict:
     packet.write(pkt)
     grant_skill_xp("voice-catalog")
     log.info("LYKE: voice-catalog → %s (coverage=%s%%)", result.get("status"), result.get("metrics", {}).get("coverage_pct", 0))
+    return pkt
+
+
+def run_model_trainer(domain: str = "trading", base_model: str = "bitnet-1b", action: str = "status") -> dict:
+    result = model_trainer.run(domain=domain, base_model=base_model, action=action)
+    pkt    = _build_packet("model-trainer", result)
+    packet.write(pkt)
+    grant_skill_xp("model-trainer")
+    log.info("LYKE: model-trainer → %s (action=%s, domain=%s)", result.get("status"), action, domain)
+    return pkt
+
+
+def run_adapter_manager(action: str = "status", domain: str = None) -> dict:
+    result = adapter_manager.run(action=action, domain=domain)
+    pkt    = _build_packet("adapter-manager", result)
+    packet.write(pkt)
+    grant_skill_xp("adapter-manager")
+    log.info("LYKE: adapter-manager → %s (action=%s)", result.get("status"), action)
     return pkt
 
 

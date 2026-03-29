@@ -176,6 +176,21 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
+    },
+    "model-trainer": {
+      "schedule": "on_demand",
+      "skill": "model-trainer",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "QVAC BitNet LoRA fine-tuning orchestrator — always human-initiated"
+    },
+    "adapter-manager": {
+      "schedule": "on_demand",
+      "skill": "adapter-manager",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
     }
   }
 }

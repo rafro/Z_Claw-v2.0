@@ -40,13 +40,17 @@ def chat(
     host: str = OLLAMA_HOST,
     temperature: float = 0.1,
     max_tokens: int = 2048,
+    adapter: str | None = None,
 ) -> str:
     """Run a chat completion. Returns the response text."""
-    resp = _client(host).chat(
+    kwargs: dict = dict(
         model=model,
         messages=messages,
         options={"temperature": temperature, "num_predict": max_tokens},
     )
+    if adapter:
+        kwargs["adapter"] = adapter
+    resp = _client(host).chat(**kwargs)
     return resp.message.content.strip()
 
 
@@ -56,17 +60,21 @@ def chat_json(
     host: str = OLLAMA_HOST,
     temperature: float = 0.05,
     max_tokens: int = 2048,
+    adapter: str | None = None,
 ) -> Any:
     """
     Run a chat completion expecting JSON output.
     Returns parsed dict/list. Raises ValueError if response is not valid JSON.
     """
-    resp = _client(host).chat(
+    kwargs: dict = dict(
         model=model,
         messages=messages,
         format="json",
         options={"temperature": temperature, "num_predict": max_tokens},
     )
+    if adapter:
+        kwargs["adapter"] = adapter
+    resp = _client(host).chat(**kwargs)
     text = resp.message.content.strip()
     try:
         return json.loads(text)

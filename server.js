@@ -340,6 +340,8 @@ const SKILL_XP = {
   'sfx-generate':       { division: 'production',     amount:  8 },
   'asset-optimize':     { division: 'production',     amount:  5 },
   'voice-catalog':      { division: 'production',     amount:  5 },
+  'model-trainer':      { division: 'production',     amount:  8 },
+  'adapter-manager':    { division: 'production',     amount:  5 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -405,6 +407,8 @@ const SKILL_TASK_MAP = {
   'sfx-generate':       { divState: 'production', division: 'production', task: 'sfx-generate'      },
   'asset-optimize':     { divState: 'production', division: 'production', task: 'asset-optimize'    },
   'voice-catalog':      { divState: 'production', division: 'production', task: 'voice-catalog'     },
+  'model-trainer':      { divState: 'production', division: 'production', task: 'model-trainer'     },
+  'adapter-manager':    { divState: 'production', division: 'production', task: 'adapter-manager'   },
 };
 
 function rankForLevel(level) {

@@ -255,6 +255,13 @@ def run(division: str, task: str, args: list) -> dict:
                                       image_path=args[0] if args else "",
                                       scale=int(args[1]) if len(args) > 1 else 2),
             "voice-catalog":      lambda: prod_orch.run_voice_catalog(),
+            "model-trainer":      lambda: prod_orch.run_model_trainer(
+                                      domain=args[0] if args else "trading",
+                                      base_model=args[1] if len(args) > 1 else "bitnet-1b",
+                                      action=args[2] if len(args) > 2 else "status"),
+            "adapter-manager":    lambda: prod_orch.run_adapter_manager(
+                                      action=args[0] if args else "status",
+                                      domain=args[1] if len(args) > 1 else None),
         }
         runner = task_map.get(task)
         if not runner:

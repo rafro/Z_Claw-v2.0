@@ -8,13 +8,57 @@ runtime/config.py SKILL_MODELS is deprecated; import from here instead.
 
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 from typing import Optional
 
 from providers.base import BaseProvider
 from providers.capture import CaptureProvider
 
 log = logging.getLogger(__name__)
+
+# ── Adapter support ──────────────────────────────────────────────────────────
+_ADAPTER_STATE = Path(__file__).resolve().parent.parent / "state" / "active-adapters.json"
+
+# Map task_type prefixes to fine-tuning domains.
+_DOMAIN_PREFIXES: list[tuple[str, str]] = [
+    ("trading",   "trading"),
+    ("market",    "trading"),
+    ("security",  "opsec"),
+    ("threat",    "opsec"),
+    ("breach",    "opsec"),
+    ("opsec",     "opsec"),
+    ("cred",      "opsec"),
+    ("privacy",   "opsec"),
+    ("dev",       "dev"),
+    ("repo",      "dev"),
+    ("debug",     "dev"),
+    ("refactor",  "dev"),
+    ("doc",       "dev"),
+    ("health",    "personal"),
+    ("perf",      "personal"),
+    ("burnout",   "personal"),
+    ("funding",   "opportunity"),
+    ("hard-filter", "opportunity"),
+    ("job",       "opportunity"),
+]
+
+
+def _load_active_adapters() -> dict[str, str]:
+    """Read state/active-adapters.json → {domain: adapter_path}. Returns {} if missing."""
+    try:
+        return json.loads(_ADAPTER_STATE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _domain_for_task_type(task_type: str) -> Optional[str]:
+    """Derive the fine-tuning domain from a task_type string."""
+    for prefix, domain in _DOMAIN_PREFIXES:
+        if task_type.startswith(prefix):
+            return domain
+    return None
 
 # ── Routing table ─────────────────────────────────────────────────────────────
 # Each entry: task_type → [primary_provider_key, fallback1, fallback2, ...]
@@ -137,6 +181,10 @@ class ProviderRouter:
         """
         Walk the provider chain for task_type, return first available.
         Returns None if no provider in the chain is available.
+
+        If a fine-tuned LoRA adapter is active for the task's domain, the
+        selected provider is annotated with ``_adapter_path`` so backends
+        that support adapter loading (e.g. Ollama) can use it.
         """
         chain = self._table.get(task_type)
         if chain is None:
@@ -149,6 +197,16 @@ class ProviderRouter:
                 provider = _build_provider(key)
                 if provider.is_available():
                     log.debug("Router: %s → %s", task_type, provider.provider_id)
+
+                    # ── Adapter annotation ────────────────────────────────
+                    domain = _domain_for_task_type(task_type)
+                    if domain:
+                        adapters = _load_active_adapters()
+                        adapter_path = adapters.get(domain)
+                        if adapter_path:
+                            provider._adapter_path = adapter_path
+                            log.info("Using fine-tuned adapter for %s: %s", domain, adapter_path)
+
                     return CaptureProvider(provider, task_type=task_type)
                 else:
                     log.debug("Router: %s skipped (unavailable)", key)
