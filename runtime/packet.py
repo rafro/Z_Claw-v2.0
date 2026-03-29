@@ -118,3 +118,9 @@ def job_action_item(job: dict) -> dict:
         f" | Resume: {resume} | {job['url']}"
     )
     return action_item(desc, priority="high", requires_matthew=True)
+
+
+def read_fresh(division: str, skill: str, max_age_minutes: int = 60):
+    """Read a packet only if generated within max_age_minutes. Returns None if stale."""
+    from runtime.tools.artifact_hydration import read_fresh as _read_fresh
+    return _read_fresh(division, skill, max_age_minutes)

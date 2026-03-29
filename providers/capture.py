@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from providers.base import BaseProvider
+from runtime.tools.domain_map import get_domain, compute_capture_hash
+from runtime.tools.training_manifest import record_capture
 
 log = logging.getLogger(__name__)
 
@@ -77,3 +79,11 @@ class CaptureProvider(BaseProvider):
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         except Exception:
             log.warning("CaptureProvider failed to write capture entry", exc_info=True)
+
+        # Record in training manifest for lineage tracking
+        try:
+            entry_hash = compute_capture_hash(messages, response)
+            domain = get_domain(self._task_type)
+            record_capture(entry_hash, domain, datetime.now(timezone.utc).isoformat())
+        except Exception:
+            pass  # manifest failures must never block LLM calls
