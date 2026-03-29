@@ -26,6 +26,7 @@ from runtime.skills import (
     storyboard_compose,
     continuity_check,
     asset_deliver,
+    qa_pipeline,
 )
 
 log = logging.getLogger(__name__)
@@ -149,6 +150,18 @@ def run_video_review(video_path: str = "") -> dict:
     packet.write(pkt)
     grant_skill_xp("video-review")
     log.info("LYKE: video-review → %s", result.get("status"))
+    return pkt
+
+
+def run_qa_pipeline(asset_paths: list = None, commander: str = "generic") -> dict:
+    result = qa_pipeline.run(asset_paths=asset_paths, commander=commander)
+    pkt    = _build_packet("qa-pipeline", result)
+    packet.write(pkt)
+    grant_skill_xp("qa-pipeline")
+    log.info("LYKE: qa-pipeline → %s (%d/%d passed)",
+             result.get("status"),
+             result.get("metrics", {}).get("passed", 0),
+             result.get("metrics", {}).get("total", 0))
     return pkt
 
 

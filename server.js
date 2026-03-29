@@ -331,6 +331,7 @@ const SKILL_XP = {
   'continuity-check':   { division: 'production',     amount:  8 },
   'asset-deliver':      { division: 'production',     amount:  5 },
   'production-digest':  { division: 'production',     amount: 10 },
+  'qa-pipeline':        { division: 'production',     amount: 12 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -387,6 +388,7 @@ const SKILL_TASK_MAP = {
   'continuity-check':   { divState: 'production', division: 'production', task: 'continuity-check'   },
   'asset-deliver':      { divState: 'production', division: 'production', task: 'asset-deliver'      },
   'production-digest':  { divState: 'production', division: 'production', task: 'production-digest'  },
+  'qa-pipeline':        { divState: 'production', division: 'production', task: 'qa-pipeline'        },
 };
 
 function rankForLevel(level) {

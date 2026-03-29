@@ -32,6 +32,7 @@ Usage:
   python run_division.py production continuity-check vael
   python run_division.py production asset-deliver
   python run_division.py production production-digest
+  python run_division.py production qa-pipeline [commander]
   python run_division.py sentinel provider-health
   python run_division.py sentinel queue-monitor
   python run_division.py sentinel sentinel-digest
@@ -222,6 +223,8 @@ def run(division: str, task: str, args: list) -> dict:
                                       commander=args[0] if args else ""),
             "asset-deliver":      lambda: prod_orch.run_asset_deliver(),
             "production-digest":  lambda: prod_orch.run_production_digest(),
+            "qa-pipeline":        lambda: prod_orch.run_qa_pipeline(
+                                      commander=args[0] if args else "generic"),
         }
         runner = task_map.get(task)
         if not runner:
