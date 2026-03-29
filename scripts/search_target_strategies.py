@@ -220,6 +220,10 @@ def _candidate_matches(
     projected_monthly: float,
     args: argparse.Namespace,
 ) -> bool:
+    trade_count = int(candidate.get("trade_count", 0) or 0)
+    if trade_count < 100:
+        return False  # Statistically meaningless with fewer than 100 trades
+
     if not candidate.get("passed"):
         return False
     if strategy_schema is None:
