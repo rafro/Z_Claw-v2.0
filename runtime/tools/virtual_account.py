@@ -43,19 +43,29 @@ _TF_MAP = {
 DEFAULT_BALANCE    = 10_000.0
 RISK_PER_TRADE_PCT = 1.0   # 1% of account per trade
 STOP_PCT           = 0.01  # 1% stop loss distance
-SLIPPAGE_BPS       = 5     # 5 basis points per fill (0.05%)
+SLIPPAGE_BPS       = 5     # default fallback
 DAILY_LOSS_HALT_PCT = 3.0  # halt if daily PnL < -3% of account
 STREAK_HALT_COUNT   = 5    # halt after N consecutive losses
+TRAILING_DD_PCT     = 5.0  # trailing drawdown limit (Apex $50K = 5%)
+MAX_CONTRACTS_PER_INSTRUMENT = 5   # Topstep $50K default
+MAX_TOTAL_CONTRACTS = 10           # Total across all instruments
 
-# Known pairwise correlations (approximate, based on historical data)
-# High correlation = potential double-exposure risk
+# Per-instrument slippage (bps)
+INSTRUMENT_SLIPPAGE_BPS = {
+    "SPX500": 3,
+    "XAUUSD": 8,
+    "CRUDE":  5,
+    "BONDS":  3,
+}
+
+# Diversified pairwise correlations — all below 0.80 threshold
 INSTRUMENT_CORRELATIONS = {
-    ("SPX500", "NAS100"): 0.92,
-    ("SPX500", "US30"):   0.88,
     ("SPX500", "XAUUSD"): -0.15,
-    ("NAS100", "US30"):   0.90,
-    ("NAS100", "XAUUSD"): -0.12,
-    ("US30",   "XAUUSD"): -0.10,
+    ("SPX500", "CRUDE"):   0.40,
+    ("SPX500", "BONDS"):  -0.30,
+    ("XAUUSD", "CRUDE"):   0.25,
+    ("XAUUSD", "BONDS"):   0.20,
+    ("CRUDE",  "BONDS"):  -0.15,
 }
 MAX_PORTFOLIO_CORRELATION = 0.80
 
@@ -63,6 +73,11 @@ MAX_PORTFOLIO_CORRELATION = 0.80
 def _correlation(inst_a: str, inst_b: str) -> float:
     key = (inst_a, inst_b) if (inst_a, inst_b) in INSTRUMENT_CORRELATIONS else (inst_b, inst_a)
     return INSTRUMENT_CORRELATIONS.get(key, 0.0)
+
+
+def _slippage_bps(instrument: str) -> int:
+    """Per-instrument slippage in basis points."""
+    return INSTRUMENT_SLIPPAGE_BPS.get(instrument, SLIPPAGE_BPS)
 
 
 def _load_file(path: Path) -> Optional[dict]:
@@ -590,6 +605,35 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
     """
     account = load_virtual_account()
 
+    # ── Trailing drawdown check ─────────────────────────────────────────────
+    peak_balance = account.get("peak_balance", account.get("initial_balance", DEFAULT_BALANCE))
+    current_balance = account.get("account_balance", DEFAULT_BALANCE)
+    if current_balance > peak_balance:
+        peak_balance = current_balance
+    account["peak_balance"] = peak_balance
+    trailing_floor = peak_balance * (1 - TRAILING_DD_PCT / 100) if TRAILING_DD_PCT > 0 else 0
+    trailing_dd_current = round((peak_balance - current_balance) / peak_balance * 100, 2) if peak_balance > 0 else 0
+
+    if TRAILING_DD_PCT > 0 and current_balance <= trailing_floor:
+        for pos in list(account.get("open_positions", [])):
+            account["trade_log"].append({
+                "type": "exit", "side": "liquidation", "symbol": pos.get("symbol", ""),
+                "filled_price": pos.get("entry_price", 0), "qty": pos.get("qty", 1),
+                "reason": "trailing_drawdown_breach", "pnl": 0,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+        account["open_positions"] = []
+        account["trading_halted_reason"] = "trailing_drawdown_breach"
+        save_virtual_account(account)
+        log.critical("TRAILING DRAWDOWN BREACH: $%.2f <= floor $%.2f (peak $%.2f)", current_balance, trailing_floor, peak_balance)
+        return {
+            "status": "halted", "trades_made": 0, "open_positions": 0,
+            "account_balance": current_balance, "peak_balance": peak_balance,
+            "trailing_dd_current": trailing_dd_current, "trailing_dd_limit": TRAILING_DD_PCT,
+            "summary": f"TRAILING DRAWDOWN BREACH — balance ${current_balance:.2f} hit floor ${trailing_floor:.2f}",
+            "escalate": True, "escalation_reason": "trailing_drawdown_breach", "errors": [],
+        }
+
     if cycle_state is None:
         state_file = AGENT_NETWORK_STATE / "spx500_cycle_state.json"
         cycle_state = _load_file(state_file)
@@ -662,7 +706,16 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
         if daily_pnl < -(balance * DAILY_LOSS_HALT_PCT / 100):
             trading_halted = True
             account["trading_halted"] = True
-            log.warning("CIRCUIT BREAKER: daily loss limit hit (%.2f)", daily_pnl)
+            # Force-close ALL open positions on daily halt
+            for pos in list(account.get("open_positions", [])):
+                account["trade_log"].append({
+                    "type": "exit", "side": "liquidation", "symbol": pos.get("symbol", ""),
+                    "filled_price": pos.get("entry_price", 0), "qty": pos.get("qty", 1),
+                    "reason": "daily_loss_halt_liquidation", "pnl": 0,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+            account["open_positions"] = []
+            log.warning("DAILY LOSS HALT: all positions force-closed (daily PnL: %.2f)", daily_pnl)
         elif loss_streak >= STREAK_HALT_COUNT:
             trading_halted = True
             account["trading_halted"] = True
@@ -709,9 +762,9 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
                 # Apply slippage on exit (opposite direction to entry)
                 if side == "buy":
-                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 - _slippage_bps(display_name) / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 + _slippage_bps(display_name) / 10000), 4)
 
                 pnl = (
                     (fill_price - entry_price) * qty
@@ -797,6 +850,13 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                                 display_name, max_corr, MAX_PORTFOLIO_CORRELATION)
                     continue
 
+                # Contract limit enforcement
+                current_contracts = sum(p.get("qty", 1) for p in account["open_positions"])
+                if current_contracts >= MAX_TOTAL_CONTRACTS:
+                    log.info("CONTRACT LIMIT: total %d >= max %d — skipping %s entry",
+                             current_contracts, MAX_TOTAL_CONTRACTS, display_name)
+                    continue
+
                 # Volatility-normalize: use ATR relative to SPX baseline for sizing
                 atr_values = _calc_atr(ohlcv["high"], ohlcv["low"], ohlcv["close"])
                 current_atr = next((v for v in reversed(atr_values) if v is not None), None)
@@ -811,11 +871,15 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
                 # Apply slippage on entry based on side
                 if signals["side"] == "buy":
-                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 + _slippage_bps(display_name) / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 - _slippage_bps(display_name) / 10000), 4)
 
                 qty      = max(1, int(adjusted_risk_usd / (fill_price * STOP_PCT)))
+                qty      = min(qty, MAX_CONTRACTS_PER_INSTRUMENT)
+                qty      = min(qty, MAX_TOTAL_CONTRACTS - current_contracts)
+                if qty <= 0:
+                    continue
                 order_id = f"VA-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
                 stop     = (
                     round(fill_price * (1 - STOP_PCT), 2)
