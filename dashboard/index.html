@@ -1193,6 +1193,7 @@
         <div class="agent-row"><span class="agent-name">job-intake</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-job-intake">3h</span><button class="skill-run-btn" onclick="runSkill('job-intake','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="job-intake"></div></div>
         <div class="agent-row"><span class="agent-name">hard-filter</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-hard-filter">auto</span><button class="skill-run-btn" onclick="runSkill('hard-filter','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="hard-filter"></div></div>
         <div class="agent-row"><span class="agent-name">funding-finder</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-funding-finder">14:00</span><button class="skill-run-btn" onclick="runSkill('funding-finder','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="funding-finder"></div></div>
+        <div class="agent-row"><span class="agent-name">application-tracker</span><span class="tag tag-blue" style="font-size:7px;" id="tag-opportunity-application-tracker">10:00</span><button class="skill-run-btn" onclick="runSkill('application-tracker','opportunity',this)">▶</button><div class="toggle on" data-division="opportunity" data-agent="application-tracker"></div></div>
       </div>
     </div>
 
@@ -1236,6 +1237,7 @@
         <div class="agent-row"><span class="agent-name">perf-correlation</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-perf-correlation">20:00</span><button class="skill-run-btn" onclick="runSkill('perf-correlation','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="perf-correlation"></div></div>
         <div class="agent-row"><span class="agent-name">burnout-monitor</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-burnout-monitor">21:00</span><button class="skill-run-btn" onclick="runSkill('burnout-monitor','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="burnout-monitor"></div></div>
         <div class="agent-row"><span class="agent-name">personal-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-personal-digest">21:30</span><button class="skill-run-btn" onclick="runSkill('personal-digest','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="personal-digest"></div></div>
+        <div class="agent-row"><span class="agent-name">weekly-retrospective</span><span class="tag tag-blue" style="font-size:7px;" id="tag-personal-weekly-retrospective">MON 08:00</span><button class="skill-run-btn" onclick="runSkill('weekly-retrospective','personal',this)">▶</button><div class="toggle on" data-division="personal" data-agent="weekly-retrospective"></div></div>
       </div>
       <!-- Health check-in widget — shown when prompt is active -->
       <div id="health-checkin-widget" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--purple);border-radius:4px;background:rgba(198,160,246,0.06);">
@@ -1271,6 +1273,7 @@
         <div class="agent-row"><span class="agent-name">breach-check</span><span class="tag tag-yellow" style="font-size:7px;" id="tag-op_sec-breach-check">14:00</span><button class="skill-run-btn" onclick="runSkill('breach-check','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="breach-check"></div></div>
         <div class="agent-row"><span class="agent-name">opsec-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-opsec-digest">16:30</span><button class="skill-run-btn" onclick="runSkill('opsec-digest','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="opsec-digest"></div></div>
         <div class="agent-row"><span class="agent-name">mobile-audit-review</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-mobile-audit-review">23:00</span><button class="skill-run-btn" onclick="runSkill('mobile-audit-review','op_sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="mobile-audit-review"></div></div>
+        <div class="agent-row"><span class="agent-name">network-monitor</span><span class="tag tag-blue" style="font-size:7px;" id="tag-op_sec-network-monitor">03:30</span><button class="skill-run-btn" onclick="runSkill('network-monitor','op-sec',this)">▶</button><div class="toggle on" data-division="op_sec" data-agent="network-monitor"></div></div>
       </div>
     </div>
 
@@ -1302,6 +1305,14 @@
         <div class="agent-row"><span class="agent-name">asset-catalog</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-catalog">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-catalog','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-catalog"></div></div>
         <div class="agent-row"><span class="agent-name">asset-deliver</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-deliver">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-deliver','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-deliver"></div></div>
         <div class="agent-row"><span class="agent-name">production-digest</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-production-digest">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('production-digest','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="production-digest"></div></div>
+        <div class="agent-row"><span class="agent-name">voice-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-voice-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('voice-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="voice-generate"></div></div>
+        <div class="agent-row"><span class="agent-name">music-compose</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-music-compose">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('music-compose','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="music-compose"></div></div>
+        <div class="agent-row"><span class="agent-name">qa-pipeline</span><span class="tag tag-green" style="font-size:7px;" id="tag-production-qa-pipeline">QA</span><button class="skill-run-btn" onclick="runSkill('qa-pipeline','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="qa-pipeline"></div></div>
+        <div class="agent-row"><span class="agent-name">art-director</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-art-director">07:00</span><button class="skill-run-btn" onclick="runSkill('art-director','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="art-director"></div></div>
+        <div class="agent-row"><span class="agent-name">narrative-craft</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-narrative-craft">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('narrative-craft','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="narrative-craft"></div></div>
+        <div class="agent-row"><span class="agent-name">sfx-generate</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-sfx-generate">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('sfx-generate','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="sfx-generate"></div></div>
+        <div class="agent-row"><span class="agent-name">asset-optimize</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-asset-optimize">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('asset-optimize','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="asset-optimize"></div></div>
+        <div class="agent-row"><span class="agent-name">voice-catalog</span><span class="tag tag-blue" style="font-size:7px;" id="tag-production-voice-catalog">ON-DEMAND</span><button class="skill-run-btn" onclick="runSkill('voice-catalog','production',this)">▶</button><div class="toggle on" data-division="production" data-agent="voice-catalog"></div></div>
       </div>
     </div>
 
@@ -2439,17 +2450,32 @@ Hit ⚡ GENERATE NOW to compile immediately.
       'asset-catalog':      'production',
       'asset-deliver':      'production',
       'production-digest':  'production',
+      'application-tracker': 'opportunity',
+      'network-monitor':     'op_sec',
+      'weekly-retrospective': 'personal',
+      'voice-generate':      'production',
+      'music-compose':       'production',
+      'qa-pipeline':         'production',
+      'art-director':        'production',
+      'narrative-craft':     'production',
+      'sfx-generate':        'production',
+      'asset-optimize':      'production',
+      'voice-catalog':       'production',
+      'provider-health':     'sentinel',
+      'queue-monitor':       'sentinel',
+      'agent-network-monitor': 'sentinel',
+      'sentinel-digest':     'sentinel',
     };
 
     // ── Reports Panel ──
     const REPORT_DIVISIONS = {
-      'trading':        { label: 'TRADING',   agents: ['market-scan', 'trading-report'] },
-      'opportunity':    { label: 'OPPS',      agents: ['job-intake', 'funding-finder'] },
+      'trading':        { label: 'TRADING',   agents: ['market-scan', 'trading-report', 'virtual-trader', 'backtester'] },
+      'opportunity':    { label: 'OPPS',      agents: ['job-intake', 'funding-finder', 'application-tracker'] },
       'dev-automation': { label: 'DEV',       agents: ['repo-monitor', 'refactor-scan', 'doc-update', 'artifact-manager', 'dev-digest'] },
-      'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest'] },
-      'op-sec':         { label: 'OP-SEC',    agents: ['device-posture', 'threat-surface', 'breach-check', 'cred-audit', 'privacy-scan', 'security-scan', 'opsec-digest'] },
-      'production':     { label: 'FORGE',     agents: ['image-generate', 'sprite-generate', 'graphic-design', 'prompt-craft', 'style-check', 'image-review', 'audio-test', 'video-review', 'storyboard-compose', 'continuity-check', 'asset-catalog', 'asset-deliver', 'production-digest'] },
-      'sentinel':       { label: 'SENTINEL',  agents: ['provider-health', 'queue-monitor'] },
+      'personal':       { label: 'PERSONAL',  agents: ['health-logger', 'perf-correlation', 'burnout-monitor', 'personal-digest', 'weekly-retrospective'] },
+      'op-sec':         { label: 'OP-SEC',    agents: ['device-posture', 'threat-surface', 'breach-check', 'cred-audit', 'privacy-scan', 'security-scan', 'opsec-digest', 'network-monitor'] },
+      'production':     { label: 'FORGE',     agents: ['image-generate', 'sprite-generate', 'graphic-design', 'prompt-craft', 'style-check', 'image-review', 'audio-test', 'video-review', 'storyboard-compose', 'continuity-check', 'asset-catalog', 'asset-deliver', 'production-digest', 'voice-generate', 'music-compose', 'qa-pipeline', 'art-director', 'narrative-craft', 'sfx-generate', 'asset-optimize', 'voice-catalog'] },
+      'sentinel':       { label: 'SENTINEL',  agents: ['provider-health', 'queue-monitor', 'agent-network-monitor', 'sentinel-digest'] },
     };
 
     window._reportData    = {};
@@ -3117,7 +3143,7 @@ Hit ⚡ GENERATE NOW to compile immediately.
     // ── Rank Card ──
     const ALL_ACHIEVEMENTS = [
       { id: 'first_hunt',      name: 'First Hunt'  },
-      { id: 'healthy_habits',  name: 'Loyal Flame' },
+      { id: 'loyal_flame',      name: 'Loyal Flame' },
       { id: 'market_watcher',  name: 'Mkt Eyes'    },
       { id: 'code_warden',     name: 'Code Warden' },
       { id: 'rulers_blessing', name: 'Ruler Bless' },
@@ -3125,6 +3151,11 @@ Hit ⚡ GENERATE NOW to compile immediately.
       { id: 'realm_commander', name: 'Commander'   },
       { id: 'eternal',         name: 'Eternal'     },
       { id: 'forge_lit',       name: 'Forge Lit'   },
+      { id: 'fortnight_flame',  name: 'Fortnight' },
+      { id: 'monthly_guardian',  name: 'Guardian' },
+      { id: 'first_prestige',   name: '1st Prestige' },
+      { id: 'triple_prestige',  name: '3x Prestige' },
+      { id: 'forge_ignited',    name: 'Forge On' },
     ];
 
     async function loadRankCard() {

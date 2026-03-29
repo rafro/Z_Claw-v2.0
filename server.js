@@ -629,6 +629,16 @@ function _checkAchievements(stats) {
       unlocked.push(id);
     }
   }
+    if (!earned.has('fortnight_flame') && Object.values(stats.streaks || {}).some(s => (s.longest || 0) >= 14))
+      unlocked.push('fortnight_flame');
+    if (!earned.has('monthly_guardian') && Object.values(stats.streaks || {}).some(s => (s.longest || 0) >= 30))
+      unlocked.push('monthly_guardian');
+    if (!earned.has('first_prestige') && (stats.prestige || 0) >= 1)
+      unlocked.push('first_prestige');
+    if (!earned.has('triple_prestige') && (stats.prestige || 0) >= 3)
+      unlocked.push('triple_prestige');
+    if (!earned.has('forge_ignited') && divXP('production') > 0)
+      unlocked.push('forge_ignited');
   return unlocked;
 }
 
@@ -2636,6 +2646,7 @@ function handleMobileDivisions(res) {
         burnout_monitor:  readPkt('personal', 'burnout-monitor'),
         perf_correlation: readPkt('personal', 'perf-correlation'),
         personal_digest:  readPkt('personal', 'personal-digest'),
+        weekly_retrospective: readPkt('personal', 'weekly-retrospective'),
       },
       dev_automation: {
         repo_monitor:  readPkt('dev-automation', 'repo-monitor'),
@@ -2658,7 +2669,6 @@ function handleMobileDivisions(res) {
         market_scan:    readPkt('trading', 'market-scan'),
         trading_report: readPkt('trading', 'trading-report'),
         virtual_trader: readPkt('trading', 'virtual-trader'),
-        risk_monitor:   readPkt('trading', 'risk-monitor'),
       },
       production: (() => {
         const hotDir  = path.join(ROOT, 'divisions', 'production', 'hot');
@@ -2667,16 +2677,36 @@ function handleMobileDivisions(res) {
         return {
           asset_catalog:  readPkt('production', 'asset-catalog'),
           asset_deliver:  readPkt('production', 'asset-deliver'),
-          concept_generate: readPkt('production', 'concept-generate'),
           image_generate: readPkt('production', 'image-generate'),
           video_generate: readPkt('production', 'video-generate'),
           music_compose:  readPkt('production', 'music-compose'),
           voice_generate: readPkt('production', 'voice-generate'),
           production_digest: readPkt('production', 'production-digest'),
+          sprite_generate: readPkt('production', 'sprite-generate'),
+          graphic_design: readPkt('production', 'graphic-design'),
+          prompt_craft: readPkt('production', 'prompt-craft'),
+          style_check: readPkt('production', 'style-check'),
+          image_review: readPkt('production', 'image-review'),
+          audio_test: readPkt('production', 'audio-test'),
+          video_review: readPkt('production', 'video-review'),
+          storyboard_compose: readPkt('production', 'storyboard-compose'),
+          continuity_check: readPkt('production', 'continuity-check'),
+          qa_pipeline: readPkt('production', 'qa-pipeline'),
+          art_director: readPkt('production', 'art-director'),
+          narrative_craft: readPkt('production', 'narrative-craft'),
+          sfx_generate: readPkt('production', 'sfx-generate'),
+          asset_optimize: readPkt('production', 'asset-optimize'),
+          voice_catalog: readPkt('production', 'voice-catalog'),
           hot_count:  dirCount(hotDir),
           cold_count: dirCount(coldDir),
         };
       })(),
+      sentinel: {
+        provider_health:       readPkt('sentinel', 'provider-health'),
+        queue_monitor:         readPkt('sentinel', 'queue-monitor'),
+        agent_network_monitor: readPkt('sentinel', 'agent-network-monitor'),
+        sentinel_digest:       readPkt('sentinel', 'sentinel-digest'),
+      },
     });
   } catch(e) {
     return jsonError(res, 500, e.message);
@@ -2775,6 +2805,10 @@ function _readDivisionMetrics() {
       health_entries:  bm.metrics?.health_entries || 0,
     };
   } catch(e) {}
+    try {
+      const wr = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'personal', 'packets', 'weekly-retrospective.json'), 'utf8'));
+      if (m.personal) m.personal.retro_wins = wr.metrics?.wins_count ?? null;
+    } catch(e) {}
 
   // Dev Automation
   try {
@@ -2827,6 +2861,10 @@ function _readDivisionMetrics() {
   } catch(e) {
     m.production = { total_assets: 0, pending_review: 0, approved: 0, delivered: 0 };
   }
+    try {
+      const qp = JSON.parse(fs.readFileSync(path.join(ROOT, 'divisions', 'production', 'packets', 'qa-pipeline.json'), 'utf8'));
+      if (m.production) { m.production.qa_passed = qp.metrics?.passed ?? 0; m.production.qa_total = qp.metrics?.total ?? 0; }
+    } catch(e) {}
   const hotDir  = path.join(ROOT, 'divisions', 'production', 'hot');
   const coldDir = path.join(ROOT, 'divisions', 'production', 'cold');
   if (m.production) {
@@ -2835,7 +2873,7 @@ function _readDivisionMetrics() {
   }
 
   // Action items — high priority count across all packets (all divisions)
-  const _divFolders = { trading: 'trading', opportunity: 'opportunity', personal: 'personal', dev_automation: 'dev-automation', op_sec: 'op-sec', production: 'production' };
+  const _divFolders = { trading: 'trading', opportunity: 'opportunity', personal: 'personal', dev_automation: 'dev-automation', op_sec: 'op-sec', production: 'production', sentinel: 'sentinel' };
   for (const [divKey, divFolder] of Object.entries(_divFolders)) {
     try {
       const pktDir = path.join(ROOT, 'divisions', divFolder, 'packets');
@@ -3161,6 +3199,11 @@ function handleAchievements(res) {
     { id: 'oracle_speaks', name: 'Oracle Speaks', icon: '🔮', desc: 'Generate a trading strategy', lore: 'ORACLE spoke truth. The market had no secrets left.' },
     { id: 'iron_forged', name: 'Iron Forged', icon: '⚙️', desc: 'Complete 5 dev automation tasks', lore: 'The forge ran hot. Code became stronger.' },
     { id: 'sovereign_path', name: 'Sovereign Path', icon: '🌟', desc: 'Reach level 5 overall', lore: 'J_Claw ascended. The realm trembled with power.' },
+    { id: 'fortnight_flame',  icon: '🔥', name: 'Fortnight Flame',    desc: 'Maintain a 14-day streak',      lore: 'Two weeks of unbroken service. The flame endures.' },
+    { id: 'monthly_guardian',  icon: '🛡️', name: 'Monthly Guardian',    desc: 'Maintain a 30-day streak',      lore: 'A full moon cycle of vigilance. Legends whisper your name.' },
+    { id: 'first_prestige',   icon: '✨', name: 'First Ascension',     desc: 'Complete your first prestige',   lore: 'The cycle breaks. You emerge stronger.' },
+    { id: 'triple_prestige',  icon: '🌟', name: 'Thrice Ascended',     desc: 'Reach prestige level 3',        lore: 'Three cycles complete. The realm bends to your will.' },
+    { id: 'forge_ignited',    icon: '🔨', name: 'The Forge Ignited',   desc: 'First asset in Production',     lore: "LYKE's forge burns. Creation begins." },
   ];
   const result = ALL_ACHIEVEMENTS.map(a => ({ ...a, unlocked: earned.includes(a.id), unlock_date: null }));
   jsonOk(res, { achievements: result, earned_count: earned.length, total: result.length });
