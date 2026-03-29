@@ -286,15 +286,67 @@ Mobile access via Tailscale: `http://<tailscale-ip>:3000/mobile`.
 
 ---
 
+## Prop Firm Trading Engine
+
+The trading division is built for futures prop firm evaluation and funded account management.
+
+### Signal Resolution (3-tier priority)
+1. **Schema-driven** — Uses exact backtested parameters from strategy schema (9 indicator types)
+2. **Name-parsing** — Legacy fallback matching strategy name strings
+3. **Multi-factor composite** — 6-score weighted system (trend/momentum/volatility/volume/structure/intermarket)
+
+### Risk Controls
+| Control | Threshold | Action |
+|---|---|---|
+| Trailing drawdown | 5% from peak equity | Force-liquidate ALL positions, halt permanently |
+| Daily loss | -3% | Force-close ALL positions |
+| VIX halt | > 35 | Block all new entries |
+| VIX reduce | > 25 | 50% position size |
+| Loss streak | 5 consecutive | 30-min cooldown, then half size |
+| Contract limits | 5/instrument, 10 total | Clamp or skip entry |
+| Correlation | > 0.80 | Block correlated entries |
+| Per-instrument slippage | SPX=3, Gold=8, Crude=5, Bonds=3 bps | Applied to every fill |
+
+### Daytrading Support
+- **4x daily execution**: 03:00 (Pre-London), 10:00 (NY Open), 15:00 (NY Afternoon), 18:00 (NY Close)
+- **Multi-timeframe**: Primary timeframe for direction + entry timeframe for timing
+- **Time-of-day filters**: ny_rth, ny_extended, london, asia sessions + allowed/blocked hours
+- **Session-aware data**: RTH-only bar filtering for cleaner analysis
+
+### Intermarket Signals
+- 3 confirmation types: `intermarket_trend`, `intermarket_momentum`, `intermarket_divergence`
+- 15% weight in composite scoring
+- Uses cross-instrument correlations for genuine multi-asset alpha
+
+### Instruments (diversified, all holdable simultaneously)
+| Instrument | Ticker | Futures | Slippage |
+|---|---|---|---|
+| SPX500 | ^GSPC | MES | 3 bps |
+| XAUUSD | GC=F | MGC | 8 bps |
+| CRUDE | CL=F | MCL | 5 bps |
+| BONDS | ZN=F | MBT | 3 bps |
+
+---
+
 ## What's Next
 
-- **QVAC Phase 2** — Install QVAC binary, download BitNet models, first training run (Trading domain)
-- **Voice reference recordings** — 5-30s WAV per commander for XTTS v2 cloning
-- **Full hydration system** — Selective extraction, manifests, budget-limited cache (when scale demands it)
-- **Strategy-to-indicator mapping** — Replace strategy name parsing with structured schema metadata
+### Your Side (Setup Required)
+1. Install Ollama + pull models (`qwen2.5:7b-instruct-q4_K_M`, `qwen2.5:14b-instruct-q4_K_M`)
+2. Create `.env` file (ADZUNA_APP_ID, ADZUNA_APP_KEY, HIBP_API_KEY, TELEGRAM_BOT_TOKEN)
+3. Install Python deps (`pip install yfinance pandas`)
+4. Start system (`pm2 start ecosystem.config.js`)
+5. Install ComfyUI + AnimateDiff for media generation
+6. Install QVAC for model fine-tuning (when ready)
+
+### Code Improvements (Future Sessions)
+- **Multiple-testing correction** — Deflated Sharpe Ratio for 250-strategy search
+- **Evaluation mode vs funded mode** — Different VIX thresholds, profit target tracking
+- **Weekend/news event protection** — FOMC/NFP calendar, forced close before weekends
 - **Production auto-trigger** — Art director → narrative craft → prompt craft → generation chain
+- **Dashboard: trading metrics** — Surface trailing DD, contract usage, intermarket scores, session status
+- **Dashboard: widget integration** — 7 prepared widget patches not yet integrated into dashboard
+- **Voice reference recordings** — 5-30s WAV per commander for XTTS v2 cloning
 - **Streak XP multiplier** — +10% per 7-day milestone, stacks to +50%
-- **WebAuthn Face ID** — Registration flow for Matthew's iPhone
 - **Agent-network expansion** — Live P&L streaming integration
 
 ---
