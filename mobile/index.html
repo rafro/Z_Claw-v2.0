@@ -4291,6 +4291,11 @@ async function loadStatsTab() {
       { id: 'five_orders',      icon: '✦',  name: 'Six Orders Stand',    desc: 'All six orders have opened their ledgers' },
       { id: 'realm_commander',  icon: '🌟', name: 'Realm Commander',      desc: 'J_Claw reached Level 10 — command authority established' },
       { id: 'eternal',          icon: '♾',  name: 'Eternal',              desc: 'J_Claw reached Level 50 — the Eternal Orchestrator ascends' },
+      { id: 'fortnight_flame',  icon: '🔥', name: 'Fortnight Flame',    desc: 'Maintain a 14-day streak' },
+      { id: 'monthly_guardian',  icon: '🛡️', name: 'Monthly Guardian',    desc: 'Maintain a 30-day streak' },
+      { id: 'first_prestige',   icon: '✨', name: 'First Ascension',     desc: 'Complete your first prestige' },
+      { id: 'triple_prestige',  icon: '🌟', name: 'Thrice Ascended',     desc: 'Reach prestige level 3' },
+      { id: 'forge_ignited',    icon: '🔨', name: 'The Forge Ignited',   desc: 'Generate your first asset in Production' },
     ];
     const DIV_CONFIG = [
       { key: 'op_sec',         icon: '🛡', label: 'Op-Sec'   },
@@ -6872,17 +6877,21 @@ const DIVISION_AGENTS = {
   trading:        [
     { skill: 'market-scan',     label: 'Market Scan',    schedule: '2h' },
     { skill: 'trading-report',  label: 'Trade Report',   schedule: '18:00' },
+    { skill: 'virtual-trader',  label: 'Virtual Trader', schedule: '18:00' },
+    { skill: 'backtester',      label: 'Backtester',     schedule: '18:05' },
   ],
   opportunity:    [
     { skill: 'job-intake',      label: 'Job Intake',     schedule: '3h' },
     { skill: 'hard-filter',     label: 'Hard Filter',    schedule: 'auto' },
     { skill: 'funding-finder',  label: 'Funding Finder', schedule: '14:00' },
+    { skill: 'application-tracker', label: 'App Tracker', schedule: '10:00' },
   ],
   personal:       [
     { skill: 'health-logger',   label: 'Health Logger',  schedule: '18:00' },
     { skill: 'perf-correlation',label: 'Perf Corr',      schedule: '20:00' },
     { skill: 'burnout-monitor', label: 'Burnout Monitor',schedule: '21:00' },
     { skill: 'personal-digest', label: 'Digest',         schedule: '21:30' },
+    { skill: 'weekly-retrospective', label: 'Weekly Retro', schedule: 'Mon 08:00' },
   ],
   dev_automation: [
     { skill: 'repo-monitor',    label: 'Repo Monitor',   schedule: '3h' },
@@ -6899,6 +6908,7 @@ const DIVISION_AGENTS = {
     { skill: 'privacy-scan',    label: 'Privacy Scan',   schedule: '16:00' },
     { skill: 'breach-check',    label: 'Breach Check',   schedule: '14:00' },
     { skill: 'opsec-digest',    label: 'OpSec Digest',   schedule: '08:30' },
+    { skill: 'network-monitor', label: 'Network Monitor', schedule: '03:30' },
   ],
   production:     [
     { skill: 'image-generate',    label: 'Image Generate',   schedule: 'demand' },
@@ -6915,6 +6925,20 @@ const DIVISION_AGENTS = {
     { skill: 'asset-catalog',     label: 'Asset Catalog',    schedule: 'demand' },
     { skill: 'asset-deliver',     label: 'Deliver Assets',   schedule: 'demand' },
     { skill: 'production-digest', label: 'Forge Digest',     schedule: 'demand' },
+    { skill: 'voice-generate',    label: 'Voice Generate',   schedule: 'demand' },
+    { skill: 'music-compose',     label: 'Music Compose',    schedule: 'demand' },
+    { skill: 'qa-pipeline',       label: 'QA Pipeline',      schedule: 'QA' },
+    { skill: 'art-director',      label: 'Art Director',     schedule: '07:00' },
+    { skill: 'narrative-craft',   label: 'Narrative Craft',  schedule: 'demand' },
+    { skill: 'sfx-generate',     label: 'SFX Generate',     schedule: 'demand' },
+    { skill: 'asset-optimize',   label: 'Asset Optimize',   schedule: 'demand' },
+    { skill: 'voice-catalog',    label: 'Voice Catalog',    schedule: 'demand' },
+  ],
+  sentinel:       [
+    { skill: 'provider-health',       label: 'Provider Health',    schedule: '2h' },
+    { skill: 'queue-monitor',         label: 'Queue Monitor',      schedule: '2h' },
+    { skill: 'agent-network-monitor', label: 'Agent Net Monitor',  schedule: '4h' },
+    { skill: 'sentinel-digest',       label: 'Sentinel Digest',    schedule: '6h' },
   ],
 };
 
@@ -7063,12 +7087,12 @@ function _packetCard(name, pkt, scheduleHint) {
 function _renderDivisionPackets(key, divData) {
   let html = '';
   const packetNames = {
-    opportunity:    { job_intake: 'Job Intake', funding_finder: 'Funding Finder' },
-    personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation', personal_digest: 'Personal Digest' },
+    opportunity:    { job_intake: 'Job Intake', funding_finder: 'Funding Finder', application_tracker: 'App Tracker' },
+    personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation', personal_digest: 'Personal Digest', weekly_retrospective: 'Weekly Retro' },
     dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager' },
-    op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest' },
-    production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest' },
-    sentinel:       {},
+    op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest', network_monitor: 'Network Monitor' },
+    production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog' },
+    sentinel:       { provider_health: 'Provider Health', queue_monitor: 'Queue Monitor', agent_network_monitor: 'Agent Net Monitor', sentinel_digest: 'Sentinel Digest' },
   };
   // Schedule hints for packets that only run on specific triggers / cadences
   const scheduleHints = {
