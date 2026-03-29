@@ -111,20 +111,13 @@ def run_trading_report() -> dict:
 
     result      = trading_report.run()
     stats       = result.get("stats", {})
-    market_pkt  = packet.read("trading", "market-scan")  # read latest market-scan if available
+    market_pkt  = packet.read_fresh("trading", "market-scan", 120)  # 2h market scan cycle
 
     # ── Burnout cross-wire ───────────────────────────────────────────────────
     burnout_warning = ""
-    try:
-        from pathlib import Path
-        bm_path = Path("divisions/personal/packets/burnout-monitor.json")
-        if bm_path.exists():
-            import json
-            bm = json.loads(bm_path.read_text())
-            if bm.get("escalate"):
-                burnout_warning = "WARNING: Burnout escalated — consider reduced trading."
-    except Exception:
-        pass
+    burnout_pkt = packet.read_fresh("personal", "burnout-monitor", 1440)  # daily
+    if burnout_pkt and burnout_pkt.get("escalate"):
+        burnout_warning = "WARNING: Burnout escalated — consider reduced trading."
 
     if result["source"] == "none":
         summary = "Trading system not yet activated — no session data found."

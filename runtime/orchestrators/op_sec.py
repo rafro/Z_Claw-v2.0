@@ -230,12 +230,12 @@ def run_opsec_digest() -> dict:
     log.info("=== OP-Sec Division: opsec-digest synthesis ===")
 
     pkts = [
-        packet.read("op-sec", "device-posture"),
-        packet.read("op-sec", "breach-check"),
-        packet.read("op-sec", "threat-surface"),
-        packet.read("op-sec", "cred-audit"),
-        packet.read("op-sec", "privacy-scan"),
-        packet.read("op-sec", "security-scan"),
+        packet.read_fresh("op-sec", "device-posture", 10080),   # 7-day window
+        packet.read_fresh("op-sec", "breach-check", 10080),
+        packet.read_fresh("op-sec", "threat-surface", 10080),
+        packet.read_fresh("op-sec", "cred-audit", 10080),
+        packet.read_fresh("op-sec", "privacy-scan", 10080),
+        packet.read_fresh("op-sec", "security-scan", 10080),
     ]
 
     synthesis = _synthesize_posture(pkts)

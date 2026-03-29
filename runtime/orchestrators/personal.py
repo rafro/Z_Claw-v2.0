@@ -121,7 +121,7 @@ def run_perf_correlation() -> dict:
     result = perf_correlation.run()
 
     # Orchestrator adds context from burnout monitor if available
-    burnout_pkt = packet.read("personal", "burnout-monitor")
+    burnout_pkt = packet.read_fresh("personal", "burnout-monitor", 1440)  # daily
     summary = result.get("summary", "No patterns detected.")
 
     if burnout_pkt and burnout_pkt.get("metrics", {}).get("avg_sleep_hours"):
@@ -179,9 +179,9 @@ def run_personal_digest() -> dict:
     """
     log.info("=== Personal Division: personal-digest synthesis ===")
 
-    health_pkt  = packet.read("personal", "health-logger")
-    perf_pkt    = packet.read("personal", "perf-correlation")
-    burnout_pkt = packet.read("personal", "burnout-monitor")
+    health_pkt  = packet.read_fresh("personal", "health-logger", 1440)   # daily
+    perf_pkt    = packet.read_fresh("personal", "perf-correlation", 1440)  # daily
+    burnout_pkt = packet.read_fresh("personal", "burnout-monitor", 1440)  # daily
 
     synthesis = _synthesize_personal_state(health_pkt, perf_pkt, burnout_pkt)
 

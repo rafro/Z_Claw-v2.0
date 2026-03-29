@@ -321,9 +321,9 @@ def run_dev_digest() -> dict:
     """
     log.info("=== Dev Automation Division: dev-digest synthesis ===")
 
-    repo_pkt     = packet.read("dev-automation", "repo-monitor")
-    security_pkt = packet.read("dev-automation", "security-scan")
-    refactor_pkt = packet.read("dev-automation", "refactor-scan")
+    repo_pkt     = packet.read_fresh("dev-automation", "repo-monitor", 4320)    # 3-day window
+    security_pkt = packet.read_fresh("dev-automation", "security-scan", 4320)
+    refactor_pkt = packet.read_fresh("dev-automation", "refactor-scan", 4320)
 
     synthesis = _synthesize_dev_state(repo_pkt, security_pkt, refactor_pkt)
 
