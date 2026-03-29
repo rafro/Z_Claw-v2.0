@@ -1,5 +1,6 @@
 """
-Virtual account manager — SPX500 and Gold paper trading with real yfinance data.
+Virtual account manager — diversified paper trading with real yfinance data.
+Instruments: SPX500, XAUUSD, CRUDE, BONDS (loaded from assets.json).
 No broker, no KYC. Uses real market prices to simulate trade execution.
 Reads agent-network cycle state for active strategy. Writes virtual_account.json.
 """
@@ -43,19 +44,25 @@ _TF_MAP = {
 DEFAULT_BALANCE    = 10_000.0
 RISK_PER_TRADE_PCT = 1.0   # 1% of account per trade
 STOP_PCT           = 0.01  # 1% stop loss distance
-SLIPPAGE_BPS       = 5     # 5 basis points per fill (0.05%)
+SLIPPAGE_BPS       = 5     # default fallback: 5 basis points per fill (0.05%)
+INSTRUMENT_SLIPPAGE_BPS = {
+    "SPX500": 3,
+    "XAUUSD": 8,
+    "CRUDE":  5,
+    "BONDS":  3,
+}
 DAILY_LOSS_HALT_PCT = 3.0  # halt if daily PnL < -3% of account
 STREAK_HALT_COUNT   = 5    # halt after N consecutive losses
 
 # Known pairwise correlations (approximate, based on historical data)
 # High correlation = potential double-exposure risk
 INSTRUMENT_CORRELATIONS = {
-    ("SPX500", "NAS100"): 0.92,
-    ("SPX500", "US30"):   0.88,
     ("SPX500", "XAUUSD"): -0.15,
-    ("NAS100", "US30"):   0.90,
-    ("NAS100", "XAUUSD"): -0.12,
-    ("US30",   "XAUUSD"): -0.10,
+    ("SPX500", "CRUDE"):   0.40,
+    ("SPX500", "BONDS"):  -0.30,
+    ("XAUUSD", "CRUDE"):   0.25,
+    ("XAUUSD", "BONDS"):   0.20,
+    ("CRUDE",  "BONDS"):  -0.15,
 }
 MAX_PORTFOLIO_CORRELATION = 0.80
 
@@ -63,6 +70,11 @@ MAX_PORTFOLIO_CORRELATION = 0.80
 def _correlation(inst_a: str, inst_b: str) -> float:
     key = (inst_a, inst_b) if (inst_a, inst_b) in INSTRUMENT_CORRELATIONS else (inst_b, inst_a)
     return INSTRUMENT_CORRELATIONS.get(key, 0.0)
+
+
+def _slippage_bps(instrument: str) -> int:
+    """Per-instrument slippage in basis points; falls back to SLIPPAGE_BPS (5)."""
+    return INSTRUMENT_SLIPPAGE_BPS.get(instrument, SLIPPAGE_BPS)
 
 
 def _load_file(path: Path) -> Optional[dict]:
@@ -870,10 +882,11 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                 entry_risk  = open_pos["risk_usd"]
 
                 # Apply slippage on exit (opposite direction to entry)
+                slip = _slippage_bps(display_name)
                 if side == "buy":
-                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 - slip / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 + slip / 10000), 4)
 
                 pnl = (
                     (fill_price - entry_price) * qty
@@ -972,10 +985,11 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                 adjusted_risk_usd = risk_usd * vix_size_factor * vol_adjustment
 
                 # Apply slippage on entry based on side
+                slip = _slippage_bps(display_name)
                 if signals["side"] == "buy":
-                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 + slip / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
+                    fill_price = round(current_price * (1 - slip / 10000), 4)
 
                 qty      = max(1, int(adjusted_risk_usd / (fill_price * STOP_PCT)))
                 order_id = f"VA-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"

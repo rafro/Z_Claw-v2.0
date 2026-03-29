@@ -1,9 +1,9 @@
 {
-  "_comment": "Instrument registry — name, yfinance ticker, futures symbol. One source of truth for all trading skills.",
+  "_comment": "Instrument registry — diversified for prop firm trading.",
   "instruments": [
-    { "name": "SPX500", "ticker": "^GSPC",  "futures": "MES" },
-    { "name": "NAS100", "ticker": "^NDX",   "futures": "MNQ" },
-    { "name": "XAUUSD", "ticker": "GC=F",   "futures": "MGC" },
-    { "name": "US30",   "ticker": "^DJI",   "futures": "MYM" }
+    { "name": "SPX500", "ticker": "^GSPC",  "futures": "MES",  "asset_class": "equity_index", "notable_move_pct": 1.5, "strong_move_pct": 3.0 },
+    { "name": "XAUUSD", "ticker": "GC=F",   "futures": "MGC",  "asset_class": "commodity",    "notable_move_pct": 1.5, "strong_move_pct": 3.0 },
+    { "name": "CRUDE",  "ticker": "CL=F",   "futures": "MCL",  "asset_class": "commodity",    "notable_move_pct": 2.0, "strong_move_pct": 4.0 },
+    { "name": "BONDS",  "ticker": "ZN=F",   "futures": "MBT",  "asset_class": "fixed_income", "notable_move_pct": 0.5, "strong_move_pct": 1.0 }
   ]
 }
