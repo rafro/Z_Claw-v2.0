@@ -10,6 +10,11 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from runtime.tools.domain_map import compute_capture_hash, get_domain
+from runtime.tools.training_manifest import record_capture, record_review
+
 CAPTURE_FILE = PROJECT_ROOT / "state" / "training-capture.jsonl"
 APPROVED_FILE = PROJECT_ROOT / "state" / "training-approved.jsonl"
 
@@ -163,9 +168,25 @@ def run_review(entries: list[dict]) -> None:
 
             if choice == "k":
                 write_approved(entry)
+                try:
+                    entry_hash = compute_capture_hash(entry.get("messages", []), entry.get("response", ""))
+                    domain = get_domain(entry.get("task_type", ""))
+                    # Bootstrap: record capture if not already tracked
+                    record_capture(entry_hash, domain, entry.get("ts", ""))
+                    record_review(entry_hash, approved=True, reviewer="human-cli")
+                except Exception as e:
+                    print(f"  (manifest warning: {e})")
                 kept += 1
                 reviewed += 1
             elif choice == "d":
+                try:
+                    entry_hash = compute_capture_hash(entry.get("messages", []), entry.get("response", ""))
+                    domain = get_domain(entry.get("task_type", ""))
+                    # Bootstrap: record capture if not already tracked
+                    record_capture(entry_hash, domain, entry.get("ts", ""))
+                    record_review(entry_hash, approved=False, reviewer="human-cli")
+                except Exception as e:
+                    print(f"  (manifest warning: {e})")
                 deleted += 1
                 reviewed += 1
             elif choice == "s":
