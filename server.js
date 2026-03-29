@@ -1487,7 +1487,18 @@ async function handleChat(body, res) {
   const systemPrompt = soul + '\n\nIMPORTANT — User Context: There are two users of J_Claw. Tyler is the partner and owner of this local environment — he is the primary operator on the PC desktop and the user you are speaking with now. Matthew is the creator of J_Claw and accesses the system from mobile. Both have full trust in the system.\n\n---\n\n' + context;
 
   const hist = readState('chat-history.json') || { messages: [], last_updated: null };
-  let history = (hist.messages || []).slice(-20);
+  let history = (function trimToTokenBudget(msgs, budget) {
+      const recent = (msgs || []).slice(-20);
+      const kept = [];
+      let tokens = 0;
+      for (let i = recent.length - 1; i >= 0; i--) {
+          const cost = Math.max(1, Math.floor((recent[i].content || '').length / 4)) + 4;
+          if (tokens + cost > budget) break;
+          kept.unshift(recent[i]);
+          tokens += cost;
+      }
+      return kept;
+  })(hist.messages, 3000);
   if (history.length > 0 && history[0].role !== 'user') history = history.slice(1);
 
   let conversationText = '';
@@ -1704,7 +1715,18 @@ async function handleMobileChatJClaw(body, res) {
   const systemPrompt = soul + '\n\nIMPORTANT — User Context: There are two users of J_Claw. Matthew is the creator of J_Claw and the user you are speaking with now — he is accessing from mobile. Tyler is Matthew\'s partner and the owner of this local environment; Tyler operates J_Claw from the PC desktop. Both have full trust in the system.\n\n---\n\n' + context;
 
   const hist = readState('chat-history.json') || { messages: [], last_updated: null };
-  let history = (hist.messages || []).slice(-20);
+  let history = (function trimToTokenBudget(msgs, budget) {
+      const recent = (msgs || []).slice(-20);
+      const kept = [];
+      let tokens = 0;
+      for (let i = recent.length - 1; i >= 0; i--) {
+          const cost = Math.max(1, Math.floor((recent[i].content || '').length / 4)) + 4;
+          if (tokens + cost > budget) break;
+          kept.unshift(recent[i]);
+          tokens += cost;
+      }
+      return kept;
+  })(hist.messages, 3000);
   if (history.length > 0 && history[0].role !== 'user') history = history.slice(1);
 
   res.writeHead(200, {
@@ -1858,7 +1880,18 @@ async function handleMobileChatCoding(body, res) {
   const systemPrompt = `You are Claude, an AI coding assistant helping manage and improve J_Claw — a personal AI orchestration system running on Windows 11. There are two users: Matthew is the creator of J_Claw and the user you are speaking with now, accessing from mobile. Tyler is Matthew's partner and the owner of this local environment; Tyler operates J_Claw from the PC desktop. Both have full trust in the system. You have full context about the system below. Help with code changes, debugging, planning, and answering questions. You CAN make real file edits using your Edit, Write, Read, Glob, and Grep tools. Be direct and concise.\n\n${context}`;
 
   const hist = readState('coding-history.json') || { messages: [], last_updated: null };
-  let history = (hist.messages || []).slice(-20);
+  let history = (function trimToTokenBudget(msgs, budget) {
+      const recent = (msgs || []).slice(-20);
+      const kept = [];
+      let tokens = 0;
+      for (let i = recent.length - 1; i >= 0; i--) {
+          const cost = Math.max(1, Math.floor((recent[i].content || '').length / 4)) + 4;
+          if (tokens + cost > budget) break;
+          kept.unshift(recent[i]);
+          tokens += cost;
+      }
+      return kept;
+  })(hist.messages, 3000);
   if (history.length > 0 && history[0].role !== 'user') history = history.slice(1);
 
   let conversationText = '';

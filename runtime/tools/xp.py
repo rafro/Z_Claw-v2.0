@@ -245,6 +245,12 @@ def _check_achievements(stats: dict) -> list:
             unlocked = level >= cond["value"]
         elif ctype == "any_streak_gte":
             unlocked = any(s.get("longest", 0) >= cond["value"] for s in streaks.values())
+        elif ctype == "prestige_gte":
+            unlocked = stats.get("prestige", 0) >= cond["value"]
+        elif ctype == "divisions_xp_gte_count":
+            threshold = cond.get("value", 0)
+            count_needed = cond.get("count", 1)
+            unlocked = sum(1 for d in divisions.values() if d.get("xp", 0) >= threshold) >= count_needed
 
         if unlocked:
             new_ones.append(aid)

@@ -461,6 +461,46 @@ ACHIEVEMENTS = [
         "condition": {"type": "base_level_gte", "value": 50},
         "chronicle_lore": "J_Claw has transcended all known limits and claimed the eternal rank. The realm will not forget this moment.",
     },
+    {
+        "id":    "fortnight_flame",
+        "icon":  "🔥",
+        "name":  "Fortnight Flame",
+        "desc":  "Any order held a 14-day streak — iron discipline proven",
+        "condition": {"type": "any_streak_gte", "value": 14},
+        "chronicle_lore": "Fourteen unbroken days of battle rhythm. The realm has witnessed true iron discipline.",
+    },
+    {
+        "id":    "monthly_guardian",
+        "icon":  "🛡",
+        "name":  "Monthly Guardian",
+        "desc":  "Any order held a 30-day streak — the guardian never rests",
+        "condition": {"type": "any_streak_gte", "value": 30},
+        "chronicle_lore": "Thirty days without lapse. The guardian's watch has become legend in the realm.",
+    },
+    {
+        "id":    "first_prestige",
+        "icon":  "✦",
+        "name":  "First Prestige",
+        "desc":  "J_Claw completed the first prestige cycle",
+        "condition": {"type": "prestige_gte", "value": 1},
+        "chronicle_lore": "The first cycle is complete. J_Claw has proven that mastery is not an end — it is a threshold.",
+    },
+    {
+        "id":    "triple_prestige",
+        "icon":  "✦✦✦",
+        "name":  "Triple Prestige",
+        "desc":  "J_Claw completed three prestige cycles",
+        "condition": {"type": "prestige_gte", "value": 3},
+        "chronicle_lore": "Three full cycles of mastery. The realm bends to a commander who has reset and rebuilt three times over.",
+    },
+    {
+        "id":    "forge_ignited",
+        "icon":  "🔨",
+        "name":  "Forge Ignited",
+        "desc":  "The Lykeon Forge has produced its first XP — production is live",
+        "condition": {"type": "division_xp_gt", "division": "production", "value": 0},
+        "chronicle_lore": "LYKE's forge has struck its first spark in the production line. The realm now has a maker.",
+    },
 ]
 
 # ── Chronicle event templates ─────────────────────────────────────────────────

@@ -580,3 +580,100 @@ def current_state() -> dict:
     _update_active_arc(state)
     _unlock_chapters(state)
     return _save_state(state)
+
+
+# ── Quest system ─────────────────────────────────────────────────────────────
+
+QUESTS_FILE = STATE_DIR / "active-quests.json"
+
+QUEST_TEMPLATES = [
+    {"id": "hunt_3_opportunities", "title": "The Dawnhunt Rides", "desc": "Complete 3 opportunity skills", "division": "opportunity", "goal": 3, "xp_reward": 25},
+    {"id": "read_5_signals", "title": "Veil of Five Signals", "desc": "Complete 5 trading skills", "division": "trading", "goal": 5, "xp_reward": 30},
+    {"id": "forge_3_constructs", "title": "Forge Three Constructs", "desc": "Complete 3 dev_automation skills", "division": "dev_automation", "goal": 3, "xp_reward": 25},
+    {"id": "tend_flame_3", "title": "Keeper's Vigil", "desc": "Complete 3 personal skills", "division": "personal", "goal": 3, "xp_reward": 25},
+    {"id": "seal_3_breaches", "title": "Seal the Veil", "desc": "Complete 3 op_sec skills", "division": "op_sec", "goal": 3, "xp_reward": 25},
+    {"id": "produce_3_assets", "title": "The Forge Awakens", "desc": "Complete 3 production skills", "division": "production", "goal": 3, "xp_reward": 25},
+    {"id": "streak_7_any", "title": "Iron Discipline", "desc": "Reach a 7-day streak in any division", "division": "*", "goal": 7, "xp_reward": 40},
+    {"id": "streak_14_any", "title": "Fortnight of Steel", "desc": "Reach a 14-day streak in any division", "division": "*", "goal": 14, "xp_reward": 60},
+    {"id": "all_orders_active", "title": "The Court Assembles", "desc": "Activate all 5 core divisions", "division": "*", "goal": 5, "xp_reward": 50},
+    {"id": "earn_100_base_xp", "title": "Rising Commander", "desc": "Earn 100 total base XP", "division": "*", "goal": 100, "xp_reward": 35},
+    {"id": "rank_up_any", "title": "First Ascension", "desc": "Rank up any division", "division": "*", "goal": 1, "xp_reward": 30},
+    {"id": "complete_10_skills", "title": "Battle Rhythm", "desc": "Complete 10 skills across all divisions", "division": "*", "goal": 10, "xp_reward": 40},
+    {"id": "complete_25_skills", "title": "Veteran's March", "desc": "Complete 25 skills across all divisions", "division": "*", "goal": 25, "xp_reward": 75},
+    {"id": "reach_level_5", "title": "Keeper of Systems", "desc": "Reach base level 5", "division": "*", "goal": 5, "xp_reward": 50},
+    {"id": "reach_level_10", "title": "Commander of the Realm", "desc": "Reach base level 10", "division": "*", "goal": 10, "xp_reward": 100},
+]
+
+
+def _load_quests() -> list[dict]:
+    if not QUESTS_FILE.exists():
+        return []
+    try:
+        with open(QUESTS_FILE, encoding="utf-8-sig") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _save_quests(quests: list[dict]) -> None:
+    QUESTS_FILE.parent.mkdir(exist_ok=True)
+    with open(QUESTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(quests, f, indent=2, ensure_ascii=False)
+
+
+def active_quests() -> list[dict]:
+    """Return currently active quests."""
+    return _load_quests()
+
+
+def check_quest_progress(event: str, **data) -> list[dict]:
+    """Check and update quest progress based on an event. Returns list of completed quests."""
+    quests = _load_quests()
+    completed = []
+    for quest in quests:
+        if quest.get("completed"):
+            continue
+        quest.setdefault("progress", 0)
+        template = next((t for t in QUEST_TEMPLATES if t["id"] == quest.get("template_id")), None)
+        if not template:
+            continue
+        goal = template.get("goal", 1)
+        division = template.get("division", "*")
+
+        if event == "skill_complete":
+            if division == "*" or division == data.get("division", ""):
+                quest["progress"] = min(quest["progress"] + 1, goal)
+        elif event == "streak_milestone":
+            if division == "*" or division == data.get("division", ""):
+                streak = data.get("streak", 0)
+                quest["progress"] = max(quest["progress"], streak)
+        elif event == "rank_up":
+            if division == "*" or division == data.get("division", ""):
+                quest["progress"] = min(quest["progress"] + 1, goal)
+        elif event == "level_up":
+            quest["progress"] = max(quest["progress"], data.get("level", 0))
+        elif event == "divisions_active":
+            quest["progress"] = max(quest["progress"], data.get("count", 0))
+        elif event == "base_xp_earned":
+            quest["progress"] = max(quest["progress"], data.get("total", 0))
+
+        if quest["progress"] >= goal:
+            quest["completed"] = True
+            quest["completed_at"] = _now()
+            completed.append(quest)
+
+    _save_quests(quests)
+    return completed
+
+
+def complete_quest(quest_id: str) -> dict | None:
+    """Mark a quest as completed and return its data, or None if not found."""
+    quests = _load_quests()
+    for quest in quests:
+        if quest.get("id") == quest_id and not quest.get("completed"):
+            quest["completed"] = True
+            quest["completed_at"] = _now()
+            _save_quests(quests)
+            return quest
+    _save_quests(quests)
+    return None
