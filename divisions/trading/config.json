@@ -54,6 +54,30 @@
       "last_run": null,
       "status": "idle",
       "note": "Placeholder — artifact-manager already handles trading hot/cold archiving"
+    },
+    "strategy-builder": {
+      "schedule": "on_demand",
+      "skill": "strategy-builder",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "LLM generates strategy schemas using local Ollama. On-demand only."
+    },
+    "strategy-tester": {
+      "schedule": "on_demand",
+      "skill": "strategy-tester",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "Backtests generated strategies against historical data. On-demand only."
+    },
+    "strategy-search": {
+      "schedule": "on_demand",
+      "skill": "strategy-search",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "Search loop: generate → test → filter → repeat until prop-firm-compliant winner. On-demand only."
     }
   }
 }

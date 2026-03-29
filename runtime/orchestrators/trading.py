@@ -9,7 +9,7 @@ import logging
 
 from runtime.config import SKILL_MODELS, OLLAMA_HOST
 from runtime.ollama_client import chat, is_available
-from runtime.skills import trading_report, market_scan, virtual_trader, backtester
+from runtime.skills import trading_report, market_scan, virtual_trader, backtester, strategy_builder
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
 from runtime.tools.trading import load_cycle_state, load_active_strategy
@@ -298,4 +298,22 @@ def run_market_scan() -> dict:
         "Market-scan packet written. Signals=%d High=%d",
         len(signals), result["counts"].get("high", 0),
     )
+    return pkt
+
+
+def run_strategy_builder(num_strategies: int = 5, timeframe: str = "1d") -> dict:
+    """Generate new trading strategies using local LLM."""
+    log.info("=== Trading Division: strategy-builder run ===")
+    result = strategy_builder.run(num_strategies=num_strategies, timeframe=timeframe)
+    pkt = packet.build(
+        division="trading", skill="strategy-builder",
+        status=result.get("status", "failed"),
+        summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result.get("status") in ("success", "partial"):
+        grant_skill_xp("strategy-builder")
     return pkt

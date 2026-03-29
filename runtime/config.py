@@ -56,6 +56,7 @@ SKILL_MODELS = {
     "privacy-scan":      MODEL_7B,
     "art-director":      MODEL_7B,
     "narrative-craft":   MODEL_7B,
+    "strategy-builder":  MODEL_7B,
 }
 
 
