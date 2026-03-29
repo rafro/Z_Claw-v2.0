@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from runtime import packet as packet_io
 from runtime.config import STATE_DIR
 from runtime.realm import chronicle, events as realm_events, story as realm_story
+from runtime.tools.atomic_write import atomic_write_json
 from runtime.realm.config import (
     ACHIEVEMENTS,
     BASE_RANKS,
@@ -156,9 +157,7 @@ def _load_stats() -> dict:
 def _save_stats(stats: dict) -> None:
     _refresh_base_progress(stats)
     stats["last_updated"] = datetime.now(timezone.utc).isoformat()
-    STATS_FILE.parent.mkdir(exist_ok=True)
-    with open(STATS_FILE, "w", encoding="utf-8") as f:
-        json.dump(stats, f, indent=2)
+    atomic_write_json(STATS_FILE, stats)
 
 
 def _append_xp_history(entry: dict) -> None:

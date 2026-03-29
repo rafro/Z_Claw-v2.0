@@ -99,9 +99,32 @@ def run_trading_report() -> dict:
     """Run trading session stats + orchestrator synthesis with market context."""
     log.info("=== Trading Division: trading-report run ===")
 
+    # ── Breach check cross-wire ──────────────────────────────────────────────
+    from runtime.tools.breach_check import is_breach_active
+    breach_active = False
+    try:
+        breach_active = is_breach_active()
+        if breach_active:
+            log.warning("BREACH ACTIVE during trading run — flagging in summary")
+    except Exception:
+        pass
+
     result      = trading_report.run()
     stats       = result.get("stats", {})
     market_pkt  = packet.read("trading", "market-scan")  # read latest market-scan if available
+
+    # ── Burnout cross-wire ───────────────────────────────────────────────────
+    burnout_warning = ""
+    try:
+        from pathlib import Path
+        bm_path = Path("divisions/personal/packets/burnout-monitor.json")
+        if bm_path.exists():
+            import json
+            bm = json.loads(bm_path.read_text())
+            if bm.get("escalate"):
+                burnout_warning = "WARNING: Burnout escalated — consider reduced trading."
+    except Exception:
+        pass
 
     if result["source"] == "none":
         summary = "Trading system not yet activated — no session data found."
@@ -125,6 +148,12 @@ def run_trading_report() -> dict:
         # Orchestrator synthesizes session + market together
         summary = _synthesize_trading_session(result, market_pkt)
         status  = result["status"]
+
+    # ── Append cross-division warnings to summary ─────────────────────────────
+    if breach_active:
+        summary += " [BREACH ACTIVE — review op-sec breach-check packet]"
+    if burnout_warning:
+        summary += f" {burnout_warning}"
 
     # Load virtual account state — always include balance/growth even with no closed trades
     v_acct          = load_virtual_account()

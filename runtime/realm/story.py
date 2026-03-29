@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from runtime.config import STATE_DIR
 from runtime.realm.config import DIVISIONS
+from runtime.tools.atomic_write import atomic_write_json
 
 try:
     from runtime.tools import anim_queue as _aq
@@ -260,9 +261,7 @@ def _load_state() -> dict:
 
 def _save_state(state: dict) -> dict:
     state["last_updated"] = _now()
-    STORY_FILE.parent.mkdir(exist_ok=True)
-    with open(STORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+    atomic_write_json(STORY_FILE, state, ensure_ascii=False)
     return state
 
 

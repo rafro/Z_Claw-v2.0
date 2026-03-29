@@ -130,12 +130,35 @@ def run_job_intake() -> dict:
     for job in filtered.get("tier_a", []) + filtered.get("tier_b", []):
         action_items.append(packet.job_action_item(job))
 
+    # Step 4b: Burnout throttle — cap Tier A escalations during high burnout
+    burnout_high = False
+    try:
+        from pathlib import Path
+        import json as _json
+        bm_path = Path("divisions/personal/packets/burnout-monitor.json")
+        if bm_path.exists():
+            bm = _json.loads(bm_path.read_text())
+            if bm.get("escalate"):
+                burnout_high = True
+                tier_a_list = filtered.get("tier_a", [])
+                if len(tier_a_list) > 2:
+                    log.warning(
+                        "Burnout throttle: capping Tier A from %d to 2",
+                        len(tier_a_list),
+                    )
+                    filtered["tier_a"] = tier_a_list[:2]
+                    filtered["counts"]["tier_a"] = len(filtered["tier_a"])
+    except Exception:
+        pass
+
     # Step 5: Determine escalation (Tier A found)
     escalate = len(filtered.get("tier_a", [])) > 0
     escalation_reason = ""
     if escalate:
         n = len(filtered["tier_a"])
         escalation_reason = f"{n} Tier A job{'s' if n > 1 else ''} found requiring Matthew's review."
+        if burnout_high:
+            escalation_reason += " (Burnout throttle active — showing top 2 only.)"
 
     # Also escalate if Adzuna quota hit (blocks Canadian coverage)
     if intake["source_status"].get("Adzuna") == "rate_limited":

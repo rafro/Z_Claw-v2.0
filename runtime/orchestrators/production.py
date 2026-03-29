@@ -208,9 +208,26 @@ def run_production_digest() -> dict:
     LYKE's executive report to J_Claw.
     Runs catalog + storyboard, then synthesizes pipeline health.
     """
+    # ── Breach check cross-wire — skip non-critical generation during breach ─
+    from runtime.tools.breach_check import is_breach_active
+    breach_active = False
+    try:
+        breach_active = is_breach_active()
+        if breach_active:
+            log.warning("BREACH ACTIVE — skipping non-critical production generation")
+    except Exception:
+        pass
+
     catalog_result     = asset_catalog.run()
-    storyboard_result  = storyboard_compose.run()
-    deliver_result     = asset_deliver.run()
+
+    if breach_active:
+        # During breach: skip storyboard and delivery (non-critical generation)
+        storyboard_result = {"metrics": {"shots_composed": 0}, "status": "skipped"}
+        deliver_result    = {"metrics": {"delivered": 0}, "status": "skipped"}
+        log.info("LYKE: storyboard + delivery skipped during active breach")
+    else:
+        storyboard_result  = storyboard_compose.run()
+        deliver_result     = asset_deliver.run()
 
     catalog_m    = catalog_result.get("metrics", {})
     storyboard_m = storyboard_result.get("metrics", {})
