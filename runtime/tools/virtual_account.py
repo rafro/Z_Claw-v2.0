@@ -46,19 +46,16 @@ STOP_PCT           = 0.01  # 1% stop loss distance
 SLIPPAGE_BPS       = 5     # 5 basis points per fill (0.05%)
 DAILY_LOSS_HALT_PCT = 3.0  # halt if daily PnL < -3% of account
 STREAK_HALT_COUNT   = 5    # halt after N consecutive losses
-TRAILING_DD_PCT     = 6.0  # trailing drawdown limit (% from peak)
-MAX_TOTAL_CONTRACTS      = 10   # max total contracts across all instruments
-MAX_CONTRACTS_PER_INSTRUMENT = 5  # max contracts per single instrument
 
 # Known pairwise correlations (approximate, based on historical data)
 # High correlation = potential double-exposure risk
 INSTRUMENT_CORRELATIONS = {
+    ("SPX500", "NAS100"): 0.92,
+    ("SPX500", "US30"):   0.88,
     ("SPX500", "XAUUSD"): -0.15,
-    ("SPX500", "CRUDE"):   0.40,
-    ("SPX500", "BONDS"):  -0.30,
-    ("XAUUSD", "CRUDE"):   0.25,
-    ("XAUUSD", "BONDS"):   0.20,
-    ("CRUDE",  "BONDS"):  -0.15,
+    ("NAS100", "US30"):   0.90,
+    ("NAS100", "XAUUSD"): -0.12,
+    ("US30",   "XAUUSD"): -0.10,
 }
 MAX_PORTFOLIO_CORRELATION = 0.80
 
@@ -66,20 +63,6 @@ MAX_PORTFOLIO_CORRELATION = 0.80
 def _correlation(inst_a: str, inst_b: str) -> float:
     key = (inst_a, inst_b) if (inst_a, inst_b) in INSTRUMENT_CORRELATIONS else (inst_b, inst_a)
     return INSTRUMENT_CORRELATIONS.get(key, 0.0)
-
-
-# Per-instrument slippage overrides (basis points)
-_INSTRUMENT_SLIPPAGE = {
-    "SPX500": 3,   # most liquid
-    "XAUUSD": 8,   # gold spreads wider
-    "CRUDE":  5,   # oil moderate
-    "BONDS":  3,   # treasuries liquid
-}
-
-
-def _slippage_bps(instrument: str) -> float:
-    """Return per-instrument slippage in basis points."""
-    return _INSTRUMENT_SLIPPAGE.get(instrument, SLIPPAGE_BPS)
 
 
 def _load_file(path: Path) -> Optional[dict]:
@@ -246,730 +229,224 @@ def _last(values: list) -> Optional[float]:
     return next((v for v in reversed(values) if v is not None), None)
 
 
-def _calc_rsi(prices: list, period: int = 14) -> list:
-    """Wilder RSI."""
+def _calc_rsi(prices: list, period: int = 14) -> Optional[float]:
+    """Calculate RSI for the last bar. Returns None if insufficient data."""
     if len(prices) < period + 1:
-        return [None] * len(prices)
-    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
-    gains = [max(d, 0) for d in deltas]
-    losses = [abs(min(d, 0)) for d in deltas]
+        return None
+    gains, losses = [], []
+    for i in range(1, len(prices)):
+        delta = prices[i] - prices[i - 1]
+        gains.append(delta if delta > 0 else 0)
+        losses.append(-delta if delta < 0 else 0)
+    if len(gains) < period:
+        return None
     avg_gain = sum(gains[:period]) / period
     avg_loss = sum(losses[:period]) / period
-    result: list = [None] * period
-    rs = avg_gain / avg_loss if avg_loss != 0 else 100.0
-    result.append(100 - 100 / (1 + rs))
-    for i in range(period, len(deltas)):
+    for i in range(period, len(gains)):
         avg_gain = (avg_gain * (period - 1) + gains[i]) / period
         avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-        rs = avg_gain / avg_loss if avg_loss != 0 else 100.0
-        result.append(100 - 100 / (1 + rs))
-    return result
-
-
-def _calc_macd(prices: list, fast: int = 12, slow: int = 26, signal: int = 9) -> tuple[list, list, list]:
-    """MACD line, signal line, histogram."""
-    ema_fast = _calc_ema(prices, fast)
-    ema_slow = _calc_ema(prices, slow)
-    macd_line = [
-        (f - s) if (f is not None and s is not None) else None
-        for f, s in zip(ema_fast, ema_slow)
-    ]
-    valid_macd = [v for v in macd_line if v is not None]
-    signal_line_raw = _calc_ema(valid_macd, signal) if len(valid_macd) >= signal else [None] * len(valid_macd)
-    # Align signal_line back to full length
-    signal_line: list = [None] * (len(macd_line) - len(signal_line_raw)) + signal_line_raw
-    histogram = [
-        (m - s) if (m is not None and s is not None) else None
-        for m, s in zip(macd_line, signal_line)
-    ]
-    return macd_line, signal_line, histogram
-
-
-def _calc_stochastic(high: list, low: list, close: list,
-                     k_period: int = 14, d_period: int = 3) -> tuple[list, list]:
-    """Stochastic %K and %D."""
-    k_vals: list = []
-    for i in range(len(close)):
-        if i < k_period - 1:
-            k_vals.append(None)
-        else:
-            h = max(high[i - k_period + 1:i + 1])
-            l = min(low[i - k_period + 1:i + 1])
-            if h == l:
-                k_vals.append(50.0)
-            else:
-                k_vals.append((close[i] - l) / (h - l) * 100)
-    # %D = SMA of %K
-    d_vals: list = []
-    valid_k = [v for v in k_vals if v is not None]
-    for i in range(len(k_vals)):
-        if k_vals[i] is None:
-            d_vals.append(None)
-        else:
-            idx_in_valid = sum(1 for v in k_vals[:i + 1] if v is not None) - 1
-            if idx_in_valid < d_period - 1:
-                d_vals.append(None)
-            else:
-                window = valid_k[idx_in_valid - d_period + 1:idx_in_valid + 1]
-                d_vals.append(sum(window) / d_period)
-    return k_vals, d_vals
-
-
-# ── Multi-factor scoring ─────────────────────────────────────────────────────
-
-SIGNAL_WEIGHTS = {
-    "trend":      0.35,
-    "momentum":   0.30,
-    "volatility": 0.20,
-    "volume":     0.00,
-    "structure":  0.15,
-}
-
-ENTRY_THRESHOLD = 0.60
-EXIT_THRESHOLD  = 0.35
-
-
-def _score_trend(close: list) -> float:
-    """EMA alignment score: 0=bearish, 0.5=neutral, 1=bullish."""
-    ema20 = _last(_calc_ema(close, 20))
-    ema50 = _last(_calc_ema(close, 50))
-    if ema20 is None or ema50 is None:
-        return 0.5
-    price = close[-1]
-    score = 0.5
-    if price > ema20 > ema50:
-        score = 1.0
-    elif price > ema20:
-        score = 0.75
-    elif price < ema20 < ema50:
-        score = 0.0
-    elif price < ema20:
-        score = 0.25
-    return score
-
-
-def _score_momentum(close: list, high: list, low: list) -> float:
-    """RSI + MACD histogram + Stochastic — SYMMETRIC scoring."""
-    rsi_val = _last(_calc_rsi(close, 14))
-    _, _, hist = _calc_macd(close)
-    hist_val = _last(hist)
-    k_vals, d_vals = _calc_stochastic(high, low, close)
-    k_val = _last(k_vals)
-    d_val = _last(d_vals)
-
-    scores = []
-
-    # RSI — symmetric
-    if rsi_val is not None:
-        if 55 <= rsi_val <= 70:
-            scores.append(0.75)
-        elif 30 <= rsi_val <= 45:
-            scores.append(0.25)
-        elif 45 < rsi_val < 55:
-            scores.append(0.5)
-        elif rsi_val > 70:
-            scores.append(0.6)   # overbought — slightly bullish but caution
-        else:  # < 30
-            scores.append(0.4)   # oversold — slightly bearish but caution
-    else:
-        scores.append(0.5)
-
-    # MACD histogram — symmetric
-    if hist_val is not None:
-        if hist_val > 0:
-            scores.append(0.75)
-        elif hist_val < 0:
-            scores.append(0.25)
-        else:
-            scores.append(0.5)
-    else:
-        scores.append(0.5)
-
-    # Stochastic — symmetric
-    if k_val is not None and d_val is not None:
-        if k_val > d_val and k_val < 80:
-            scores.append(0.75)
-        elif k_val < d_val and k_val > 20:
-            scores.append(0.25)
-        else:
-            scores.append(0.5)
-    else:
-        scores.append(0.5)
-
-    return sum(scores) / len(scores)
-
-
-def _score_volatility(high: list, low: list, close: list) -> float:
-    """ATR expansion = opportunity (higher score). Contraction = caution."""
-    atr = _calc_atr(high, low, close)
-    expanding = _atr_expanding(atr)
-    if expanding is None:
-        return 0.5
-    return 0.75 if expanding else 0.35
-
-
-def _score_volume() -> float:
-    """Volume scoring — returns 0.5 neutral for daily bars (no intraday volume profile)."""
-    return 0.5
-
-
-def _score_structure(close: list) -> float:
-    """Price relative to Bollinger Bands — mean-reversion / breakout signal."""
-    bb_upper, bb_mid, bb_lower = _calc_bollinger(close)
-    upper = _last(bb_upper)
-    lower = _last(bb_lower)
-    mid = _last(bb_mid)
-    if upper is None or lower is None or mid is None:
-        return 0.5
-    price = close[-1]
-    band_width = upper - lower
-    if band_width <= 0:
-        return 0.5
-    position = (price - lower) / band_width  # 0 = at lower, 1 = at upper
-    # Near lower band = potential long (higher score), near upper = potential short (lower score)
-    # Middle = neutral
-    if position < 0.2:
-        return 0.75   # near lower band — bullish reversal zone
-    elif position > 0.8:
-        return 0.25   # near upper band — bearish reversal zone
-    else:
-        return 0.5
-
-
-def _composite_score(close: list, high: list, low: list) -> float:
-    """Weighted composite of all factor scores."""
-    scores = {
-        "trend":      _score_trend(close),
-        "momentum":   _score_momentum(close, high, low),
-        "volatility": _score_volatility(high, low, close),
-        "volume":     _score_volume(),
-        "structure":  _score_structure(close),
-    }
-    total = sum(scores[k] * SIGNAL_WEIGHTS[k] for k in SIGNAL_WEIGHTS)
-    return round(total, 4)
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))
 
 
 # ── Signal engine ──────────────────────────────────────────────────────────────
 
+SIGNAL_WEIGHTS = {
+    "trend":        0.30,
+    "momentum":     0.25,
+    "volatility":   0.20,
+    "volume":       0.00,
+    "structure":    0.10,
+    "intermarket":  0.15,
+}
 
-def _resolve_from_schema(strategy_schema: dict, ohlcv: dict) -> Optional[dict]:
+
+def _score_intermarket(close: list, intermarket_data: dict, instrument_name: str) -> float:
+    """Score intermarket alignment 0.0-1.0. 0.5 = neutral."""
+    if not intermarket_data or not close or len(close) < 10:
+        return 0.5
+    primary_ret = (close[-1] - close[-5]) / close[-5] if len(close) >= 5 else 0
+    alignment_scores = []
+    for ref_name, ref_ohlcv in intermarket_data.items():
+        if ref_name == instrument_name or not ref_ohlcv or not ref_ohlcv.get("close"):
+            continue
+        ref_close = ref_ohlcv["close"]
+        if len(ref_close) < 5:
+            continue
+        ref_ret = (ref_close[-1] - ref_close[-5]) / ref_close[-5]
+        expected_corr = _correlation(instrument_name, ref_name)
+        if expected_corr > 0.1:
+            aligned = (primary_ret > 0 and ref_ret > 0) or (primary_ret < 0 and ref_ret < 0)
+        elif expected_corr < -0.1:
+            aligned = (primary_ret > 0 and ref_ret < 0) or (primary_ret < 0 and ref_ret > 0)
+        else:
+            continue
+        alignment_scores.append(0.75 if aligned else 0.25)
+    return sum(alignment_scores) / len(alignment_scores) if alignment_scores else 0.5
+
+
+def _composite_score(close: list, high: list, low: list,
+                     intermarket_data: dict = None, instrument_name: str = "") -> dict:
     """
-    PRIMARY signal path: read the strategy schema and use its exact parameters.
-
-    This ensures the live signals match what was backtested. The schema contains
-    the indicator type, its parameters, entry/exit triggers, confirmation logic,
-    stop loss configuration, and directional bias.
-
-    Returns the standard signal dict, or None if resolution fails (so the caller
-    can fall back to the name-parsing logic).
+    Compute a weighted composite score from multiple signal categories.
+    Each sub-score is 0.0–1.0; the composite is their weighted average.
     """
-    try:
-        close  = ohlcv["close"]
-        high   = ohlcv["high"]
-        low    = ohlcv["low"]
-        volume = ohlcv.get("volume", [0.0] * len(close))
+    scores = {}
 
-        current_price = close[-1] if close else 0.0
-        result = {
-            "entry": False, "exit": False,
-            "side": "buy", "reason": "",
-            "current_price": current_price,
-        }
+    # Trend: EMA20 vs EMA50
+    ema20_val = _last(_calc_ema(close, 20))
+    ema50_val = _last(_calc_ema(close, 50))
+    if ema20_val is not None and ema50_val is not None and ema50_val != 0:
+        trend_ratio = ema20_val / ema50_val
+        scores["trend"] = max(0.0, min(1.0, 0.5 + (trend_ratio - 1.0) * 10))
+    else:
+        scores["trend"] = 0.5
 
-        if not close or len(close) < 40:
-            result["reason"] = "Insufficient price history (<40 bars)"
-            return result
+    # Momentum: RSI
+    rsi = _calc_rsi(close)
+    if rsi is not None:
+        scores["momentum"] = rsi / 100.0
+    else:
+        scores["momentum"] = 0.5
 
-        # ── Read schema sections (with safe defaults) ─────────────────────────
-        primary    = strategy_schema.get("primary_indicator", {})
-        confirm    = strategy_schema.get("confirmation", {})
-        entry_cfg  = strategy_schema.get("entry", {})
-        exit_cfg   = strategy_schema.get("exit", {})
-        stop_cfg   = strategy_schema.get("stop_loss", {})
-        metadata   = strategy_schema.get("metadata", {})
+    # Volatility: ATR expansion
+    atr = _calc_atr(high, low, close)
+    expanding = _atr_expanding(atr)
+    if expanding is True:
+        scores["volatility"] = 0.7
+    elif expanding is False:
+        scores["volatility"] = 0.3
+    else:
+        scores["volatility"] = 0.5
 
-        indicator_type = primary.get("type", "").lower()
-        if not indicator_type:
-            return None  # No indicator type — cannot resolve, fall back
+    # Volume: placeholder (no volume signal currently)
+    scores["volume"] = 0.5
 
-        direction = metadata.get("direction", "long").lower()
-        result["side"] = "buy" if direction == "long" else "sell"
+    # Structure: price vs Bollinger bands
+    bb_upper, bb_mid, bb_lower = _calc_bollinger(close)
+    bb_u = _last(bb_upper)
+    bb_l = _last(bb_lower)
+    if bb_u is not None and bb_l is not None and bb_u != bb_l:
+        scores["structure"] = max(0.0, min(1.0, (close[-1] - bb_l) / (bb_u - bb_l)))
+    else:
+        scores["structure"] = 0.5
 
-        entry_trigger = entry_cfg.get("trigger", "").lower()
-        exit_trigger  = exit_cfg.get("trigger", "").lower()
+    # Intermarket
+    scores["intermarket"] = _score_intermarket(close, intermarket_data, instrument_name)
 
-        # ── Compute confirmation signal ───────────────────────────────────────
+    # Weighted composite
+    composite = sum(scores[k] * SIGNAL_WEIGHTS.get(k, 0) for k in scores)
+    total_weight = sum(SIGNAL_WEIGHTS.get(k, 0) for k in scores)
+    composite = composite / total_weight if total_weight > 0 else 0.5
+
+    return {"scores": scores, "composite": round(composite, 4)}
+
+
+def _resolve_from_schema(strategy_schema: dict, ohlcv: dict,
+                         intermarket_data: dict = None, instrument_name: str = "") -> dict:
+    """
+    Evaluate a strategy_schema's confirmation indicators against OHLCV data.
+    Returns confirmation result dict.
+    """
+    close = ohlcv["close"]
+    high  = ohlcv["high"]
+    low   = ohlcv["low"]
+
+    confirmations = []
+    confirm_list = []
+
+    # Extract confirmation(s) from schema
+    ci = strategy_schema.get("confirmation_indicator")
+    if isinstance(ci, dict):
+        confirm_list = [ci]
+    elif isinstance(ci, list):
+        confirm_list = ci
+
+    direction = strategy_schema.get("direction", "long").lower()
+
+    for confirm in confirm_list:
         confirm_type = confirm.get("type", "").lower()
-        confirmation_met = True  # default: no confirmation required
+        confirmation_met = True
         confirmation_desc = ""
 
         if confirm_type == "atr_expansion":
-            atr_period = confirm.get("period", 14)
-            threshold  = confirm.get("threshold", 1.0)
-            atr = _calc_atr(high, low, close, period=atr_period)
-            valid_atr = [v for v in atr if v is not None]
-            if len(valid_atr) >= 6:
-                current_atr = valid_atr[-1]
-                recent_avg  = sum(valid_atr[-6:-1]) / 5
-                confirmation_met = current_atr > (recent_avg * threshold)
-                confirmation_desc = (
-                    f"ATR {'expanding' if confirmation_met else 'contracting'} "
-                    f"(current={current_atr:.2f}, avg={recent_avg:.2f}, thresh={threshold}x)"
-                )
-            else:
-                confirmation_met = True  # not enough data, don't block
-                confirmation_desc = "ATR confirmation skipped (insufficient data)"
+            atr = _calc_atr(high, low, close, confirm.get("params", {}).get("period", 14))
+            expanding = _atr_expanding(atr)
+            confirmation_met = expanding is True
+            confirmation_desc = f"ATR {'expanding' if expanding else 'not expanding'}"
 
         elif confirm_type == "rsi":
-            rsi_period = confirm.get("period", 14)
-            rsi_vals = _calc_rsi(close, period=rsi_period)
-            rsi_val = _last(rsi_vals)
-            rsi_threshold = confirm.get("threshold", 50)
-            if rsi_val is not None:
+            period = confirm.get("params", {}).get("period", 14)
+            rsi = _calc_rsi(close, period)
+            if rsi is not None:
+                threshold = confirm.get("params", {}).get("threshold", 50)
                 if direction == "long":
-                    confirmation_met = rsi_val < rsi_threshold
+                    confirmation_met = rsi > threshold
                 else:
-                    confirmation_met = rsi_val > rsi_threshold
-                confirmation_desc = f"RSI={rsi_val:.1f} (threshold={rsi_threshold})"
+                    confirmation_met = rsi < (100 - threshold)
+                confirmation_desc = f"RSI({period})={rsi:.1f} vs {threshold}"
             else:
-                confirmation_desc = "RSI confirmation skipped (insufficient data)"
-
-        elif confirm_type == "macd":
-            fast = confirm.get("fast", 12)
-            slow = confirm.get("slow", 26)
-            sig  = confirm.get("signal_period", 9)
-            macd_line, sig_line, hist = _calc_macd(close, fast, slow, sig)
-            h = _last(hist)
-            if h is not None:
-                confirmation_met = h > 0 if direction == "long" else h < 0
-                confirmation_desc = f"MACD histogram={'positive' if h > 0 else 'negative'}"
-            else:
-                confirmation_desc = "MACD confirmation skipped (insufficient data)"
-
-        elif confirm_type == "volume_above_avg":
-            lookback = confirm.get("period", 20)
-            if len(volume) >= lookback:
-                avg_vol = sum(volume[-lookback:]) / lookback
-                confirmation_met = volume[-1] > avg_vol * confirm.get("threshold", 1.0)
-                confirmation_desc = f"Volume {'above' if confirmation_met else 'below'} avg"
-            else:
-                confirmation_desc = "Volume confirmation skipped (insufficient data)"
-
-        elif confirm_type == "ema_crossover":
-            fast_p = confirm.get("fast_period", 12)
-            slow_p = confirm.get("slow_period", 26)
-            ema_f = _calc_ema(close, fast_p)
-            ema_s = _calc_ema(close, slow_p)
-            ef, es = _last(ema_f), _last(ema_s)
-            if ef is not None and es is not None:
-                confirmation_met = ef > es if direction == "long" else ef < es
-                confirmation_desc = f"EMA{fast_p}={'above' if ef > es else 'below'} EMA{slow_p}"
-            else:
-                confirmation_desc = "EMA crossover confirmation skipped (insufficient data)"
+                confirmation_desc = "RSI insufficient data"
 
         elif confirm_type == "stochastic":
-            k_p = confirm.get("k_period", 14)
-            d_p = confirm.get("d_period", 3)
-            k_vals, d_vals = _calc_stochastic(high, low, close, k_p, d_p)
-            k_val = _last(k_vals)
-            threshold = confirm.get("threshold", 20)
-            if k_val is not None:
-                if direction == "long":
-                    confirmation_met = k_val < threshold  # oversold
-                else:
-                    confirmation_met = k_val > (100 - threshold)  # overbought
-                confirmation_desc = f"Stochastic %K={k_val:.1f} (threshold={threshold})"
-            else:
-                confirmation_desc = "Stochastic confirmation skipped (insufficient data)"
+            # Stochastic confirmation placeholder
+            confirmation_met = True
+            confirmation_desc = "Stochastic (pass-through)"
 
-        elif confirm_type:
-            # Unknown confirmation type — don't block the trade
-            confirmation_desc = f"Unknown confirmation type '{confirm_type}' — skipped"
+        elif confirm_type == "intermarket_trend":
+            ref_name = confirm.get("reference_instrument", "")
+            ref_alignment = confirm.get("alignment", "same_direction")
+            ref_ohlcv = intermarket_data.get(ref_name) if intermarket_data else None
+            if ref_ohlcv and ref_ohlcv.get("close"):
+                ref_close = ref_ohlcv["close"]
+                ref_ema20 = _last(_calc_ema(ref_close, 20))
+                ref_ema50 = _last(_calc_ema(ref_close, 50))
+                if ref_ema20 is not None and ref_ema50 is not None:
+                    ref_trending_up = ref_ema20 > ref_ema50
+                    if ref_alignment == "same_direction":
+                        confirmation_met = ref_trending_up == (direction == "long")
+                    else:
+                        confirmation_met = ref_trending_up != (direction == "long")
+                    confirmation_desc = f"{ref_name} EMA20/50 {'confirms' if confirmation_met else 'conflicts'} ({ref_alignment})"
 
-        # ── Compute primary indicator values and entry/exit signals ────────────
-        entry_signal = False
-        exit_signal  = False
-        reason_parts = []
+        elif confirm_type == "intermarket_momentum":
+            ref_name = confirm.get("reference_instrument", "")
+            ref_ohlcv = intermarket_data.get(ref_name) if intermarket_data else None
+            if ref_ohlcv and ref_ohlcv.get("close"):
+                ref_rsi = _calc_rsi(ref_ohlcv["close"], confirm.get("period", 14))
+                if ref_rsi is not None:
+                    primary_bullish = direction == "long"
+                    ref_bullish = ref_rsi > 50
+                    confirmation_met = primary_bullish == ref_bullish
+                    confirmation_desc = f"{ref_name} RSI({ref_rsi:.0f}) {'aligns' if confirmation_met else 'diverges'}"
 
-        if indicator_type == "bollinger_bands":
-            period   = primary.get("period", 20)
-            std_dev  = primary.get("std_dev", 2.0)
-            bb_upper, bb_mid, bb_lower = _calc_bollinger(close, period, std_dev)
-            prev_close = close[-2] if len(close) >= 2 else current_price
-            curr_lower = _last(bb_lower)
-            prev_lower = _last(bb_lower[:-1]) if len(bb_lower) >= 2 else None
-            curr_upper = _last(bb_upper)
-            curr_mid   = _last(bb_mid)
+        elif confirm_type == "intermarket_divergence":
+            ref_name = confirm.get("reference_instrument", "")
+            ref_ohlcv = intermarket_data.get(ref_name) if intermarket_data else None
+            if ref_ohlcv and ref_ohlcv.get("close") and len(close) >= 5 and len(ref_ohlcv["close"]) >= 5:
+                primary_ret = (close[-1] - close[-5]) / close[-5]
+                ref_ret = (ref_ohlcv["close"][-1] - ref_ohlcv["close"][-5]) / ref_ohlcv["close"][-5]
+                expected_corr = _correlation(instrument_name, ref_name) if instrument_name else 0
+                diverging = (primary_ret > 0 and ref_ret < 0) or (primary_ret < 0 and ref_ret > 0)
+                confirmation_met = diverging and abs(expected_corr) > 0.2
+                confirmation_desc = f"Divergence vs {ref_name}: primary {primary_ret:+.2%}, ref {ref_ret:+.2%}"
 
-            if curr_lower is None:
-                result["reason"] = f"Bollinger({period},{std_dev}) insufficient data"
-                return result
+        confirmations.append({
+            "type": confirm_type,
+            "met": confirmation_met,
+            "description": confirmation_desc,
+        })
 
-            # Entry triggers
-            if entry_trigger == "price_touches_lower_band":
-                bb_touch = (prev_lower is not None) and (prev_close <= prev_lower)
-                if bb_touch and current_price > curr_lower:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Bollinger({period},{std_dev}) lower touch ${curr_lower:.2f} "
-                        f"→ rebounding ${current_price:.2f}"
-                    )
-            elif entry_trigger == "price_touches_upper_band":
-                bb_touch = (curr_upper is not None) and (prev_close >= curr_upper if len(close) >= 2 else False)
-                if bb_touch and current_price < curr_upper:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Bollinger({period},{std_dev}) upper touch ${curr_upper:.2f} "
-                        f"→ reversing ${current_price:.2f}"
-                    )
-            elif entry_trigger == "price_below_lower_band":
-                if current_price < curr_lower:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} below Bollinger lower ${curr_lower:.2f}"
-                    )
-            else:
-                # Default Bollinger entry: lower band touch
-                bb_touch = (prev_lower is not None) and (prev_close <= prev_lower)
-                if bb_touch and current_price > curr_lower:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Bollinger({period},{std_dev}) lower touch → rebounding"
-                    )
-
-            # Exit triggers
-            if exit_trigger == "price_crosses_middle_band":
-                if curr_mid and current_price >= curr_mid:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} crossed Bollinger mid ${curr_mid:.2f}"
-                    )
-            elif exit_trigger == "price_crosses_upper_band":
-                if curr_upper and current_price >= curr_upper:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} crossed Bollinger upper ${curr_upper:.2f}"
-                    )
-            else:
-                # Default exit: middle band
-                if curr_mid and current_price >= curr_mid:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} at Bollinger mid ${curr_mid:.2f}"
-                    )
-
-        elif indicator_type == "ema_crossover":
-            fast_period = primary.get("fast_period", 20)
-            slow_period = primary.get("slow_period", 50)
-            ema_fast = _calc_ema(close, fast_period)
-            ema_slow = _calc_ema(close, slow_period)
-            ef = _last(ema_fast)
-            es = _last(ema_slow)
-
-            if ef is None or es is None:
-                result["reason"] = f"EMA({fast_period}/{slow_period}) insufficient data"
-                return result
-
-            # Check for crossover (current bar vs previous)
-            ef_prev = _last(ema_fast[:-1]) if len(ema_fast) >= 2 else None
-            es_prev = _last(ema_slow[:-1]) if len(ema_slow) >= 2 else None
-
-            if entry_trigger == "fast_crosses_above_slow" or not entry_trigger:
-                if ef > es:
-                    crossed = (ef_prev is not None and es_prev is not None and ef_prev <= es_prev)
-                    entry_signal = crossed or (ef > es)  # signal if above, strong if just crossed
-                    reason_parts.append(
-                        f"EMA{fast_period} ${ef:.2f} above EMA{slow_period} ${es:.2f}"
-                    )
-            elif entry_trigger == "fast_crosses_below_slow":
-                if ef < es:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"EMA{fast_period} ${ef:.2f} below EMA{slow_period} ${es:.2f}"
-                    )
-
-            if exit_trigger == "fast_crosses_below_slow" or not exit_trigger:
-                if ef < es:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"EMA{fast_period} ${ef:.2f} crossed below EMA{slow_period} ${es:.2f} — exit"
-                    )
-            elif exit_trigger == "fast_crosses_above_slow":
-                if ef > es:
-                    exit_signal = True
-                    reason_parts.append(f"EMA crossover exit triggered")
-
-        elif indicator_type == "ema_above_price":
-            period = primary.get("period", 38)
-            ema = _calc_ema(close, period)
-            ema_val = _last(ema)
-
-            if ema_val is None:
-                result["reason"] = f"EMA({period}) insufficient data"
-                return result
-
-            if entry_trigger == "price_above_ema" or not entry_trigger:
-                if current_price > ema_val:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} above EMA{period} ${ema_val:.2f}"
-                    )
-            elif entry_trigger == "price_below_ema":
-                if current_price < ema_val:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} below EMA{period} ${ema_val:.2f}"
-                    )
-
-            if exit_trigger == "price_below_ema" or not exit_trigger:
-                if current_price < ema_val:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} below EMA{period} ${ema_val:.2f} — exit"
-                    )
-            elif exit_trigger == "price_above_ema":
-                if current_price > ema_val:
-                    exit_signal = True
-                    reason_parts.append(f"Price above EMA — exit")
-
-        elif indicator_type == "rsi":
-            period     = primary.get("period", 14)
-            overbought = primary.get("overbought", 70)
-            oversold   = primary.get("oversold", 30)
-            rsi_vals   = _calc_rsi(close, period=period)
-            rsi_val    = _last(rsi_vals)
-
-            if rsi_val is None:
-                result["reason"] = f"RSI({period}) insufficient data"
-                return result
-
-            if entry_trigger == "rsi_oversold" or (not entry_trigger and direction == "long"):
-                if rsi_val < oversold:
-                    entry_signal = True
-                    reason_parts.append(f"RSI({period})={rsi_val:.1f} < {oversold} (oversold)")
-            elif entry_trigger == "rsi_overbought" or (not entry_trigger and direction == "short"):
-                if rsi_val > overbought:
-                    entry_signal = True
-                    reason_parts.append(f"RSI({period})={rsi_val:.1f} > {overbought} (overbought)")
-
-            if exit_trigger == "rsi_overbought" or (not exit_trigger and direction == "long"):
-                if rsi_val > overbought:
-                    exit_signal = True
-                    reason_parts.append(f"RSI({period})={rsi_val:.1f} > {overbought} — exit")
-            elif exit_trigger == "rsi_oversold" or (not exit_trigger and direction == "short"):
-                if rsi_val < oversold:
-                    exit_signal = True
-                    reason_parts.append(f"RSI({period})={rsi_val:.1f} < {oversold} — exit")
-
-        elif indicator_type == "rsi_divergence":
-            period     = primary.get("period", 14)
-            lookback   = primary.get("lookback", 10)
-            rsi_vals   = _calc_rsi(close, period=period)
-            valid_rsi  = [v for v in rsi_vals if v is not None]
-
-            if len(valid_rsi) < lookback:
-                result["reason"] = f"RSI divergence({period}) insufficient data"
-                return result
-
-            rsi_val = valid_rsi[-1]
-            # Bullish divergence: price makes lower low but RSI makes higher low
-            price_lower = close[-1] < min(close[-lookback:-1])
-            rsi_higher  = valid_rsi[-1] > min(valid_rsi[-lookback:-1])
-            # Bearish divergence: price makes higher high but RSI makes lower high
-            price_higher = close[-1] > max(close[-lookback:-1])
-            rsi_lower    = valid_rsi[-1] < max(valid_rsi[-lookback:-1])
-
-            if direction == "long":
-                if price_lower and rsi_higher:
-                    entry_signal = True
-                    reason_parts.append(f"Bullish RSI divergence (RSI={rsi_val:.1f})")
-                if price_higher and rsi_lower:
-                    exit_signal = True
-                    reason_parts.append(f"Bearish RSI divergence — exit (RSI={rsi_val:.1f})")
-            else:
-                if price_higher and rsi_lower:
-                    entry_signal = True
-                    reason_parts.append(f"Bearish RSI divergence (RSI={rsi_val:.1f})")
-                if price_lower and rsi_higher:
-                    exit_signal = True
-                    reason_parts.append(f"Bullish RSI divergence — exit (RSI={rsi_val:.1f})")
-
-        elif indicator_type == "macd":
-            fast   = primary.get("fast", 12)
-            slow   = primary.get("slow", 26)
-            signal = primary.get("signal_period", 9)
-            macd_line, sig_line, hist = _calc_macd(close, fast, slow, signal)
-            m = _last(macd_line)
-            s = _last(sig_line)
-            h = _last(hist)
-
-            if m is None or s is None:
-                result["reason"] = f"MACD({fast},{slow},{signal}) insufficient data"
-                return result
-
-            h_prev = _last(hist[:-1]) if len(hist) >= 2 else None
-
-            if entry_trigger == "macd_crosses_signal" or not entry_trigger:
-                if direction == "long":
-                    if h is not None and h > 0 and (h_prev is not None and h_prev <= 0):
-                        entry_signal = True
-                        reason_parts.append(f"MACD crossed above signal (hist={h:.4f})")
-                    elif h is not None and h > 0:
-                        entry_signal = True
-                        reason_parts.append(f"MACD above signal (hist={h:.4f})")
-                else:
-                    if h is not None and h < 0 and (h_prev is not None and h_prev >= 0):
-                        entry_signal = True
-                        reason_parts.append(f"MACD crossed below signal (hist={h:.4f})")
-                    elif h is not None and h < 0:
-                        entry_signal = True
-                        reason_parts.append(f"MACD below signal (hist={h:.4f})")
-
-            if exit_trigger == "macd_crosses_signal" or not exit_trigger:
-                if direction == "long" and h is not None and h < 0:
-                    exit_signal = True
-                    reason_parts.append(f"MACD below signal — exit (hist={h:.4f})")
-                elif direction == "short" and h is not None and h > 0:
-                    exit_signal = True
-                    reason_parts.append(f"MACD above signal — exit (hist={h:.4f})")
-
-        elif indicator_type == "stochastic":
-            k_period = primary.get("k_period", 14)
-            d_period = primary.get("d_period", 3)
-            overbought = primary.get("overbought", 80)
-            oversold   = primary.get("oversold", 20)
-            k_vals, d_vals = _calc_stochastic(high, low, close, k_period, d_period)
-            k_val = _last(k_vals)
-            d_val = _last(d_vals)
-
-            if k_val is None:
-                result["reason"] = f"Stochastic({k_period},{d_period}) insufficient data"
-                return result
-
-            if direction == "long":
-                if k_val < oversold:
-                    entry_signal = True
-                    reason_parts.append(f"Stochastic %K={k_val:.1f} < {oversold} (oversold)")
-                if k_val > overbought:
-                    exit_signal = True
-                    reason_parts.append(f"Stochastic %K={k_val:.1f} > {overbought} — exit")
-            else:
-                if k_val > overbought:
-                    entry_signal = True
-                    reason_parts.append(f"Stochastic %K={k_val:.1f} > {overbought} (overbought)")
-                if k_val < oversold:
-                    exit_signal = True
-                    reason_parts.append(f"Stochastic %K={k_val:.1f} < {oversold} — exit")
-
-        elif indicator_type == "atr_expansion":
-            atr_period = primary.get("period", 14)
-            threshold  = primary.get("threshold", 1.0)
-            atr = _calc_atr(high, low, close, period=atr_period)
-            valid_atr = [v for v in atr if v is not None]
-
-            if len(valid_atr) < 6:
-                result["reason"] = f"ATR({atr_period}) insufficient data"
-                return result
-
-            current_atr = valid_atr[-1]
-            recent_avg  = sum(valid_atr[-6:-1]) / 5
-            expanding   = current_atr > (recent_avg * threshold)
-
-            if expanding:
-                entry_signal = True
-                reason_parts.append(
-                    f"ATR expanding: {current_atr:.2f} > {recent_avg:.2f}*{threshold}"
-                )
-            else:
-                exit_signal = True
-                reason_parts.append(
-                    f"ATR contracting: {current_atr:.2f} <= {recent_avg:.2f}*{threshold} — exit"
-                )
-
-        elif indicator_type == "vwap":
-            vwap = _calc_vwap(high, low, close, volume)
-            vwap_val = _last(vwap)
-
-            if vwap_val is None:
-                result["reason"] = "VWAP insufficient data"
-                return result
-
-            if entry_trigger == "price_above_vwap" or (not entry_trigger and direction == "long"):
-                if current_price > vwap_val:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} above VWAP ${vwap_val:.2f}"
-                    )
-            elif entry_trigger == "price_below_vwap" or (not entry_trigger and direction == "short"):
-                if current_price < vwap_val:
-                    entry_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} below VWAP ${vwap_val:.2f}"
-                    )
-
-            if exit_trigger == "price_below_vwap" or (not exit_trigger and direction == "long"):
-                if current_price < vwap_val:
-                    exit_signal = True
-                    reason_parts.append(
-                        f"Price ${current_price:.2f} below VWAP ${vwap_val:.2f} — exit"
-                    )
-            elif exit_trigger == "price_above_vwap" or (not exit_trigger and direction == "short"):
-                if current_price > vwap_val:
-                    exit_signal = True
-                    reason_parts.append(f"Price above VWAP — exit")
-
-        else:
-            # Unrecognized indicator type — cannot resolve from schema
-            return None
-
-        # ── Apply confirmation filter to entry signal ─────────────────────────
-        if entry_signal and not confirmation_met:
-            entry_signal = False
-            reason_parts.append(f"Entry blocked: {confirmation_desc}")
-
-        if entry_signal and confirmation_met and confirmation_desc:
-            reason_parts.append(f"Confirmed: {confirmation_desc}")
-
-        # ── Build result ──────────────────────────────────────────────────────
-        result["entry"]  = entry_signal and not exit_signal
-        result["exit"]   = exit_signal
-        result["reason"] = " | ".join(reason_parts) if reason_parts else "No signal"
-
-        # ── Annotate stop loss info from schema (consumed by position sizing) ─
-        if stop_cfg:
-            stop_type = stop_cfg.get("type", "")
-            if stop_type == "atr_based":
-                atr = _calc_atr(high, low, close)
-                current_atr = _last(atr)
-                if current_atr:
-                    multiplier = stop_cfg.get("multiplier", 2.0)
-                    result["stop_distance"] = current_atr * multiplier
-            elif stop_type == "percent":
-                pct = stop_cfg.get("percent", 1.0)
-                result["stop_distance"] = current_price * (pct / 100)
-            elif stop_type == "fixed":
-                result["stop_distance"] = stop_cfg.get("distance", current_price * 0.01)
-
-        log.info("Schema-resolved signal for %s: entry=%s exit=%s side=%s | %s",
-                 indicator_type, result["entry"], result["exit"],
-                 result["side"], result["reason"])
-        return result
-
-    except Exception as e:
-        log.warning("Schema resolution failed (%s) — falling back to name-parsing", e)
-        return None
+    all_met = all(c["met"] for c in confirmations) if confirmations else True
+    return {"confirmations": confirmations, "all_met": all_met}
 
 
-def get_strategy_signals(strategy_id: str, ohlcv: dict, strategy_schema: dict = None) -> dict:
+def get_strategy_signals(strategy_id: str, ohlcv: dict,
+                         strategy_schema: dict = None,
+                         intermarket_data: dict = None) -> dict:
     """
-
-    # Priority 1: Schema-driven resolution (uses exact backtested parameters)
-    if strategy_schema:
-        schema_result = _resolve_from_schema(strategy_schema, ohlcv)
-        if schema_result is not None:
-            return schema_result
-
-    # Priority 2: Name-parsing (hardcoded defaults — legacy fallback)
     Generate entry/exit signals based on strategy_id and OHLCV data.
     Returns:
       {"entry": bool, "exit": bool, "side": "buy"|"sell",
@@ -1046,23 +523,34 @@ def get_strategy_signals(strategy_id: str, ohlcv: dict, strategy_schema: dict = 
                 f"${curr_mid:.2f} — take profit"
             )
 
-    # ── Multi-factor composite fallback ───────────────────────────────────────
+    # ── Generic EMA crossover fallback ────────────────────────────────────────
     else:
-        score = _composite_score(close, high, low)
-        if score >= ENTRY_THRESHOLD:
-            result["entry"] = True
-            result["side"]  = "buy"
-            result["reason"] = (
-                f"Composite score {score:.2f} >= entry threshold {ENTRY_THRESHOLD} "
-                f"(trend/momentum/vol/structure)"
-            )
-        elif score <= EXIT_THRESHOLD:
-            result["exit"]   = True
-            result["side"]   = "sell"
-            result["reason"] = (
-                f"Composite score {score:.2f} <= exit threshold {EXIT_THRESHOLD} "
-                f"(trend/momentum/vol/structure)"
-            )
+        ema20 = _calc_ema(close, 20)
+        ema50 = _calc_ema(close, 50)
+        e20   = _last(ema20)
+        e50   = _last(ema50)
+        if e20 and e50:
+            if e20 > e50 and atr_expanding:
+                result["entry"] = True
+                result["side"]  = "buy"
+                result["reason"] = (
+                    f"EMA20 ${e20:.2f} above EMA50 ${e50:.2f} with expanding ATR"
+                )
+            elif e20 < e50:
+                result["exit"]   = True
+                result["reason"] = (
+                    f"EMA20 ${e20:.2f} crossed below EMA50 ${e50:.2f}"
+                )
+
+    # ── Schema-based confirmation overlay ─────────────────────────────────────
+    if strategy_schema and result["entry"]:
+        schema_result = _resolve_from_schema(strategy_schema, ohlcv,
+                                             intermarket_data=intermarket_data,
+                                             instrument_name="")
+        if not schema_result["all_met"]:
+            failed = [c for c in schema_result["confirmations"] if not c["met"]]
+            result["entry"] = False
+            result["reason"] += " | BLOCKED by: " + ", ".join(c["description"] for c in failed)
 
     return result
 
@@ -1101,40 +589,6 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
     Returns summary dict consumed by virtual_trader.py skill.
     """
     account = load_virtual_account()
-
-    # ── Trailing drawdown tracking ──────────────────────────────────────────
-    peak_balance = account.get("peak_balance", account.get("initial_balance", DEFAULT_BALANCE))
-    current_balance = account.get("account_balance", DEFAULT_BALANCE)
-    if current_balance > peak_balance:
-        peak_balance = current_balance
-    account["peak_balance"] = peak_balance
-
-    trailing_floor = peak_balance * (1 - TRAILING_DD_PCT / 100)
-    trailing_dd_current = round((peak_balance - current_balance) / peak_balance * 100, 2) if peak_balance > 0 else 0
-
-    if current_balance <= trailing_floor and TRAILING_DD_PCT > 0:
-        # FORCE LIQUIDATE ALL POSITIONS
-        for pos in list(account.get("open_positions", [])):
-            close_price = pos.get("entry_price", current_balance)  # best effort
-            pnl = 0  # approximate — real price unknown without fetch
-            account["trade_log"].append({
-                "type": "exit", "side": "liquidation", "symbol": pos["symbol"],
-                "filled_price": close_price, "qty": pos.get("qty", 1),
-                "reason": "trailing_drawdown_breach", "pnl": pnl,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-        account["open_positions"] = []
-        account["trading_halted_reason"] = "trailing_drawdown_breach"
-        save_virtual_account(account)
-        log.critical("TRAILING DRAWDOWN BREACHED: $%.2f <= floor $%.2f (peak $%.2f)", current_balance, trailing_floor, peak_balance)
-        return {
-            "status": "halted", "trades_made": 0, "open_positions": 0,
-            "account_balance": current_balance, "peak_balance": peak_balance,
-            "trailing_dd_current": trailing_dd_current, "trailing_dd_limit": TRAILING_DD_PCT,
-            "summary": f"TRAILING DRAWDOWN BREACH — all positions liquidated. Balance ${current_balance:.2f} hit floor ${trailing_floor:.2f}",
-            "escalate": True, "escalation_reason": "trailing_drawdown_breach",
-            "errors": [],
-        }
 
     if cycle_state is None:
         state_file = AGENT_NETWORK_STATE / "spx500_cycle_state.json"
@@ -1209,16 +663,6 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
             trading_halted = True
             account["trading_halted"] = True
             log.warning("CIRCUIT BREAKER: daily loss limit hit (%.2f)", daily_pnl)
-            # Force-close all open positions
-            for pos in list(account["open_positions"]):
-                account["trade_log"].append({
-                    "type": "exit", "side": "liquidation", "symbol": pos["symbol"],
-                    "filled_price": pos.get("entry_price", 0), "qty": pos.get("qty", 1),
-                    "reason": "daily_loss_halt_liquidation", "pnl": 0,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
-            account["open_positions"] = []
-            log.warning("DAILY LOSS HALT: all positions force-closed")
         elif loss_streak >= STREAK_HALT_COUNT:
             trading_halted = True
             account["trading_halted"] = True
@@ -1231,20 +675,24 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
     trades_made = []
     errors      = []
 
+    # ── Pre-fetch all instruments for intermarket signal access ──────────
+    _all_ohlcv = {}
+    for _im_name, _im_ticker in INSTRUMENTS.items():
+        _all_ohlcv[_im_name] = fetch_ohlcv(_im_ticker, timeframe)
+
     for display_name, ticker in INSTRUMENTS.items():
         try:
             if trading_halted:
                 log.warning("Trading halted (circuit breaker) — skipping %s", display_name)
                 continue
 
-            ohlcv = fetch_ohlcv(ticker, timeframe)
+            ohlcv = _all_ohlcv.get(display_name)
             if not ohlcv:
                 errors.append(f"No OHLCV data for {display_name} ({ticker})")
                 continue
 
-            # Pass strategy schema so signals use backtested parameters
-            _schema = cycle_state.get("active_strategy", {}).get("strategy_schema") if cycle_state else None
-            signals = get_strategy_signals(strategy_id, ohlcv, strategy_schema=_schema)
+            signals       = get_strategy_signals(strategy_id, ohlcv,
+                                                 intermarket_data=_all_ohlcv)
             current_price = signals["current_price"]
 
             open_pos = next(
@@ -1261,9 +709,9 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
                 # Apply slippage on exit (opposite direction to entry)
                 if side == "buy":
-                    fill_price = round(current_price * (1 - _slippage_bps(display_name) / 10000), 4)
+                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 + _slippage_bps(display_name) / 10000), 4)
+                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
 
                 pnl = (
                     (fill_price - entry_price) * qty
@@ -1349,12 +797,6 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                                 display_name, max_corr, MAX_PORTFOLIO_CORRELATION)
                     continue
 
-                # Contract limit enforcement
-                current_contracts = sum(p.get("qty", 1) for p in account["open_positions"])
-                if current_contracts >= MAX_TOTAL_CONTRACTS:
-                    log.info("CONTRACT LIMIT: total %d >= max %d — skipping entry", current_contracts, MAX_TOTAL_CONTRACTS)
-                    continue
-
                 # Volatility-normalize: use ATR relative to SPX baseline for sizing
                 atr_values = _calc_atr(ohlcv["high"], ohlcv["low"], ohlcv["close"])
                 current_atr = next((v for v in reversed(atr_values) if v is not None), None)
@@ -1369,15 +811,11 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
                 # Apply slippage on entry based on side
                 if signals["side"] == "buy":
-                    fill_price = round(current_price * (1 + _slippage_bps(display_name) / 10000), 4)
+                    fill_price = round(current_price * (1 + SLIPPAGE_BPS / 10000), 4)
                 else:
-                    fill_price = round(current_price * (1 - _slippage_bps(display_name) / 10000), 4)
+                    fill_price = round(current_price * (1 - SLIPPAGE_BPS / 10000), 4)
 
                 qty      = max(1, int(adjusted_risk_usd / (fill_price * STOP_PCT)))
-                qty = min(qty, MAX_CONTRACTS_PER_INSTRUMENT)
-                qty = min(qty, MAX_TOTAL_CONTRACTS - current_contracts)
-                if qty <= 0:
-                    continue
                 order_id = f"VA-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
                 stop     = (
                     round(fill_price * (1 - STOP_PCT), 2)
@@ -1440,13 +878,6 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
             errors.append(f"{display_name}: {e}")
             log.error("Virtual account error for %s: %s", display_name, e)
 
-    # ── Update trailing drawdown peak after trades ────────────────────────
-    end_balance = account.get("account_balance", DEFAULT_BALANCE)
-    if end_balance > account.get("peak_balance", 0):
-        account["peak_balance"] = end_balance
-    peak_balance = account["peak_balance"]
-    trailing_dd_current = round((peak_balance - end_balance) / peak_balance * 100, 2) if peak_balance > 0 else 0
-
     save_virtual_account(account)
 
     status = "success" if not errors else ("partial" if trades_made or not errors else "failed")
@@ -1458,9 +889,6 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
         "trades_made":      len(trades_made),
         "open_positions":   len(account["open_positions"]),
         "account_balance":  account["account_balance"],
-        "peak_balance":     peak_balance,
-        "trailing_dd_current": trailing_dd_current,
-        "trailing_dd_limit":   TRAILING_DD_PCT,
         "strategy_id":      strategy_id,
         "errors":           errors,
         "summary":          _build_summary(trades_made, account, strategy_id),
