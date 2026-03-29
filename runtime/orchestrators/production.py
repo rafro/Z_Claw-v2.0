@@ -15,6 +15,8 @@ from runtime.skills import (
     image_generate,
     sprite_generate,
     video_generate,
+    voice_generate,
+    music_compose,
     graphic_design,
     style_check,
     image_review,
@@ -81,6 +83,26 @@ def run_video_generate(scene_type: str = "battle", commander: str = "generic", d
     packet.write(pkt)
     grant_skill_xp("video-generate")
     log.info("LYKE: video-generate queued — %s / %s", scene_type, commander)
+    return pkt
+
+
+def run_voice_generate(commander: str = "vael", line_type: str = "greeting", emotion: str = "confident", text: str = "") -> dict:
+    result = voice_generate.run(commander=commander, line_type=line_type, emotion=emotion, text=text)
+    pkt    = _build_packet("voice-generate", result)
+    packet.write(pkt)
+    if result.get("status") in ("success", "partial"):
+        grant_skill_xp("voice-generate")
+    log.info("LYKE: voice-generate — %s / %s → %s", commander, line_type, result.get("status"))
+    return pkt
+
+
+def run_music_compose(track_type: str = "main_theme", division: str = "production", mood: str = "epic", tempo_bpm: int = 120, duration_seconds: int = 60, loop: bool = True) -> dict:
+    result = music_compose.run(track_type=track_type, division=division, mood=mood, tempo_bpm=tempo_bpm, duration_seconds=duration_seconds, loop=loop)
+    pkt    = _build_packet("music-compose", result)
+    packet.write(pkt)
+    if result.get("status") in ("success", "partial"):
+        grant_skill_xp("music-compose")
+    log.info("LYKE: music-compose — %s / %s → %s", division, track_type, result.get("status"))
     return pkt
 
 

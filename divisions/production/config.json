@@ -48,6 +48,22 @@
       "status": "idle",
       "note": "AnimateDiff-Evolved via ComfyUI — requires mm_sdxl_v10_beta.ckpt in ComfyUI/models/animatediff_models/"
     },
+    "voice-generate": {
+      "schedule": "on_demand",
+      "skill": "voice-generate",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "Coqui XTTS v2 voice synthesis — requires pip install TTS"
+    },
+    "music-compose": {
+      "schedule": "on_demand",
+      "skill": "music-compose",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "note": "Meta MusicGen — requires pip install transformers accelerate scipy torch-directml"
+    },
     "graphic-design": {
       "schedule": "on_demand",
       "skill": "graphic-design",
