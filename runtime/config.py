@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent          # OpenClaw-Orchestrator/
+BASE_DIR = ROOT  # Alias used by production skills (image_generate, voice_generate, etc.)
 STATE_DIR = ROOT / "state"
 LOGS_DIR = ROOT / "logs"
 DIVISIONS_DIR = ROOT / "divisions"
@@ -70,6 +71,6 @@ def ensure_dirs():
     """Create any missing runtime directories."""
     for d in [STATE_DIR, LOGS_DIR, REPORTS_DIR]:
         d.mkdir(exist_ok=True)
-    for div in ["opportunity", "trading", "personal", "dev-automation", "op-sec", "dev", "sentinel"]:
+    for div in ["opportunity", "trading", "personal", "dev-automation", "op-sec", "dev", "sentinel", "production"]:
         for sub in ["packets", "hot", "cold", "manifests"]:
             (DIVISIONS_DIR / div / sub).mkdir(parents=True, exist_ok=True)
