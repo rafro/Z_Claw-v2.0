@@ -4646,17 +4646,33 @@ cron.schedule('0 8,10,12,14,16,18,20,22 * * *', async () => {
   await runSkillViaPython('market-scan', 'TRADING');
 }, { timezone: TZ });
 
-// Virtual trader daily at 6:00 PM — must run first (produces trade data for backtester/report)
+// ── Trading Division — 4x daily execution aligned with sessions ──────────
+// Session 1: Post-Asia / Pre-London (03:00 ET)
+cron.schedule('0 3 * * *', async () => {
+  await runSkillViaPython('virtual-trader', 'TRADING');
+}, { timezone: TZ });
+
+// Session 2: NY Open (09:30 ET → use 10:00 for clean hourly bar)
+cron.schedule('0 10 * * 1-5', async () => {
+  await runSkillViaPython('virtual-trader', 'TRADING');
+}, { timezone: TZ });
+
+// Session 3: NY Afternoon (15:00 ET)
+cron.schedule('0 15 * * 1-5', async () => {
+  await runSkillViaPython('virtual-trader', 'TRADING');
+}, { timezone: TZ });
+
+// Session 4: NY Close + daily synthesis (18:00 ET — original time)
 cron.schedule('0 18 * * *', async () => {
   await runSkillViaPython('virtual-trader', 'TRADING');
 }, { timezone: TZ });
 
-// Backtester daily at 6:05 PM — runs after virtual-trader produces trade data
+// Backtester runs once daily after the final session (18:05)
 cron.schedule('5 18 * * *', async () => {
   await runSkillViaPython('backtester', 'TRADING');
 }, { timezone: TZ });
 
-// Trading performance report daily at 6:10 PM — runs last, summarises both above
+// Trading report runs once daily after backtester (18:10)
 cron.schedule('10 18 * * *', async () => {
   await runSkillViaPython('trading-report', 'TRADING');
 }, { timezone: TZ });

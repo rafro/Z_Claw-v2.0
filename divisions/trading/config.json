@@ -24,7 +24,7 @@
       "status": "idle"
     },
     "virtual-trader": {
-      "schedule": "daily 18:00",
+      "schedule": "4x daily (03:00, 10:00, 15:00, 18:00)",
       "run_order": "first",
       "skill": "virtual-trader",
       "enabled": true,
