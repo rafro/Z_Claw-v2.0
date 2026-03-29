@@ -69,6 +69,59 @@ INSTRUMENT_CORRELATIONS = {
 }
 MAX_PORTFOLIO_CORRELATION = 0.80
 
+# ── Time-of-day session definitions ───────────────────────────────────────────
+
+SESSION_HOURS = {
+    "ny_rth":      list(range(10, 16)),                          # 10:00-15:59 ET
+    "ny_extended":  list(range(8, 18)),                           # 8:00-17:59 ET
+    "london":      list(range(3, 12)),                           # 3:00-11:59 ET
+    "asia":        list(range(19, 24)) + list(range(0, 4)),      # 19:00-3:59 ET
+    "all":         list(range(0, 24)),
+}
+
+
+def _check_time_filter(metadata: dict) -> bool:
+    """
+    Check time-of-day filters from strategy schema metadata.
+
+    Returns True if the current time is allowed (trading should proceed),
+    False if the current time is blocked (instrument should be skipped).
+
+    Metadata keys examined:
+        allowed_hours    - explicit list of ET hours, e.g. [10, 11, 12, 13, 14, 15]
+        blocked_hours    - explicit list of ET hours to skip, e.g. [9, 16]
+        allowed_sessions - list of named sessions, e.g. ["ny_rth"]
+    """
+    allowed_hours    = metadata.get("allowed_hours")       # e.g., [10, 11, 12, 13, 14, 15]
+    blocked_hours    = metadata.get("blocked_hours")       # e.g., [9, 16]
+    allowed_sessions = metadata.get("allowed_sessions")    # e.g., ["ny_rth"]
+
+    # Nothing configured -> no filtering
+    if not allowed_hours and not blocked_hours and not allowed_sessions:
+        return True
+
+    # Simple ET approximation: ET = UTC - 4 (EDT) or UTC - 5 (EST).
+    # Use -4 as default -- most of the year is EDT.
+    current_hour = datetime.now(timezone.utc).hour
+    et_hour = (current_hour - 4) % 24
+
+    time_allowed = True
+
+    if allowed_sessions:
+        session_hours: set[int] = set()
+        for session_name in allowed_sessions:
+            session_hours.update(SESSION_HOURS.get(session_name, []))
+        if et_hour not in session_hours:
+            time_allowed = False
+
+    if allowed_hours and et_hour not in allowed_hours:
+        time_allowed = False
+
+    if blocked_hours and et_hour in blocked_hours:
+        time_allowed = False
+
+    return time_allowed
+
 
 def _correlation(inst_a: str, inst_b: str) -> float:
     key = (inst_a, inst_b) if (inst_a, inst_b) in INSTRUMENT_CORRELATIONS else (inst_b, inst_a)
@@ -145,11 +198,21 @@ def _resample_4h(ohlcv: dict) -> dict:
             "high": r_h, "low": r_l, "close": r_c, "volume": r_v}
 
 
-def fetch_ohlcv(ticker: str, timeframe: str = "1d") -> Optional[dict]:
+def fetch_ohlcv(ticker: str, timeframe: str = "1d", session: str = "all") -> Optional[dict]:
     """
     Fetch OHLCV via yfinance for the given timeframe (15m, 1h, 4h, 1d).
     4h is fetched as 1h then resampled. Returns dict with lists:
     date, open, high, low, close, volume.
+
+    Args:
+        ticker:    yfinance ticker symbol (e.g. "^GSPC", "GC=F").
+        timeframe: bar size — one of "15m", "1h", "4h", "1d".
+        session:   trading-session filter applied to intraday timeframes.
+                   "all"      — no filtering (default, backward-compatible).
+                   "rth"      — Regular Trading Hours 9:30-16:00 ET (14:30-21:00 UTC).
+                   "extended" — Extended hours 8:00-17:00 ET (13:00-22:00 UTC).
+                   "london"   — London session 08:00-16:30 UTC.
+                   Ignored for daily ("1d") timeframe.
     """
     yf_interval, yf_period = _TF_MAP.get(timeframe, ("1d", "3mo"))
     try:
@@ -162,6 +225,29 @@ def fetch_ohlcv(ticker: str, timeframe: str = "1d") -> Optional[dict]:
         # Flatten in case yfinance returns MultiIndex columns
         if hasattr(df.columns, "levels"):
             df.columns = df.columns.get_level_values(0)
+
+        # Session filtering for intraday timeframes
+        if session != "all" and timeframe in ("15m", "1h", "4h"):
+            SESSION_RANGES = {
+                "rth":      (14, 30, 21, 0),   # 9:30-16:00 ET -> 14:30-21:00 UTC
+                "extended": (13, 0, 22, 0),     # 8:00-17:00 ET -> 13:00-22:00 UTC
+                "london":   (8, 0, 16, 30),     # 08:00-16:30 UTC
+            }
+            if session in SESSION_RANGES:
+                start_h, start_m, end_h, end_m = SESSION_RANGES[session]
+                if hasattr(df.index, 'hour'):
+                    mask = (
+                        (df.index.hour > start_h)
+                        | ((df.index.hour == start_h) & (df.index.minute >= start_m))
+                    ) & (
+                        (df.index.hour < end_h)
+                        | ((df.index.hour == end_h) & (df.index.minute < end_m))
+                    )
+                    df = df[mask]
+                    if df.empty:
+                        log.warning("No bars after session filter '%s' for %s", session, ticker)
+                        return None
+
         ohlcv = {
             "ticker": ticker,
             "date":   [str(d) for d in df.index],
@@ -173,7 +259,7 @@ def fetch_ohlcv(ticker: str, timeframe: str = "1d") -> Optional[dict]:
         }
         if timeframe == "4h":
             ohlcv = _resample_4h(ohlcv)
-        log.debug("Fetched %d %s bars for %s", len(ohlcv["close"]), timeframe, ticker)
+        log.debug("Fetched %d %s bars for %s (session=%s)", len(ohlcv["close"]), timeframe, ticker, session)
         return ohlcv
     except ImportError:
         log.error("yfinance not installed — run: pip install yfinance pandas")
@@ -360,14 +446,24 @@ def _composite_score(close: list, high: list, low: list,
 
 
 def _resolve_from_schema(strategy_schema: dict, ohlcv: dict,
-                         intermarket_data: dict = None, instrument_name: str = "") -> dict:
+                         intermarket_data: dict = None, instrument_name: str = "",
+                         entry_ohlcv: dict = None) -> dict:
     """
     Evaluate a strategy_schema's confirmation indicators against OHLCV data.
+    When *entry_ohlcv* is provided (multi-timeframe mode), confirmation/entry/exit
+    indicators are computed on the entry-timeframe data while the primary
+    directional indicator still uses *ohlcv*.
     Returns confirmation result dict.
     """
     close = ohlcv["close"]
     high  = ohlcv["high"]
     low   = ohlcv["low"]
+
+    # Use entry-timeframe data for confirmation if available (MTF)
+    confirm_ohlcv = entry_ohlcv if entry_ohlcv else ohlcv
+    confirm_close = confirm_ohlcv.get("close", close)
+    confirm_high  = confirm_ohlcv.get("high", high)
+    confirm_low   = confirm_ohlcv.get("low", low)
 
     confirmations = []
     confirm_list = []
@@ -387,21 +483,23 @@ def _resolve_from_schema(strategy_schema: dict, ohlcv: dict,
         confirmation_desc = ""
 
         if confirm_type == "atr_expansion":
-            atr = _calc_atr(high, low, close, confirm.get("params", {}).get("period", 14))
+            atr = _calc_atr(confirm_high, confirm_low, confirm_close, confirm.get("params", {}).get("period", 14))
             expanding = _atr_expanding(atr)
             confirmation_met = expanding is True
-            confirmation_desc = f"ATR {'expanding' if expanding else 'not expanding'}"
+            mtf_tag = " (MTF)" if entry_ohlcv else ""
+            confirmation_desc = f"ATR {'expanding' if expanding else 'not expanding'}{mtf_tag}"
 
         elif confirm_type == "rsi":
             period = confirm.get("params", {}).get("period", 14)
-            rsi = _calc_rsi(close, period)
+            rsi = _calc_rsi(confirm_close, period)
             if rsi is not None:
                 threshold = confirm.get("params", {}).get("threshold", 50)
                 if direction == "long":
                     confirmation_met = rsi > threshold
                 else:
                     confirmation_met = rsi < (100 - threshold)
-                confirmation_desc = f"RSI({period})={rsi:.1f} vs {threshold}"
+                mtf_tag = " (MTF)" if entry_ohlcv else ""
+                confirmation_desc = f"RSI({period})={rsi:.1f} vs {threshold}{mtf_tag}"
             else:
                 confirmation_desc = "RSI insufficient data"
 
@@ -460,9 +558,16 @@ def _resolve_from_schema(strategy_schema: dict, ohlcv: dict,
 
 def get_strategy_signals(strategy_id: str, ohlcv: dict,
                          strategy_schema: dict = None,
-                         intermarket_data: dict = None) -> dict:
+                         intermarket_data: dict = None,
+                         entry_ohlcv: dict = None) -> dict:
     """
     Generate entry/exit signals based on strategy_id and OHLCV data.
+
+    When *entry_ohlcv* is provided (multi-timeframe mode), confirmation
+    indicators (ATR expansion, Bollinger bands for confirmation, etc.) are
+    computed on the entry-timeframe data while the primary directional
+    indicator still uses *ohlcv*.
+
     Returns:
       {"entry": bool, "exit": bool, "side": "buy"|"sell",
        "reason": str, "current_price": float}
@@ -483,7 +588,13 @@ def get_strategy_signals(strategy_id: str, ohlcv: dict,
         result["reason"] = "Insufficient price history (<40 bars)"
         return result
 
-    atr          = _calc_atr(high, low, close)
+    # Use entry-timeframe data for confirmation if available (MTF)
+    confirm_ohlcv = entry_ohlcv if entry_ohlcv else ohlcv
+    confirm_close = confirm_ohlcv.get("close", close)
+    confirm_high = confirm_ohlcv.get("high", high)
+    confirm_low = confirm_ohlcv.get("low", low)
+
+    atr          = _calc_atr(confirm_high, confirm_low, confirm_close)
     atr_expanding = _atr_expanding(atr)
 
     # ── EMA + Price Above + ATR Expanding (Long) ──────────────────────────────
@@ -561,7 +672,8 @@ def get_strategy_signals(strategy_id: str, ohlcv: dict,
     if strategy_schema and result["entry"]:
         schema_result = _resolve_from_schema(strategy_schema, ohlcv,
                                              intermarket_data=intermarket_data,
-                                             instrument_name="")
+                                             instrument_name="",
+                                             entry_ohlcv=entry_ohlcv)
         if not schema_result["all_met"]:
             failed = [c for c in schema_result["confirmations"] if not c["met"]]
             result["entry"] = False
@@ -638,8 +750,9 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
         state_file = AGENT_NETWORK_STATE / "spx500_cycle_state.json"
         cycle_state = _load_file(state_file)
 
-    strategy_id = "Bollinger Lower Band Touch with ATR Expansion Confirmation"
-    timeframe   = "1d"   # fallback — daily candles
+    strategy_id     = "Bollinger Lower Band Touch with ATR Expansion Confirmation"
+    timeframe       = "1d"   # fallback — daily candles
+    strategy_schema = None
     if cycle_state:
         strat       = cycle_state.get("active_strategy", {})
         strategy_id = (
@@ -647,15 +760,40 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
             or strat.get("strategy_id")
             or strategy_id
         )
+        strategy_schema = strat.get("strategy_schema")
         # Read timeframe from the strategy schema (15m, 1h, 4h, 1d)
         schema_tf = (
-            strat.get("strategy_schema", {})
+            (strategy_schema or {})
                  .get("metadata", {})
                  .get("timeframe", "1d")
         )
         if schema_tf in _TF_MAP:
             timeframe = schema_tf
-    log.info("Virtual trader running on %s timeframe (strategy: %s)", timeframe, strategy_id)
+
+    # Multi-timeframe: check for a separate entry timeframe
+    entry_timeframe = None
+    if cycle_state:
+        entry_timeframe = (
+            (strategy_schema or {})
+                 .get("metadata", {})
+                 .get("entry_timeframe")
+        )
+    # Only keep entry_timeframe if it's valid and different from primary
+    if entry_timeframe and (entry_timeframe not in _TF_MAP or entry_timeframe == timeframe):
+        entry_timeframe = None
+
+    # Read session preference from strategy schema (rth, extended, london, or all)
+    session = "all"  # default
+    if strategy_schema:
+        session = (strategy_schema or {}).get("metadata", {}).get("session", "all")
+
+    if entry_timeframe:
+        log.info(
+            "Virtual trader running MTF: primary=%s entry=%s session=%s (strategy: %s)",
+            timeframe, entry_timeframe, session, strategy_id,
+        )
+    else:
+        log.info("Virtual trader running on %s timeframe, session=%s (strategy: %s)", timeframe, session, strategy_id)
 
     # ── VIX-based sizing ──────────────────────────────────────────────────────
     vix = _fetch_vix()
@@ -730,8 +868,11 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
 
     # ── Pre-fetch all instruments for intermarket signal access ──────────
     _all_ohlcv = {}
+    _all_ohlcv_entry = {}
     for _im_name, _im_ticker in INSTRUMENTS.items():
-        _all_ohlcv[_im_name] = fetch_ohlcv(_im_ticker, timeframe)
+        _all_ohlcv[_im_name] = fetch_ohlcv(_im_ticker, timeframe, session=session)
+        if entry_timeframe:
+            _all_ohlcv_entry[_im_name] = fetch_ohlcv(_im_ticker, entry_timeframe, session=session)
 
     for display_name, ticker in INSTRUMENTS.items():
         try:
@@ -744,8 +885,20 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                 errors.append(f"No OHLCV data for {display_name} ({ticker})")
                 continue
 
+            # Time-of-day filter — if schema restricts trading hours, check now
+            schema_metadata = (strategy_schema or {}).get("metadata", {})
+            if not _check_time_filter(schema_metadata):
+                et_hour = (datetime.now(timezone.utc).hour - 4) % 24
+                log.info("Skipping %s: outside allowed trading hours (ET hour: %d)", display_name, et_hour)
+                continue
+
+            # Entry-timeframe OHLCV (None when single-timeframe — backward compat)
+            ohlcv_entry = _all_ohlcv_entry.get(display_name)
+
             signals       = get_strategy_signals(strategy_id, ohlcv,
-                                                 intermarket_data=_all_ohlcv)
+                                                 strategy_schema=strategy_schema,
+                                                 intermarket_data=_all_ohlcv,
+                                                 entry_ohlcv=ohlcv_entry)
             current_price = signals["current_price"]
 
             open_pos = next(
