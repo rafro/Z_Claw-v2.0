@@ -43,6 +43,22 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
+    },
+    "artifact-manager": {
+      "schedule": "daily 23:00",
+      "skill": "artifact-manager",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Hot/cold artifact cache management across all divisions."
+    },
+    "dev-digest": {
+      "schedule": "daily 15:00",
+      "skill": "dev-digest",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Daily synthesis of repo-monitor, security-scan, and refactor-scan packets."
     }
   }
 }

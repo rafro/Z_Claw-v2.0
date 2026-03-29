@@ -39,7 +39,6 @@ XP_HISTORY_FILE = STATE_DIR / "xp-history.jsonl"
 
 _PACKET_LOOKUP_OVERRIDES = {
     "hard-filter": ("opportunity", "job-intake"),
-    "sentinel-health": ("sentinel", "provider-health"),
 }
 _PACKET_DIVISION_ALIASES = {
     "dev_automation": "dev-automation",

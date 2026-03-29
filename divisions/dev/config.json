@@ -1,0 +1,28 @@
+{
+  "division": "dev",
+  "description": "Dev Pipeline — code generation, review, and architecture workflow",
+  "orchestrator_type": "python_runtime",
+  "model": {
+    "tier2_host": "http://localhost:11434",
+    "tier2_model": "qwen2.5-coder:14b-instruct-q4_K_M",
+    "tier1_fallback_model": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "notes": "Code generation pipeline uses Coder 14B for generator/reviewer. See llm-routing.md."
+  },
+  "artifact_policy": {
+    "ttl_hours": 72,
+    "archive_schedule": "weekly saturday 22:00",
+    "max_hot_mb": 512,
+    "rezip_on": "checkpoint"
+  },
+  "packet_output_path": "divisions/dev/packets/",
+  "agents": {
+    "dev-pipeline": {
+      "schedule": "on_demand",
+      "skill": "dev-pipeline",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Triggered via prompt. Full pipeline: generate, review, test, summarize, finalize."
+    }
+  }
+}

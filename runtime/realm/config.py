@@ -291,9 +291,13 @@ DIVISIONS = {
             "privacy-scan":       {"xp":  5, "soldier": "The Privacy Warden",      "icon": "⬡", "anim": "shield", "label": "Privacy Ward"},
             "opsec-digest":       {"xp":  5, "soldier": "The Brief",               "icon": "◉", "anim": "shield", "label": "Null Report"},
             "mobile-audit-review":{"xp":  5, "soldier": "The Mobile Warden",       "icon": "◈", "anim": "shield", "label": "Audit the Mobile Veil"},
-            "sentinel-health":    {"xp":  5, "soldier": "The Sentinel",            "icon": "⬢", "anim": "shield", "label": "Sentinel Watch"},
             "security-scan":      {"xp": 10, "soldier": "The Code Sentinel",       "icon": "⬡", "anim": "shield", "label": "Audit the Veil"},
             "network-monitor":    {"xp":  8, "soldier": "The Net Warden",         "icon": "⬢", "anim": "shield", "label": "Watch the Wires"},
+            # Sentinel Tier 0 health subsystem (cross-division XP feeds op_sec)
+            "provider-health":       {"xp":  8, "soldier": "The Health Monitor",      "icon": "⬢", "anim": "shield", "label": "Provider Watch"},
+            "queue-monitor":         {"xp":  5, "soldier": "The Queue Keeper",        "icon": "⬢", "anim": "shield", "label": "Queue Guard"},
+            "agent-network-monitor": {"xp":  8, "soldier": "The Network Sentinel",    "icon": "⬢", "anim": "shield", "label": "Network Vigil"},
+            "sentinel-digest":       {"xp":  5, "soldier": "The System Watcher",      "icon": "⬢", "anim": "shield", "label": "System Pulse"},
         },
         "vocabulary": {
             "quest":       "watching the veil",
@@ -349,6 +353,16 @@ DIVISIONS = {
             "continuity-check":   {"xp":  8, "soldier": "The Warden",         "icon": "⚖",  "anim": "balance",  "label": "Hold the Continuity"},
             "asset-deliver":      {"xp":  5, "soldier": "The Herald",         "icon": "📦", "anim": "deliver",  "label": "Deliver the Artifact"},
             "production-digest":  {"xp": 10, "soldier": "LYKE",               "icon": "⬡",  "anim": "forge",    "label": "The Forge Report"},
+            "art-director":       {"xp":  8, "soldier": "The Vision Keeper",   "icon": "🎭", "anim": "direct",   "label": "Direct the Vision"},
+            "narrative-craft":    {"xp": 10, "soldier": "The Tale Weaver",     "icon": "📖", "anim": "weave",    "label": "Weave the Tale"},
+            "sfx-generate":       {"xp":  8, "soldier": "The Thunder Smith",   "icon": "⚡", "anim": "spark",    "label": "Forge the Thunder"},
+            "asset-optimize":     {"xp":  5, "soldier": "The Refiner",         "icon": "💎", "anim": "polish",   "label": "Polish the Artifact"},
+            "voice-catalog":      {"xp":  5, "soldier": "The Voice Keeper",    "icon": "🗣", "anim": "catalog",  "label": "Index the Voices"},
+            "model-trainer":      {"xp":  8, "soldier": "The Pattern Caster",  "icon": "🔮", "anim": "train",    "label": "Teach the Pattern"},
+            "adapter-manager":    {"xp":  5, "soldier": "The Linksmith",       "icon": "⛓", "anim": "link",     "label": "Bind the Bridge"},
+            "voice-generate":     {"xp": 12, "soldier": "The Voice Caster",    "icon": "🎤", "anim": "echo",     "label": "Cast the Voice"},
+            "music-compose":      {"xp": 12, "soldier": "The Bard",            "icon": "🎼", "anim": "compose",  "label": "Compose the Anthem"},
+            "qa-pipeline":        {"xp": 12, "soldier": "The Quality Keeper",  "icon": "✓",  "anim": "verify",   "label": "Seal the Quality"},
         },
         "vocabulary": {
             "quest":       "in production",
@@ -361,6 +375,56 @@ DIVISIONS = {
             "streak_lost": "the forge has gone cold",
         },
         "sprite_theme": "Armored architect in deep orange plate, glowing blueprint scrolls, forge-fire amber eyes, structural hexagonal motifs on armor. Confident builder stance.",
+    },
+
+    "gamedev": {
+        "key":       "gamedev",
+        "commander": "ARDENT",
+        "title":     "Ardent, Warden of the Eternal Engine",
+        "order":     "The Eternal Engine",
+        "color":     "#8b5cf6",
+        "glow":      "#8b5cf640",
+        "lore": (
+            "A master architect who sees the blueprint of entire worlds before a single "
+            "line of code is written. Ardent turns raw vision into playable reality — "
+            "designing, prototyping, balancing, and stress-testing until the engine runs clean. "
+            "The Eternal Engine does not ship dreams. It ships worlds."
+        ),
+        "ranks": [
+            "Engine Apprentice",          # 0   XP
+            "Prototype Builder",          # 51  XP
+            "World Architect",            # 151 XP
+            "Grand Artificer",            # 301 XP
+            "Warden of the Eternal Engine", # 500 XP
+        ],
+        "abilities": [
+            {"name": "Draft the World",    "desc": "Sketches the core design document — mechanics, loops, and player journey"},
+            {"name": "Forge the Prototype","desc": "Builds a playable vertical slice to test the design before committing"},
+            {"name": "Calibrate the Engine","desc": "Balances numbers, curves, and feedback loops until the system feels right"},
+            {"name": "Map the Terrain",    "desc": "Designs levels, encounters, and spatial flow for player progression"},
+            {"name": "Seal the Build",     "desc": "Runs full playtest gauntlet and signs off the release candidate"},
+        ],
+        "skills": {
+            "game-design":        {"xp": 15, "soldier": "The Visionary",         "icon": "🎮", "anim": "draft",     "label": "Draft the World"},
+            "mechanic-prototype": {"xp": 12, "soldier": "The Prototype Smith",   "icon": "🔧", "anim": "forge",     "label": "Forge the Prototype"},
+            "balance-audit":      {"xp": 10, "soldier": "The Calibrator",        "icon": "⚖",  "anim": "calibrate", "label": "Calibrate the Engine"},
+            "level-design":       {"xp": 12, "soldier": "The Cartographer",      "icon": "🗺",  "anim": "map",       "label": "Map the Terrain"},
+            "tech-spec":          {"xp": 10, "soldier": "The Blueprint Keeper",  "icon": "📐", "anim": "blueprint", "label": "Inscribe the Spec"},
+            "playtest-report":    {"xp": 15, "soldier": "The Trial Master",      "icon": "🎯", "anim": "trial",     "label": "Run the Gauntlet"},
+            "asset-integration":  {"xp":  8, "soldier": "The Assembler",         "icon": "🧩", "anim": "assemble",  "label": "Assemble the World"},
+            "gamedev-digest":     {"xp": 10, "soldier": "The Engine Voice",      "icon": "⬡",  "anim": "report",    "label": "The Engine Report"},
+        },
+        "vocabulary": {
+            "quest":       "building the world",
+            "rest":        "engine idle",
+            "standby":     "awaiting blueprint",
+            "wound":       "broken build",
+            "hydrate":     "engine restarted",
+            "rank_up":     "Ardent expands the Engine",
+            "streak_hold": "the engine runs unbroken",
+            "streak_lost": "the engine has stalled",
+        },
+        "sprite_theme": "Armored architect with holographic blueprint projections, violet energy lines tracing structural diagrams, game controller motifs etched into shoulder plates. Confident stance with one hand on a glowing world-sphere.",
     },
 }
 

@@ -1,6 +1,6 @@
 # Z_Claw v2.0 — Personal AI Orchestration Platform
 
-A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 7 specialized agent divisions (~55 agents) across trading, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
+A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 9 specialized agent divisions (~71 agents) across trading, game development, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
 
 Built for two users: **Tyler** (PC dashboard, port 3000) and **Matthew** (mobile PWA via Tailscale, iPhone 16 Pro Max).
 
@@ -38,9 +38,25 @@ This version reconciles Tyler's battle-tested production system (195 commits) wi
 ### QVAC BitNet LoRA — Self-Improving Training Pipeline
 Every LLM call is captured → human-reviewed → domain-split → formatted for QVAC → trained on AMD GPU → adapter deployed. See [QVAC Setup Guide](docs/QVAC_SETUP.md).
 
+### Game Development Division — ARDENT, The Eternal Engine
+- **8 new agents**: game-design, mechanic-prototype, balance-audit, level-design, tech-spec, playtest-report, asset-integration, gamedev-digest
+- Cross-division pipeline: Game Dev **designs** → Production **builds** assets → Game Dev **integrates** and tests
+- Asset integration reads production packets (asset-catalog, asset-deliver, qa-pipeline) to track delivery gaps
+- All skills capture training data for QVAC domain-specific fine-tuning
+- Scheduled: game-design (daily 09:00), balance-audit (daily 20:00), asset-integration (12h), gamedev-digest (daily 21:00)
+
+### Division Wiring Audit + Fixes
+- **14 missing XP definitions** added (10 production, 4 sentinel) — skills were running but earning 0 XP silently
+- **Sentinel orchestrator** fixed — all 4 skills now properly grant XP to op_sec division
+- **Op-sec orchestrator** wrappers added for mobile-audit-review and network-monitor (previously bypassed orchestrator, missing packet building and XP)
+- **Dead code removed**: duplicate `read_fresh()`, orphaned `sentinel-health` entries, unreachable `run_security_scan()` in dev-automation
+- **Config gaps fixed**: artifact-manager and dev-digest added to dev-automation config, dev division config created, orphaned trade-tracker removed from personal
+- **Dashboard fully synced** with all backend changes
+
 ### Gamification Restored
 - 15 quest templates with progress tracking
-- 17 achievements (5 new: Fortnight Flame, Monthly Guardian, First Ascension, Thrice Ascended, Forge Ignited)
+- 18 achievements (6 new: Fortnight Flame, Monthly Guardian, First Ascension, Thrice Ascended, Forge Ignited, Engine Awoken)
+- "Seven Orders Stand" achievement — all 9 divisions contributing XP
 - Token-aware context trimming in all chat handlers
 
 ### Dashboard Parity
@@ -78,7 +94,7 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 └──────────────────────┬──────────────────────────────────┘
                        │ HTTP / SSE / WebSocket
 ┌──────────────────────▼──────────────────────────────────┐
-│  Python Skill Runtime (~55 agents)                       │
+│  Python Skill Runtime (~71 agents)                       │
 │                                                         │
 │  runtime/orchestrators/   Per-division LLM orchestrators │
 │  runtime/skills/          Individual agent skill files   │
@@ -90,24 +106,26 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 
 ---
 
-## The 7 Divisions
+## The 9 Divisions
 
-| Division | Commander | Agents | Key Capabilities |
-|---|---|---|---|
-| **Trading** | SEREN | 5 | Multi-factor signals, VIX breakers, slippage, Monte Carlo backtesting |
-| **Opportunity** | VAEL | 5 | Job intake/filter, application tracking, funding discovery |
-| **Dev Automation** | KAELEN | 8 | Repo monitoring, refactoring, security scanning, artifact lifecycle |
-| **Personal** | LYRIN | 6 | Health logging, burnout detection, performance correlation, weekly retros |
-| **OP-Sec** | ZETH | 9 | Device posture, breach monitoring, credential audit, network profiling |
-| **Production** | LYKE | 24 | Art direction, image/video/voice/music/SFX generation, QA, QVAC training |
-| **Sentinel** | VEIL | 4 | Provider health, queue monitoring, agent-network staleness, system digest |
+| Division | Commander | Order | Agents | Key Capabilities |
+|---|---|---|---|---|
+| **Trading** | SEREN | The Auric Veil | 8 | Multi-factor signals, VIX breakers, strategy build/test/search, Monte Carlo backtesting |
+| **Opportunity** | VAEL | The Dawnhunt Order | 5 | Job intake/filter, application tracking, funding discovery |
+| **Dev Automation** | KAELEN | The Iron Codex | 6 | Repo monitoring, refactoring, artifact lifecycle, dev digest |
+| **Dev** | KAELEN | The Iron Codex | 1 | Code generation pipeline (generate → review → test → summarize → finalize) |
+| **Personal** | LYRIN | The Ember Covenant | 4 | Health logging, burnout detection, performance correlation, weekly retros |
+| **OP-Sec** | ZETH | The Nullward Circle | 8 | Device posture, breach monitoring, credential audit, network profiling, mobile audit |
+| **Production** | LYKE | The Lykeon Forge | 24 | Art direction, image/video/voice/music/SFX generation, QA, QVAC training |
+| **Game Dev** | ARDENT | The Eternal Engine | 8 | Game design, mechanic prototyping, balance audits, level design, playtesting, asset integration |
+| **Sentinel** | — | — | 4 | Provider health, queue monitoring, agent-network staleness (XP feeds OP-Sec) |
 
 ### Cross-Division Data Flows
 
 ```
                     ┌─────────────┐
                     │  SENTINEL   │ ← Watches ALL divisions for staleness
-                    └──────┬──────┘
+                    └──────┬──────┘   (XP feeds OP-SEC)
                            │
     ┌──────────────────────┼──────────────────────┐
     │                      │                      │
@@ -118,8 +136,12 @@ All frontends fully synced — every agent has buttons, packet displays, and met
     │ breach gate    burnout│
     │                     │
 ┌───▼────┐          ┌────▼─────┐
-│PRODUC- │          │ PERSONAL │◄──► OPPORTUNITY
-│TION    │          └──────────┘     (burnout throttle)
+│PRODUC- │◄────────►│ PERSONAL │◄──► OPPORTUNITY
+│TION    │ assets   └──────────┘     (burnout throttle)
+└───┬────┘
+    │ assets ↕ specs
+┌───▼────┐
+│GAME DEV│ ← Designs specs, reads production asset-catalog/deliver/QA
 └────────┘
 ```
 
@@ -234,7 +256,7 @@ The `training_manifest.py` module implements hydration-inspired lineage tracking
 | Layer | Tech |
 |---|---|
 | Mission Control | Node.js 20, PM2 |
-| Skills | Python 3.13 (~55 agents) |
+| Skills | Python 3.13 (~71 agents across 9 divisions) |
 | Local LLM | Ollama (Qwen2.5 7B / Coder 14B, AMD ROCm/Vulkan) |
 | Cloud LLM | Groq 70B, DeepSeek, Gemini (escalation only) |
 | Image/Video | ComfyUI + AnimateDiff-Evolved |
@@ -263,6 +285,8 @@ pm2 logs openclaw-gateway
 
 # Run a skill manually
 python run_division.py trading market-scan
+python run_division.py gamedev game-design
+python run_division.py gamedev balance-audit
 python run_division.py production art-director general vael
 python run_division.py production model-trainer trading bitnet-1b status
 python run_division.py production adapter-manager status
@@ -339,6 +363,8 @@ The trading division is built for futures prop firm evaluation and funded accoun
 6. Install QVAC for model fine-tuning (when ready)
 
 ### Code Improvements (Future Sessions)
+- **Game Dev content pipeline** — Wire game-design specs to production art-director for automated asset requests
+- **QVAC gamedev domain** — Accumulate training data from game dev skills, train domain-specific BitNet adapter
 - **Multiple-testing correction** — Deflated Sharpe Ratio for 250-strategy search
 - **Evaluation mode vs funded mode** — Different VIX thresholds, profit target tracking
 - **Weekend/news event protection** — FOMC/NFP calendar, forced close before weekends

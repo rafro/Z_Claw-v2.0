@@ -254,3 +254,60 @@ def run_opsec_digest() -> dict:
     packet.write(output)
     log.info("OP-Sec digest written. Escalate=%s", escalate)
     return output
+
+
+def run_mobile_audit_review() -> dict:
+    """Mobile session audit — reviews coding patterns from mobile devices."""
+    log.info("=== OP-Sec Division: mobile-audit-review run ===")
+    from runtime.skills import mobile_audit_review
+    result = mobile_audit_review.run()
+    action_items = []
+    for f in result.get("flags", [])[:8]:
+        action_items.append(packet.action_item(
+            f"[{f.get('severity', '?')}] {f.get('rule', '?')}: {f.get('detail', '')}",
+            priority="high" if f.get("severity") == "HIGH" else "normal",
+            requires_matthew=f.get("severity") == "HIGH",
+        ))
+    pkt = packet.build(
+        division="op-sec",
+        skill="mobile-audit-review",
+        status=result.get("status", "success"),
+        summary=result.get("summary", "Mobile audit complete."),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+        metrics=result.get("metrics", {}),
+        provider_used="deterministic",
+    )
+    packet.write(pkt)
+    grant_skill_xp("mobile-audit-review")
+    return pkt
+
+
+def run_network_monitor() -> dict:
+    """Network connection monitoring — flags anomalous traffic."""
+    log.info("=== OP-Sec Division: network-monitor run ===")
+    from runtime.skills import network_monitor
+    result = network_monitor.run()
+    anomalies = result.get("anomalies", [])
+    action_items = []
+    for a in anomalies[:8]:
+        action_items.append(packet.action_item(
+            f"[{a.get('severity', '?')}] {a.get('type', '?')}: {a.get('detail', '')}",
+            priority="high" if a.get("severity") == "HIGH" else "normal",
+            requires_matthew=a.get("severity") == "HIGH",
+        ))
+    pkt = packet.build(
+        division="op-sec",
+        skill="network-monitor",
+        status=result.get("status", "success"),
+        summary=result.get("summary", "Network scan complete."),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+        metrics=result.get("metrics", {}),
+        provider_used="deterministic",
+    )
+    packet.write(pkt)
+    grant_skill_xp("network-monitor")
+    return pkt

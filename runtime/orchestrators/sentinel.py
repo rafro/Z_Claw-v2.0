@@ -40,7 +40,7 @@ def run_provider_health() -> dict:
         urgency=urgency,
     )
     packet.write(pkt)
-    grant_skill_xp("sentinel-health")
+    grant_skill_xp("provider-health")
     return pkt
 
 
@@ -79,6 +79,7 @@ def run_queue_monitor() -> dict:
         urgency=urgency,
     )
     packet.write(pkt)
+    grant_skill_xp("queue-monitor")
     return pkt
 
 
@@ -149,6 +150,7 @@ def run_agent_network_monitor() -> dict:
         urgency="high" if stale else "normal",
     )
     packet.write(pkt)
+    grant_skill_xp("agent-network-monitor")
     log.info("agent-network monitor: %.1fh since last cycle — %s", hours_since, status)
     return pkt
 
@@ -195,4 +197,5 @@ def run_sentinel_digest() -> dict:
         urgency=urgency,
     )
     packet.write(pkt)
+    grant_skill_xp("sentinel-digest")
     return pkt

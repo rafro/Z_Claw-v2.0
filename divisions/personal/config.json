@@ -24,13 +24,6 @@
       "last_run": null,
       "status": "idle"
     },
-    "trade-tracker": {
-      "schedule": "after each manual session",
-      "skill": "trading-report",
-      "enabled": true,
-      "last_run": null,
-      "status": "idle"
-    },
     "perf-correlation": {
       "schedule": "daily 20:00",
       "skill": "perf-correlation",

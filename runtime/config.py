@@ -74,6 +74,6 @@ def ensure_dirs():
     """Create any missing runtime directories."""
     for d in [STATE_DIR, LOGS_DIR, REPORTS_DIR]:
         d.mkdir(exist_ok=True)
-    for div in ["opportunity", "trading", "personal", "dev-automation", "op-sec", "dev", "sentinel", "production"]:
+    for div in ["opportunity", "trading", "personal", "dev-automation", "op-sec", "dev", "sentinel", "production", "gamedev"]:
         for sub in ["packets", "hot", "cold", "manifests"]:
             (DIVISIONS_DIR / div / sub).mkdir(parents=True, exist_ok=True)

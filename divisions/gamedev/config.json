@@ -1,0 +1,84 @@
+{
+  "division": "gamedev",
+  "description": "Game Development — design, prototyping, balancing, level design, playtesting, and asset integration. Commander: ARDENT.",
+  "orchestrator_type": "python_runtime",
+  "model": {
+    "tier1_host": "http://localhost:11434",
+    "tier1_model": "qwen2.5:7b-instruct-q4_K_M",
+    "tier2_model": "qwen2.5:14b-instruct-q4_K_M",
+    "notes": "Tier 1 for routine design tasks. Tier 2 for deep mechanic prototyping and balance analysis. Cross-division: reads production packets for asset status."
+  },
+  "artifact_policy": {
+    "ttl_hours": 168,
+    "archive_schedule": "weekly sunday 22:00",
+    "max_hot_mb": 512,
+    "rezip_on": "checkpoint"
+  },
+  "packet_output_path": "divisions/gamedev/packets/",
+  "agents": {
+    "game-design": {
+      "schedule": "daily 09:00",
+      "skill": "game-design",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Iterates on game design document sections. Reads production art-director packets for visual direction."
+    },
+    "mechanic-prototype": {
+      "schedule": "on_demand",
+      "skill": "mechanic-prototype",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Generates pseudocode and logic specs for game mechanics."
+    },
+    "balance-audit": {
+      "schedule": "daily 20:00",
+      "skill": "balance-audit",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Analyzes game data for balance issues. Reads playtest-report packets."
+    },
+    "level-design": {
+      "schedule": "on_demand",
+      "skill": "level-design",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Procedural level layout generation and iteration."
+    },
+    "tech-spec": {
+      "schedule": "on_demand",
+      "skill": "tech-spec",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Generates technical design documents for game systems."
+    },
+    "playtest-report": {
+      "schedule": "on_demand",
+      "skill": "playtest-report",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Analyzes playtest data, flags issues, feeds back to balance-audit and production qa-pipeline."
+    },
+    "asset-integration": {
+      "schedule": "every 12 hours",
+      "skill": "asset-integration",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Cross-division: reads production asset-catalog and asset-deliver packets. Flags gaps against game design requirements."
+    },
+    "gamedev-digest": {
+      "schedule": "daily 21:00",
+      "skill": "gamedev-digest",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Daily synthesis of all game dev activity. Reads all gamedev skill packets."
+    }
+  }
+}

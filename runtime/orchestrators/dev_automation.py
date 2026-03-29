@@ -1,8 +1,9 @@
 """
 Dev Automation Division Orchestrator — code-specialized model routing.
-Skills: repo-monitor, refactor-scan, security-scan → Coder 7B (local).
+Skills: repo-monitor, refactor-scan → Coder 7B (local).
         debug-agent, doc-update → Coder 14B (friend's 9070 XT, Coder 7B fallback).
 Orchestrator synthesis (dev-digest) → Qwen2.5 7B (local prose, not code analysis).
+Note: security-scan migrated to op-sec division.
 """
 
 import logging
@@ -10,7 +11,7 @@ from datetime import datetime, timezone
 
 from runtime.config import SKILL_MODELS, MODEL_14B_HOST, MODEL_CODER_7B, MODEL_8B, OLLAMA_HOST
 from runtime.ollama_client import chat, is_available
-from runtime.skills import repo_monitor, debug_agent, refactor_scan, security_scan, doc_update, artifact_manager
+from runtime.skills import repo_monitor, debug_agent, refactor_scan, doc_update, artifact_manager
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
 
@@ -218,46 +219,6 @@ def run_refactor_scan() -> dict:
     return pkt
 
 
-def run_security_scan() -> dict:
-    """Weekly security scan of the OpenClaw runtime."""
-    log.info("=== Dev Automation Division: security-scan run ===")
-
-    result   = security_scan.run()
-    findings = result.get("findings", [])
-    high     = [f for f in findings if f.get("severity") == "HIGH"]
-
-    action_items = [
-        packet.action_item(
-            f"[{f.get('severity','?')}] {f.get('file','?')}:{f.get('line','?')} — "
-            f"{f.get('type','?')}: {f.get('detail','')}"
-            + (f" | Fix: {f.get('fix','')}" if f.get("fix") else ""),
-            priority="high" if f.get("severity") == "HIGH" else "normal",
-            requires_matthew=f.get("severity") == "HIGH",
-        )
-        for f in findings[:8]
-    ]
-
-    pkt = packet.build(
-        division="dev-automation",
-        skill="security-scan",
-        status=result["status"],
-        summary=result.get("summary", f"{len(findings)} security issues found."),
-        action_items=action_items,
-        metrics={
-            "findings":   len(findings),
-            "high":       len(high),
-            "model_used": result.get("model_used"),
-        },
-        escalate=result.get("escalate", False),
-        escalation_reason=result.get("escalation_reason", ""),
-    )
-
-    packet.write(pkt)
-    grant_skill_xp("security-scan")
-    log.info("Security-scan packet written. HIGH=%d total=%d", len(high), len(findings))
-    return pkt
-
-
 def run_doc_update() -> dict:
     """Weekly architecture documentation generation."""
     log.info("=== Dev Automation Division: doc-update run ===")
@@ -322,7 +283,7 @@ def run_dev_digest() -> dict:
     log.info("=== Dev Automation Division: dev-digest synthesis ===")
 
     repo_pkt     = packet.read_fresh("dev-automation", "repo-monitor", 4320)    # 3-day window
-    security_pkt = packet.read_fresh("dev-automation", "security-scan", 4320)
+    security_pkt = packet.read_fresh("op-sec", "security-scan", 4320)
     refactor_pkt = packet.read_fresh("dev-automation", "refactor-scan", 4320)
 
     synthesis = _synthesize_dev_state(repo_pkt, security_pkt, refactor_pkt)

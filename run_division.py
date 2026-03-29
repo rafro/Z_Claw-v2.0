@@ -16,7 +16,6 @@ Usage:
   python run_division.py dev-automation repo-monitor
   python run_division.py dev-automation debug-agent <error_text> [context_file ...]
   python run_division.py dev-automation refactor-scan
-  python run_division.py dev-automation security-scan
   python run_division.py dev-automation doc-update
   python run_division.py dev-automation artifact-manager
   python run_division.py dev-automation dev-digest
@@ -36,6 +35,14 @@ Usage:
   python run_division.py production asset-deliver
   python run_division.py production production-digest
   python run_division.py production qa-pipeline [commander]
+  python run_division.py gamedev game-design
+  python run_division.py gamedev mechanic-prototype
+  python run_division.py gamedev balance-audit
+  python run_division.py gamedev level-design
+  python run_division.py gamedev tech-spec '{"system":"combat"}'
+  python run_division.py gamedev playtest-report
+  python run_division.py gamedev asset-integration
+  python run_division.py gamedev gamedev-digest
   python run_division.py sentinel provider-health
   python run_division.py sentinel queue-monitor
   python run_division.py sentinel sentinel-digest
@@ -125,6 +132,7 @@ def run(division: str, task: str, args: list) -> dict:
         from runtime.orchestrators.op_sec import (
             run_device_posture, run_breach_check, run_threat_surface,
             run_cred_audit, run_privacy_scan, run_security_scan, run_opsec_digest,
+            run_mobile_audit_review, run_network_monitor,
         )
         if task == "device-posture":
             return run_device_posture()
@@ -141,10 +149,8 @@ def run(division: str, task: str, args: list) -> dict:
         if task == "opsec-digest":
             return run_opsec_digest()
         if task == "mobile-audit-review":
-            from runtime.skills.mobile_audit_review import run as run_mobile_audit
-            return run_mobile_audit()
+            return run_mobile_audit_review()
         if task == "network-monitor":
-            from runtime.skills.network_monitor import run as run_network_monitor
             return run_network_monitor()
         raise ValueError(f"Unknown task for op-sec: {task}")
 
@@ -273,6 +279,32 @@ def run(division: str, task: str, args: list) -> dict:
         if not runner:
             raise ValueError(f"Unknown task for production: {task}")
         return runner()
+
+    # ── Game Development ───────────────────────────────────────────────────
+    elif division == "gamedev":
+        from runtime.orchestrators.gamedev import (
+            run_game_design, run_mechanic_prototype, run_balance_audit,
+            run_level_design, run_tech_spec, run_playtest_report,
+            run_asset_integration, run_gamedev_digest,
+        )
+        if task == "game-design":
+            return run_game_design()
+        if task == "mechanic-prototype":
+            return run_mechanic_prototype()
+        if task == "balance-audit":
+            return run_balance_audit()
+        if task == "level-design":
+            return run_level_design()
+        if task == "tech-spec":
+            spec_str = args[0] if args else "{}"
+            return run_tech_spec(spec_str)
+        if task == "playtest-report":
+            return run_playtest_report()
+        if task == "asset-integration":
+            return run_asset_integration()
+        if task == "gamedev-digest":
+            return run_gamedev_digest()
+        raise ValueError(f"Unknown task for gamedev: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────
     elif division == "realm-keeper":

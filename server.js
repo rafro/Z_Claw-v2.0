@@ -259,6 +259,7 @@ const DIV_RANKS = {
   personal:       ['Covenant Initiate', 'Flame Tender', 'Guardian of Vitality', 'Covenant Warden', 'Eternal Keeper'],
   op_sec:         ['Circle Watchman', 'Veil Scout', 'Shadow Warden', 'Grand Sentinel', 'Sovereign of the Null'],
   production:     ['Apprentice of the Forge', 'Craftwright Adept', 'Lykeon Architect', 'Master of the Forge', 'Lyke, Architect of the Lykeon Forge'],
+  gamedev:        ['Engine Apprentice', 'Prototype Builder', 'World Architect', 'Grand Artificer', 'Warden of the Eternal Engine'],
 };
 
 const DIV_COMMANDERS = {
@@ -268,6 +269,7 @@ const DIV_COMMANDERS = {
   personal:       { name: 'LYRIN',  order: 'The Ember Covenant' },
   op_sec:         { name: 'ZETH',   order: 'The Nullward Circle' },
   production:     { name: 'LYKE',   order: 'The Lykeon Forge'   },
+  gamedev:        { name: 'ARDENT', order: 'The Eternal Engine' },
 };
 
 const DIV_XP_THRESHOLDS = [0, 51, 151, 301, 500];
@@ -345,6 +347,15 @@ const SKILL_XP = {
   'voice-catalog':      { division: 'production',     amount:  5 },
   'model-trainer':      { division: 'production',     amount:  8 },
   'adapter-manager':    { division: 'production',     amount:  5 },
+  // Game Development — The Eternal Engine
+  'game-design':        { division: 'gamedev',        amount: 15 },
+  'mechanic-prototype': { division: 'gamedev',        amount: 12 },
+  'balance-audit':      { division: 'gamedev',        amount: 10 },
+  'level-design':       { division: 'gamedev',        amount: 12 },
+  'tech-spec':          { division: 'gamedev',        amount: 10 },
+  'playtest-report':    { division: 'gamedev',        amount: 15 },
+  'asset-integration':  { division: 'gamedev',        amount:  8 },
+  'gamedev-digest':     { division: 'gamedev',        amount: 10 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -415,6 +426,15 @@ const SKILL_TASK_MAP = {
   'voice-catalog':      { divState: 'production', division: 'production', task: 'voice-catalog'     },
   'model-trainer':      { divState: 'production', division: 'production', task: 'model-trainer'     },
   'adapter-manager':    { divState: 'production', division: 'production', task: 'adapter-manager'   },
+  // Game Development — The Eternal Engine
+  'game-design':        { divState: 'gamedev', division: 'gamedev', task: 'game-design'        },
+  'mechanic-prototype': { divState: 'gamedev', division: 'gamedev', task: 'mechanic-prototype' },
+  'balance-audit':      { divState: 'gamedev', division: 'gamedev', task: 'balance-audit'      },
+  'level-design':       { divState: 'gamedev', division: 'gamedev', task: 'level-design'       },
+  'tech-spec':          { divState: 'gamedev', division: 'gamedev', task: 'tech-spec'          },
+  'playtest-report':    { divState: 'gamedev', division: 'gamedev', task: 'playtest-report'    },
+  'asset-integration':  { divState: 'gamedev', division: 'gamedev', task: 'asset-integration'  },
+  'gamedev-digest':     { divState: 'gamedev', division: 'gamedev', task: 'gamedev-digest'     },
 };
 
 function rankForLevel(level) {
@@ -572,7 +592,7 @@ function _getWeekKey(date) {
   return `${d.getFullYear()}-${String(week + 1).padStart(2, '0')}`;
 }
 
-const ALL_DIVISION_KEYS = ['opportunity', 'trading', 'dev_automation', 'personal', 'op_sec', 'production'];
+const ALL_DIVISION_KEYS = ['opportunity', 'trading', 'dev_automation', 'personal', 'op_sec', 'production', 'gamedev'];
 
 function _ensureStreaks(stats) {
   if (!stats.streaks) stats.streaks = {};
@@ -649,6 +669,8 @@ function _checkAchievements(stats) {
       unlocked.push('triple_prestige');
     if (!earned.has('forge_ignited') && divXP('production') > 0)
       unlocked.push('forge_ignited');
+    if (!earned.has('engine_awoken') && divXP('gamedev') > 0)
+      unlocked.push('engine_awoken');
   return unlocked;
 }
 
@@ -2723,6 +2745,16 @@ function handleMobileDivisions(res) {
         agent_network_monitor: readPkt('sentinel', 'agent-network-monitor'),
         sentinel_digest:       readPkt('sentinel', 'sentinel-digest'),
       },
+      gamedev: {
+        game_design:        readPkt('gamedev', 'game-design'),
+        mechanic_prototype: readPkt('gamedev', 'mechanic-prototype'),
+        balance_audit:      readPkt('gamedev', 'balance-audit'),
+        level_design:       readPkt('gamedev', 'level-design'),
+        tech_spec:          readPkt('gamedev', 'tech-spec'),
+        playtest_report:    readPkt('gamedev', 'playtest-report'),
+        asset_integration:  readPkt('gamedev', 'asset-integration'),
+        gamedev_digest:     readPkt('gamedev', 'gamedev-digest'),
+      },
     });
   } catch(e) {
     return jsonError(res, 500, e.message);
@@ -2732,7 +2764,7 @@ function handleMobileDivisions(res) {
 function _collectMobileAlerts() {
   const alerts = [];
   const dismissed = _loadDismissedAlerts();
-  const packetDirs = ['op-sec', 'trading', 'opportunity', 'dev-automation', 'personal', 'production', 'sentinel'];
+  const packetDirs = ['op-sec', 'trading', 'opportunity', 'dev-automation', 'personal', 'production', 'sentinel', 'gamedev'];
   for (const div of packetDirs) {
     const pktDir = path.join(ROOT, 'divisions', div, 'packets');
     if (!fs.existsSync(pktDir)) continue;
@@ -2889,7 +2921,7 @@ function _readDivisionMetrics() {
   }
 
   // Action items — high priority count across all packets (all divisions)
-  const _divFolders = { trading: 'trading', opportunity: 'opportunity', personal: 'personal', dev_automation: 'dev-automation', op_sec: 'op-sec', production: 'production', sentinel: 'sentinel' };
+  const _divFolders = { trading: 'trading', opportunity: 'opportunity', personal: 'personal', dev_automation: 'dev-automation', op_sec: 'op-sec', production: 'production', sentinel: 'sentinel', gamedev: 'gamedev' };
   for (const [divKey, divFolder] of Object.entries(_divFolders)) {
     try {
       const pktDir = path.join(ROOT, 'divisions', divFolder, 'packets');
@@ -3203,7 +3235,7 @@ function handleAchievements(res) {
   if (fs.existsSync(f)) { try { const s = JSON.parse(fs.readFileSync(f, 'utf8')); earned = s.achievements || []; } catch(e) {} }
   const ALL_ACHIEVEMENTS = [
     { id: 'first_blood', name: 'First Blood', icon: '⚔️', desc: 'Complete your first skill run', lore: 'The blade was drawn. The hunt began.' },
-    { id: 'five_orders', name: 'Six Orders', icon: '🏰', desc: 'Have all six divisions active', lore: 'The realm stands complete. All orders march.' },
+    { id: 'five_orders', name: 'Seven Orders Stand', icon: '🏰', desc: 'Have all seven divisions active', lore: 'The realm stands complete. All orders march.' },
     { id: 'market_watcher', name: 'Market Watcher', icon: '📈', desc: 'Run market-scan 10 times', lore: 'The runes have been read. Patterns emerge from chaos.' },
     { id: 'first_hunt', name: 'First Hunt', icon: '🎯', desc: 'Find your first job opportunity', lore: 'VANCE drew the map. The first target was marked.' },
     { id: 'covenant_keeper', name: 'Covenant Keeper', icon: '🔥', desc: 'Maintain a 7-day streak', lore: 'The flame was kept alive. The pact holds.' },
@@ -3220,6 +3252,7 @@ function handleAchievements(res) {
     { id: 'first_prestige',   icon: '✨', name: 'First Ascension',     desc: 'Complete your first prestige',   lore: 'The cycle breaks. You emerge stronger.' },
     { id: 'triple_prestige',  icon: '🌟', name: 'Thrice Ascended',     desc: 'Reach prestige level 3',        lore: 'Three cycles complete. The realm bends to your will.' },
     { id: 'forge_ignited',    icon: '🔨', name: 'The Forge Ignited',   desc: 'First asset in Production',     lore: "LYKE's forge burns. Creation begins." },
+    { id: 'engine_awoken',    icon: '🎮', name: 'Engine Awoken',       desc: 'First XP in Game Development',  lore: "ARDENT's Eternal Engine roars to life. Worlds await." },
   ];
   const result = ALL_ACHIEVEMENTS.map(a => ({ ...a, unlocked: earned.includes(a.id), unlock_date: null }));
   jsonOk(res, { achievements: result, earned_count: earned.length, total: result.length });
@@ -4843,6 +4876,27 @@ cron.schedule('0 */12 * * *', async () => {
 // production-digest daily at 8:00 PM
 cron.schedule('0 20 * * *', async () => {
   await runSkillViaPython('production-digest', 'PRODUCTION');
+}, { timezone: TZ });
+
+// ── Game Development Division — The Eternal Engine ───────────────────────
+// game-design daily at 9:00 AM
+cron.schedule('0 9 * * *', async () => {
+  await runSkillViaPython('game-design', 'GAMEDEV');
+}, { timezone: TZ });
+
+// balance-audit daily at 8:00 PM
+cron.schedule('0 20 * * *', async () => {
+  await runSkillViaPython('balance-audit', 'GAMEDEV');
+}, { timezone: TZ });
+
+// asset-integration every 12 hours
+cron.schedule('0 */12 * * *', async () => {
+  await runSkillViaPython('asset-integration', 'GAMEDEV');
+}, { timezone: TZ });
+
+// gamedev-digest daily at 9:00 PM
+cron.schedule('0 21 * * *', async () => {
+  await runSkillViaPython('gamedev-digest', 'GAMEDEV');
 }, { timezone: TZ });
 
 // ── Personal Division — weekly retrospective ─────────────────────────────
