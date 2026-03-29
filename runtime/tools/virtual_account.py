@@ -216,6 +216,396 @@ def _calc_bollinger(prices: list, period: int = 20,
     return upper, middle, lower
 
 
+def _calc_rsi(prices: list, period: int = 14) -> Optional[float]:
+    """Return the latest RSI value (0-100) or None if insufficient data."""
+    if len(prices) < period + 1:
+        return None
+    gains, losses = [], []
+    for i in range(1, len(prices)):
+        delta = prices[i] - prices[i - 1]
+        gains.append(max(delta, 0))
+        losses.append(max(-delta, 0))
+    # Seed with SMA then EMA-smooth
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    for i in range(period, len(gains)):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))
+
+
+def _calc_rsi_series(prices: list, period: int = 14) -> list:
+    """Return full RSI series aligned with *prices* (None-padded at the front)."""
+    result = [None] * min(period, len(prices))
+    if len(prices) < period + 1:
+        return [None] * len(prices)
+    gains, losses = [], []
+    for i in range(1, len(prices)):
+        delta = prices[i] - prices[i - 1]
+        gains.append(max(delta, 0))
+        losses.append(max(-delta, 0))
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    rs = avg_gain / avg_loss if avg_loss else 999
+    result.append(100 - (100 / (1 + rs)))
+    for i in range(period, len(gains)):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+        rs = avg_gain / avg_loss if avg_loss else 999
+        result.append(100 - (100 / (1 + rs)))
+    return result
+
+
+def _calc_macd(prices: list, fast: int = 12, slow: int = 26,
+               signal: int = 9) -> tuple[Optional[float], Optional[float], Optional[float]]:
+    """Return (macd_line, signal_line, histogram) for the latest bar."""
+    ema_fast = _calc_ema(prices, fast)
+    ema_slow = _calc_ema(prices, slow)
+    if _last(ema_fast) is None or _last(ema_slow) is None:
+        return None, None, None
+    macd_line_series = []
+    for f, s in zip(ema_fast, ema_slow):
+        macd_line_series.append(f - s if f is not None and s is not None else None)
+    valid_macd = [v for v in macd_line_series if v is not None]
+    if len(valid_macd) < signal:
+        return _last(macd_line_series), None, None
+    signal_series = _calc_ema(valid_macd, signal)
+    macd_val = valid_macd[-1]
+    signal_val = _last(signal_series)
+    histogram = macd_val - signal_val if signal_val is not None else None
+    return macd_val, signal_val, histogram
+
+
+def _calc_di(high: list, low: list, close: list, period: int = 14) -> tuple[list, list]:
+    """Return (+DI, -DI) series."""
+    plus_dm, minus_dm = [], []
+    for i in range(1, len(close)):
+        up_move = high[i] - high[i - 1]
+        down_move = low[i - 1] - low[i]
+        plus_dm.append(up_move if up_move > down_move and up_move > 0 else 0)
+        minus_dm.append(down_move if down_move > up_move and down_move > 0 else 0)
+    atr_series = _calc_atr(high, low, close, period)
+    sm_plus = _calc_ema(plus_dm, period)
+    sm_minus = _calc_ema(minus_dm, period)
+    plus_di, minus_di = [None], [None]  # offset by 1 for alignment
+    for i in range(len(sm_plus)):
+        atr_val = atr_series[i + 1] if (i + 1) < len(atr_series) else None
+        if sm_plus[i] is not None and atr_val and atr_val > 0:
+            plus_di.append(100 * sm_plus[i] / atr_val)
+        else:
+            plus_di.append(None)
+        if sm_minus[i] is not None and atr_val and atr_val > 0:
+            minus_di.append(100 * sm_minus[i] / atr_val)
+        else:
+            minus_di.append(None)
+    return plus_di, minus_di
+
+
+def _calc_adx(high: list, low: list, close: list, period: int = 14) -> Optional[float]:
+    """Return latest ADX value (0-100)."""
+    plus_di, minus_di = _calc_di(high, low, close, period)
+    dx_series = []
+    for p, m in zip(plus_di, minus_di):
+        if p is not None and m is not None and (p + m) > 0:
+            dx_series.append(100 * abs(p - m) / (p + m))
+    if len(dx_series) < period:
+        return None
+    adx_vals = _calc_ema(dx_series, period)
+    return _last(adx_vals)
+
+
+def _calc_vwap(high: list, low: list, close: list, volume: list) -> Optional[float]:
+    """Return cumulative VWAP for the available data. Returns latest value."""
+    if not close or not volume:
+        return None
+    cum_vol = 0.0
+    cum_tp_vol = 0.0
+    for h, l, c, v in zip(high, low, close, volume):
+        tp = (h + l + c) / 3
+        cum_vol += v
+        cum_tp_vol += tp * v
+    if cum_vol == 0:
+        return None
+    return cum_tp_vol / cum_vol
+
+
+def _calc_stochastic(high: list, low: list, close: list,
+                     k_period: int = 14, d_period: int = 3) -> tuple[Optional[float], Optional[float]]:
+    """Return (%K, %D) for the latest bar."""
+    if len(close) < k_period:
+        return None, None
+    k_series = []
+    for i in range(k_period - 1, len(close)):
+        window_high = max(high[i - k_period + 1: i + 1])
+        window_low = min(low[i - k_period + 1: i + 1])
+        if window_high == window_low:
+            k_series.append(50.0)
+        else:
+            k_series.append(100 * (close[i] - window_low) / (window_high - window_low))
+    if not k_series:
+        return None, None
+    pct_k = k_series[-1]
+    if len(k_series) >= d_period:
+        pct_d = sum(k_series[-d_period:]) / d_period
+    else:
+        pct_d = pct_k
+    return pct_k, pct_d
+
+
+def _detect_structure(high: list, low: list, close: list) -> str:
+    """
+    Detect market structure: 'uptrend', 'downtrend', or 'range'.
+    Uses higher-highs/higher-lows vs lower-highs/lower-lows over last 20 bars.
+    """
+    lookback = min(20, len(close))
+    if lookback < 6:
+        return "range"
+    recent_high = high[-lookback:]
+    recent_low = low[-lookback:]
+    # Split into 4 segments and check swing progression
+    seg = lookback // 4
+    seg_highs = [max(recent_high[i * seg:(i + 1) * seg]) for i in range(4)]
+    seg_lows = [min(recent_low[i * seg:(i + 1) * seg]) for i in range(4)]
+    hh_count = sum(1 for i in range(1, 4) if seg_highs[i] > seg_highs[i - 1])
+    hl_count = sum(1 for i in range(1, 4) if seg_lows[i] > seg_lows[i - 1])
+    lh_count = sum(1 for i in range(1, 4) if seg_highs[i] < seg_highs[i - 1])
+    ll_count = sum(1 for i in range(1, 4) if seg_lows[i] < seg_lows[i - 1])
+    if hh_count >= 2 and hl_count >= 2:
+        return "uptrend"
+    if lh_count >= 2 and ll_count >= 2:
+        return "downtrend"
+    return "range"
+
+
+def _detect_regime(close: list, atr: list) -> str:
+    """
+    Detect volatility regime: 'low_vol', 'normal', 'high_vol'.
+    Compares recent ATR% to longer lookback median.
+    """
+    valid_atr = [v for v in atr if v is not None]
+    if len(valid_atr) < 20 or close[-1] <= 0:
+        return "normal"
+    recent_atr_pct = valid_atr[-1] / close[-1]
+    lookback = valid_atr[-50:] if len(valid_atr) >= 50 else valid_atr
+    median_idx = len(lookback) // 2
+    sorted_lb = sorted(lookback)
+    median_atr = sorted_lb[median_idx]
+    median_pct = median_atr / close[-1] if close[-1] > 0 else 0
+    if median_pct == 0:
+        return "normal"
+    ratio = recent_atr_pct / median_pct
+    if ratio > 1.5:
+        return "high_vol"
+    if ratio < 0.6:
+        return "low_vol"
+    return "normal"
+
+
+# ── Multi-factor scoring system ───────────────────────────────────────────────
+
+SIGNAL_WEIGHTS = {
+    "trend":      0.30,
+    "momentum":   0.25,
+    "volatility": 0.20,
+    "volume":     0.10,
+    "structure":  0.15,
+}
+
+ENTRY_THRESHOLD = 0.60   # composite score >= 0.60 to enter
+EXIT_THRESHOLD  = 0.35   # composite score <= 0.35 to exit
+
+
+def _score_trend(close: list, high: list, low: list) -> float:
+    """Score trend alignment 0.0-1.0. Combines EMA stack + ADX."""
+    score = 0.0
+    ema20 = _last(_calc_ema(close, 20))
+    ema50 = _last(_calc_ema(close, 50))
+    price = close[-1]
+    if ema20 is None or ema50 is None:
+        return 0.5
+    # EMA ordering
+    if price > ema20 > ema50:
+        score += 0.6
+    elif price > ema20:
+        score += 0.4
+    elif price < ema20 < ema50:
+        score += 0.0
+    else:
+        score += 0.2
+    # ADX strength
+    adx = _calc_adx(high, low, close)
+    if adx is not None:
+        if adx > 25:
+            score += 0.4
+        elif adx > 15:
+            score += 0.2
+        else:
+            score += 0.1
+    else:
+        score += 0.2
+    return min(score, 1.0)
+
+
+def _score_momentum(close: list, high: list, low: list) -> float:
+    """Score momentum 0.0-1.0. Combines RSI + MACD + Stochastic."""
+    components = []
+    # RSI
+    rsi = _calc_rsi(close)
+    if rsi is not None:
+        if 40 <= rsi <= 70:
+            components.append(0.8)  # healthy bullish
+        elif 30 <= rsi < 40:
+            components.append(0.5)  # neutral
+        elif rsi > 70:
+            components.append(0.3)  # overbought
+        elif rsi < 30:
+            components.append(0.4)  # oversold (potential bounce)
+        else:
+            components.append(0.2)
+    # MACD
+    macd_val, signal_val, hist = _calc_macd(close)
+    if hist is not None:
+        if hist > 0:
+            components.append(0.8)
+        else:
+            components.append(0.2)
+    # Stochastic
+    pct_k, pct_d = _calc_stochastic(high, low, close)
+    if pct_k is not None and pct_d is not None:
+        if pct_k > pct_d and pct_k < 80:
+            components.append(0.8)
+        elif pct_k > pct_d:
+            components.append(0.5)
+        else:
+            components.append(0.3)
+    if not components:
+        return 0.5
+    return sum(components) / len(components)
+
+
+def _score_volatility(close: list, high: list, low: list, atr: list) -> float:
+    """Score volatility conditions 0.0-1.0. Prefers expanding but not extreme."""
+    score = 0.5
+    expanding = _atr_expanding(atr)
+    if expanding is True:
+        score += 0.2
+    elif expanding is False:
+        score -= 0.1
+    regime = _detect_regime(close, atr)
+    if regime == "normal":
+        score += 0.2
+    elif regime == "high_vol":
+        score -= 0.2
+    elif regime == "low_vol":
+        score += 0.1  # low vol can precede breakouts
+    # Bollinger width
+    bb_upper, bb_mid, bb_lower = _calc_bollinger(close)
+    u = _last(bb_upper)
+    l = _last(bb_lower)
+    m = _last(bb_mid)
+    if u is not None and l is not None and m and m > 0:
+        bb_width = (u - l) / m
+        if 0.02 < bb_width < 0.08:
+            score += 0.1  # moderate bandwidth
+    return max(0.0, min(1.0, score))
+
+
+def _score_volume(close: list, volume: list, high: list, low: list) -> float:
+    """Score volume confirmation 0.0-1.0."""
+    if not volume or len(volume) < 20:
+        return 0.5
+    recent_vol = volume[-5:]
+    avg_vol = sum(volume[-20:]) / 20
+    if avg_vol == 0:
+        return 0.5
+    vol_ratio = (sum(recent_vol) / len(recent_vol)) / avg_vol
+    score = 0.5
+    if vol_ratio > 1.3:
+        score += 0.3  # above-average volume confirms move
+    elif vol_ratio > 1.0:
+        score += 0.1
+    else:
+        score -= 0.1
+    # VWAP position
+    vwap = _calc_vwap(high, low, close, volume)
+    if vwap is not None and close[-1] > vwap:
+        score += 0.2
+    return max(0.0, min(1.0, score))
+
+
+def _score_structure(high: list, low: list, close: list) -> float:
+    """Score market structure 0.0-1.0."""
+    structure = _detect_structure(high, low, close)
+    if structure == "uptrend":
+        return 0.85
+    elif structure == "downtrend":
+        return 0.15
+    return 0.50
+
+
+def _composite_score(ohlcv: dict) -> tuple[float, dict]:
+    """
+    Compute weighted composite score across all factors.
+    Returns (score, detail_dict).
+    """
+    close = ohlcv["close"]
+    high = ohlcv["high"]
+    low = ohlcv["low"]
+    volume = ohlcv["volume"]
+    atr = _calc_atr(high, low, close)
+
+    trend = _score_trend(close, high, low)
+    momentum = _score_momentum(close, high, low)
+    volatility = _score_volatility(close, high, low, atr)
+    vol = _score_volume(close, volume, high, low)
+    structure = _score_structure(high, low, close)
+
+    composite = (
+        trend * SIGNAL_WEIGHTS["trend"]
+        + momentum * SIGNAL_WEIGHTS["momentum"]
+        + volatility * SIGNAL_WEIGHTS["volatility"]
+        + vol * SIGNAL_WEIGHTS["volume"]
+        + structure * SIGNAL_WEIGHTS["structure"]
+    )
+    detail = {
+        "trend": round(trend, 3),
+        "momentum": round(momentum, 3),
+        "volatility": round(volatility, 3),
+        "volume": round(vol, 3),
+        "structure": round(structure, 3),
+        "composite": round(composite, 3),
+    }
+    return composite, detail
+
+
+# ── Trailing stop ─────────────────────────────────────────────────────────────
+
+def _check_trailing_stop(position: dict, current_price: float,
+                         atr_value: Optional[float]) -> Optional[float]:
+    """
+    Update trailing stop based on ATR. Returns new stop level or None.
+    Uses 2x ATR as trailing distance.
+    """
+    if atr_value is None or atr_value <= 0:
+        return None
+    side = position.get("side", "buy")
+    current_stop = position.get("stop_loss")
+    trail_distance = 2.0 * atr_value
+
+    if side == "buy":
+        new_stop = round(current_price - trail_distance, 2)
+        if current_stop is None or new_stop > current_stop:
+            return new_stop
+    else:
+        new_stop = round(current_price + trail_distance, 2)
+        if current_stop is None or new_stop < current_stop:
+            return new_stop
+    return None
+
+
 def _atr_expanding(atr: list, lookback: int = 5) -> Optional[bool]:
     valid = [v for v in atr if v is not None]
     if len(valid) < lookback + 1:
@@ -309,24 +699,26 @@ def get_strategy_signals(strategy_id: str, ohlcv: dict) -> dict:
                 f"${curr_mid:.2f} — take profit"
             )
 
-    # ── Generic EMA crossover fallback ────────────────────────────────────────
+    # ── Multi-factor composite scoring fallback ──────────────────────────────
     else:
-        ema20 = _calc_ema(close, 20)
-        ema50 = _calc_ema(close, 50)
-        e20   = _last(ema20)
-        e50   = _last(ema50)
-        if e20 and e50:
-            if e20 > e50 and atr_expanding:
-                result["entry"] = True
-                result["side"]  = "buy"
-                result["reason"] = (
-                    f"EMA20 ${e20:.2f} above EMA50 ${e50:.2f} with expanding ATR"
-                )
-            elif e20 < e50:
-                result["exit"]   = True
-                result["reason"] = (
-                    f"EMA20 ${e20:.2f} crossed below EMA50 ${e50:.2f}"
-                )
+        composite, detail = _composite_score(ohlcv)
+        structure = _detect_structure(high, low, close)
+        side = "buy" if structure != "downtrend" else "sell"
+        if composite >= ENTRY_THRESHOLD:
+            result["entry"] = True
+            result["side"]  = side
+            result["reason"] = (
+                f"Multi-factor composite {composite:.2f} >= {ENTRY_THRESHOLD} "
+                f"(trend={detail['trend']:.2f} mom={detail['momentum']:.2f} "
+                f"vol={detail['volatility']:.2f} struct={detail['structure']:.2f})"
+            )
+        elif composite <= EXIT_THRESHOLD:
+            result["exit"]   = True
+            result["reason"] = (
+                f"Multi-factor composite {composite:.2f} <= {EXIT_THRESHOLD} "
+                f"(trend={detail['trend']:.2f} mom={detail['momentum']:.2f} "
+                f"vol={detail['volatility']:.2f} struct={detail['structure']:.2f})"
+            )
 
     return result
 
@@ -643,6 +1035,17 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                 log.info("OPEN %s %s @ %.2f | qty=%d risk=%.2f (vol_adj=%.2f vix_sf=%.2f)",
                          signals["side"].upper(), display_name, fill_price, qty,
                          adjusted_risk_usd, vol_adjustment, vix_size_factor)
+
+            # ── Update trailing stop for held positions ───────────────────────
+            elif open_pos and not signals["exit"] and not _stop_hit(open_pos, current_price):
+                atr_values = _calc_atr(ohlcv["high"], ohlcv["low"], ohlcv["close"])
+                current_atr = next((v for v in reversed(atr_values) if v is not None), None)
+                new_stop = _check_trailing_stop(open_pos, current_price, current_atr)
+                if new_stop is not None:
+                    old_stop = open_pos.get("stop_loss")
+                    open_pos["stop_loss"] = new_stop
+                    log.info("TRAIL %s stop: %.2f → %.2f (ATR=%.2f)",
+                             display_name, old_stop or 0, new_stop, current_atr or 0)
 
         except Exception as e:
             errors.append(f"{display_name}: {e}")
