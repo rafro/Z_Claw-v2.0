@@ -1,12 +1,14 @@
 """
 export_training_data.py
 
-Reads state/training-capture.jsonl, prints stats, and exports domain-split
-JSONL files ready for llama-finetune.
+Reads state/training-approved.jsonl (reviewed captures) by default, prints
+stats, and exports domain-split JSONL files ready for llama-finetune.
+Use --source raw to read from state/training-capture.jsonl instead.
 
 Usage:
     python scripts/export_training_data.py --stats
     python scripts/export_training_data.py --domain trading
+    python scripts/export_training_data.py --source raw --stats
     python scripts/export_training_data.py --min-response-len 100 --output-dir state/my-exports
     python scripts/export_training_data.py  # export all domains
 """
@@ -23,6 +25,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CAPTURE_FILE = PROJECT_ROOT / "state" / "training-capture.jsonl"
+APPROVED_FILE = PROJECT_ROOT / "state" / "training-approved.jsonl"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "state" / "training-exports"
 
 # ---------------------------------------------------------------------------
@@ -56,14 +59,14 @@ def get_domain(task_type: str) -> str:
 # I/O helpers
 # ---------------------------------------------------------------------------
 
-def load_entries(min_response_len: int = 0) -> list[dict]:
+def load_entries(source_file: Path, min_response_len: int = 0) -> list[dict]:
     """
-    Load and parse all entries from the capture file.
+    Load and parse all entries from the given source file.
     Returns a list of dicts. Lines that fail to parse are skipped with a warning.
     Entries whose response is shorter than min_response_len are also excluded.
     """
-    if not CAPTURE_FILE.exists():
-        print(f"Capture file not found: {CAPTURE_FILE}")
+    if not source_file.exists():
+        print(f"Source file not found: {source_file}")
         print("Nothing to do — run the system to generate training data first.")
         sys.exit(0)
 
@@ -71,7 +74,7 @@ def load_entries(min_response_len: int = 0) -> list[dict]:
     skipped_parse = 0
     skipped_len = 0
 
-    with CAPTURE_FILE.open("r", encoding="utf-8") as fh:
+    with source_file.open("r", encoding="utf-8") as fh:
         for lineno, raw in enumerate(fh, start=1):
             raw = raw.strip()
             if not raw:
@@ -212,8 +215,14 @@ def export_domains(entries: list[dict], output_dir: Path, domain_filter: str | N
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Export training data from state/training-capture.jsonl for llama-finetune.",
+        description="Export training data for llama-finetune (reads approved captures by default).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--source",
+        choices=["approved", "raw"],
+        default="approved",
+        help="Read from approved captures (default) or raw captures.",
     )
     parser.add_argument(
         "--stats",
@@ -253,7 +262,8 @@ def main() -> None:
     if not output_dir.is_absolute():
         output_dir = PROJECT_ROOT / output_dir
 
-    entries = load_entries(min_response_len=args.min_response_len)
+    source_file = APPROVED_FILE if args.source == "approved" else CAPTURE_FILE
+    entries = load_entries(source_file, min_response_len=args.min_response_len)
 
     if not entries:
         print("No entries loaded (capture file may be empty or all entries were filtered).")
