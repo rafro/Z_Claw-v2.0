@@ -451,8 +451,525 @@ def _composite_score(close: list, high: list, low: list) -> float:
 
 # ── Signal engine ──────────────────────────────────────────────────────────────
 
-def get_strategy_signals(strategy_id: str, ohlcv: dict) -> dict:
+
+def _resolve_from_schema(strategy_schema: dict, ohlcv: dict) -> Optional[dict]:
     """
+    PRIMARY signal path: read the strategy schema and use its exact parameters.
+
+    This ensures the live signals match what was backtested. The schema contains
+    the indicator type, its parameters, entry/exit triggers, confirmation logic,
+    stop loss configuration, and directional bias.
+
+    Returns the standard signal dict, or None if resolution fails (so the caller
+    can fall back to the name-parsing logic).
+    """
+    try:
+        close  = ohlcv["close"]
+        high   = ohlcv["high"]
+        low    = ohlcv["low"]
+        volume = ohlcv.get("volume", [0.0] * len(close))
+
+        current_price = close[-1] if close else 0.0
+        result = {
+            "entry": False, "exit": False,
+            "side": "buy", "reason": "",
+            "current_price": current_price,
+        }
+
+        if not close or len(close) < 40:
+            result["reason"] = "Insufficient price history (<40 bars)"
+            return result
+
+        # ── Read schema sections (with safe defaults) ─────────────────────────
+        primary    = strategy_schema.get("primary_indicator", {})
+        confirm    = strategy_schema.get("confirmation", {})
+        entry_cfg  = strategy_schema.get("entry", {})
+        exit_cfg   = strategy_schema.get("exit", {})
+        stop_cfg   = strategy_schema.get("stop_loss", {})
+        metadata   = strategy_schema.get("metadata", {})
+
+        indicator_type = primary.get("type", "").lower()
+        if not indicator_type:
+            return None  # No indicator type — cannot resolve, fall back
+
+        direction = metadata.get("direction", "long").lower()
+        result["side"] = "buy" if direction == "long" else "sell"
+
+        entry_trigger = entry_cfg.get("trigger", "").lower()
+        exit_trigger  = exit_cfg.get("trigger", "").lower()
+
+        # ── Compute confirmation signal ───────────────────────────────────────
+        confirm_type = confirm.get("type", "").lower()
+        confirmation_met = True  # default: no confirmation required
+        confirmation_desc = ""
+
+        if confirm_type == "atr_expansion":
+            atr_period = confirm.get("period", 14)
+            threshold  = confirm.get("threshold", 1.0)
+            atr = _calc_atr(high, low, close, period=atr_period)
+            valid_atr = [v for v in atr if v is not None]
+            if len(valid_atr) >= 6:
+                current_atr = valid_atr[-1]
+                recent_avg  = sum(valid_atr[-6:-1]) / 5
+                confirmation_met = current_atr > (recent_avg * threshold)
+                confirmation_desc = (
+                    f"ATR {'expanding' if confirmation_met else 'contracting'} "
+                    f"(current={current_atr:.2f}, avg={recent_avg:.2f}, thresh={threshold}x)"
+                )
+            else:
+                confirmation_met = True  # not enough data, don't block
+                confirmation_desc = "ATR confirmation skipped (insufficient data)"
+
+        elif confirm_type == "rsi":
+            rsi_period = confirm.get("period", 14)
+            rsi_vals = _calc_rsi(close, period=rsi_period)
+            rsi_val = _last(rsi_vals)
+            rsi_threshold = confirm.get("threshold", 50)
+            if rsi_val is not None:
+                if direction == "long":
+                    confirmation_met = rsi_val < rsi_threshold
+                else:
+                    confirmation_met = rsi_val > rsi_threshold
+                confirmation_desc = f"RSI={rsi_val:.1f} (threshold={rsi_threshold})"
+            else:
+                confirmation_desc = "RSI confirmation skipped (insufficient data)"
+
+        elif confirm_type == "macd":
+            fast = confirm.get("fast", 12)
+            slow = confirm.get("slow", 26)
+            sig  = confirm.get("signal_period", 9)
+            macd_line, sig_line, hist = _calc_macd(close, fast, slow, sig)
+            h = _last(hist)
+            if h is not None:
+                confirmation_met = h > 0 if direction == "long" else h < 0
+                confirmation_desc = f"MACD histogram={'positive' if h > 0 else 'negative'}"
+            else:
+                confirmation_desc = "MACD confirmation skipped (insufficient data)"
+
+        elif confirm_type == "volume_above_avg":
+            lookback = confirm.get("period", 20)
+            if len(volume) >= lookback:
+                avg_vol = sum(volume[-lookback:]) / lookback
+                confirmation_met = volume[-1] > avg_vol * confirm.get("threshold", 1.0)
+                confirmation_desc = f"Volume {'above' if confirmation_met else 'below'} avg"
+            else:
+                confirmation_desc = "Volume confirmation skipped (insufficient data)"
+
+        elif confirm_type == "ema_crossover":
+            fast_p = confirm.get("fast_period", 12)
+            slow_p = confirm.get("slow_period", 26)
+            ema_f = _calc_ema(close, fast_p)
+            ema_s = _calc_ema(close, slow_p)
+            ef, es = _last(ema_f), _last(ema_s)
+            if ef is not None and es is not None:
+                confirmation_met = ef > es if direction == "long" else ef < es
+                confirmation_desc = f"EMA{fast_p}={'above' if ef > es else 'below'} EMA{slow_p}"
+            else:
+                confirmation_desc = "EMA crossover confirmation skipped (insufficient data)"
+
+        elif confirm_type == "stochastic":
+            k_p = confirm.get("k_period", 14)
+            d_p = confirm.get("d_period", 3)
+            k_vals, d_vals = _calc_stochastic(high, low, close, k_p, d_p)
+            k_val = _last(k_vals)
+            threshold = confirm.get("threshold", 20)
+            if k_val is not None:
+                if direction == "long":
+                    confirmation_met = k_val < threshold  # oversold
+                else:
+                    confirmation_met = k_val > (100 - threshold)  # overbought
+                confirmation_desc = f"Stochastic %K={k_val:.1f} (threshold={threshold})"
+            else:
+                confirmation_desc = "Stochastic confirmation skipped (insufficient data)"
+
+        elif confirm_type:
+            # Unknown confirmation type — don't block the trade
+            confirmation_desc = f"Unknown confirmation type '{confirm_type}' — skipped"
+
+        # ── Compute primary indicator values and entry/exit signals ────────────
+        entry_signal = False
+        exit_signal  = False
+        reason_parts = []
+
+        if indicator_type == "bollinger_bands":
+            period   = primary.get("period", 20)
+            std_dev  = primary.get("std_dev", 2.0)
+            bb_upper, bb_mid, bb_lower = _calc_bollinger(close, period, std_dev)
+            prev_close = close[-2] if len(close) >= 2 else current_price
+            curr_lower = _last(bb_lower)
+            prev_lower = _last(bb_lower[:-1]) if len(bb_lower) >= 2 else None
+            curr_upper = _last(bb_upper)
+            curr_mid   = _last(bb_mid)
+
+            if curr_lower is None:
+                result["reason"] = f"Bollinger({period},{std_dev}) insufficient data"
+                return result
+
+            # Entry triggers
+            if entry_trigger == "price_touches_lower_band":
+                bb_touch = (prev_lower is not None) and (prev_close <= prev_lower)
+                if bb_touch and current_price > curr_lower:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Bollinger({period},{std_dev}) lower touch ${curr_lower:.2f} "
+                        f"→ rebounding ${current_price:.2f}"
+                    )
+            elif entry_trigger == "price_touches_upper_band":
+                bb_touch = (curr_upper is not None) and (prev_close >= curr_upper if len(close) >= 2 else False)
+                if bb_touch and current_price < curr_upper:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Bollinger({period},{std_dev}) upper touch ${curr_upper:.2f} "
+                        f"→ reversing ${current_price:.2f}"
+                    )
+            elif entry_trigger == "price_below_lower_band":
+                if current_price < curr_lower:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} below Bollinger lower ${curr_lower:.2f}"
+                    )
+            else:
+                # Default Bollinger entry: lower band touch
+                bb_touch = (prev_lower is not None) and (prev_close <= prev_lower)
+                if bb_touch and current_price > curr_lower:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Bollinger({period},{std_dev}) lower touch → rebounding"
+                    )
+
+            # Exit triggers
+            if exit_trigger == "price_crosses_middle_band":
+                if curr_mid and current_price >= curr_mid:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} crossed Bollinger mid ${curr_mid:.2f}"
+                    )
+            elif exit_trigger == "price_crosses_upper_band":
+                if curr_upper and current_price >= curr_upper:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} crossed Bollinger upper ${curr_upper:.2f}"
+                    )
+            else:
+                # Default exit: middle band
+                if curr_mid and current_price >= curr_mid:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} at Bollinger mid ${curr_mid:.2f}"
+                    )
+
+        elif indicator_type == "ema_crossover":
+            fast_period = primary.get("fast_period", 20)
+            slow_period = primary.get("slow_period", 50)
+            ema_fast = _calc_ema(close, fast_period)
+            ema_slow = _calc_ema(close, slow_period)
+            ef = _last(ema_fast)
+            es = _last(ema_slow)
+
+            if ef is None or es is None:
+                result["reason"] = f"EMA({fast_period}/{slow_period}) insufficient data"
+                return result
+
+            # Check for crossover (current bar vs previous)
+            ef_prev = _last(ema_fast[:-1]) if len(ema_fast) >= 2 else None
+            es_prev = _last(ema_slow[:-1]) if len(ema_slow) >= 2 else None
+
+            if entry_trigger == "fast_crosses_above_slow" or not entry_trigger:
+                if ef > es:
+                    crossed = (ef_prev is not None and es_prev is not None and ef_prev <= es_prev)
+                    entry_signal = crossed or (ef > es)  # signal if above, strong if just crossed
+                    reason_parts.append(
+                        f"EMA{fast_period} ${ef:.2f} above EMA{slow_period} ${es:.2f}"
+                    )
+            elif entry_trigger == "fast_crosses_below_slow":
+                if ef < es:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"EMA{fast_period} ${ef:.2f} below EMA{slow_period} ${es:.2f}"
+                    )
+
+            if exit_trigger == "fast_crosses_below_slow" or not exit_trigger:
+                if ef < es:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"EMA{fast_period} ${ef:.2f} crossed below EMA{slow_period} ${es:.2f} — exit"
+                    )
+            elif exit_trigger == "fast_crosses_above_slow":
+                if ef > es:
+                    exit_signal = True
+                    reason_parts.append(f"EMA crossover exit triggered")
+
+        elif indicator_type == "ema_above_price":
+            period = primary.get("period", 38)
+            ema = _calc_ema(close, period)
+            ema_val = _last(ema)
+
+            if ema_val is None:
+                result["reason"] = f"EMA({period}) insufficient data"
+                return result
+
+            if entry_trigger == "price_above_ema" or not entry_trigger:
+                if current_price > ema_val:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} above EMA{period} ${ema_val:.2f}"
+                    )
+            elif entry_trigger == "price_below_ema":
+                if current_price < ema_val:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} below EMA{period} ${ema_val:.2f}"
+                    )
+
+            if exit_trigger == "price_below_ema" or not exit_trigger:
+                if current_price < ema_val:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} below EMA{period} ${ema_val:.2f} — exit"
+                    )
+            elif exit_trigger == "price_above_ema":
+                if current_price > ema_val:
+                    exit_signal = True
+                    reason_parts.append(f"Price above EMA — exit")
+
+        elif indicator_type == "rsi":
+            period     = primary.get("period", 14)
+            overbought = primary.get("overbought", 70)
+            oversold   = primary.get("oversold", 30)
+            rsi_vals   = _calc_rsi(close, period=period)
+            rsi_val    = _last(rsi_vals)
+
+            if rsi_val is None:
+                result["reason"] = f"RSI({period}) insufficient data"
+                return result
+
+            if entry_trigger == "rsi_oversold" or (not entry_trigger and direction == "long"):
+                if rsi_val < oversold:
+                    entry_signal = True
+                    reason_parts.append(f"RSI({period})={rsi_val:.1f} < {oversold} (oversold)")
+            elif entry_trigger == "rsi_overbought" or (not entry_trigger and direction == "short"):
+                if rsi_val > overbought:
+                    entry_signal = True
+                    reason_parts.append(f"RSI({period})={rsi_val:.1f} > {overbought} (overbought)")
+
+            if exit_trigger == "rsi_overbought" or (not exit_trigger and direction == "long"):
+                if rsi_val > overbought:
+                    exit_signal = True
+                    reason_parts.append(f"RSI({period})={rsi_val:.1f} > {overbought} — exit")
+            elif exit_trigger == "rsi_oversold" or (not exit_trigger and direction == "short"):
+                if rsi_val < oversold:
+                    exit_signal = True
+                    reason_parts.append(f"RSI({period})={rsi_val:.1f} < {oversold} — exit")
+
+        elif indicator_type == "rsi_divergence":
+            period     = primary.get("period", 14)
+            lookback   = primary.get("lookback", 10)
+            rsi_vals   = _calc_rsi(close, period=period)
+            valid_rsi  = [v for v in rsi_vals if v is not None]
+
+            if len(valid_rsi) < lookback:
+                result["reason"] = f"RSI divergence({period}) insufficient data"
+                return result
+
+            rsi_val = valid_rsi[-1]
+            # Bullish divergence: price makes lower low but RSI makes higher low
+            price_lower = close[-1] < min(close[-lookback:-1])
+            rsi_higher  = valid_rsi[-1] > min(valid_rsi[-lookback:-1])
+            # Bearish divergence: price makes higher high but RSI makes lower high
+            price_higher = close[-1] > max(close[-lookback:-1])
+            rsi_lower    = valid_rsi[-1] < max(valid_rsi[-lookback:-1])
+
+            if direction == "long":
+                if price_lower and rsi_higher:
+                    entry_signal = True
+                    reason_parts.append(f"Bullish RSI divergence (RSI={rsi_val:.1f})")
+                if price_higher and rsi_lower:
+                    exit_signal = True
+                    reason_parts.append(f"Bearish RSI divergence — exit (RSI={rsi_val:.1f})")
+            else:
+                if price_higher and rsi_lower:
+                    entry_signal = True
+                    reason_parts.append(f"Bearish RSI divergence (RSI={rsi_val:.1f})")
+                if price_lower and rsi_higher:
+                    exit_signal = True
+                    reason_parts.append(f"Bullish RSI divergence — exit (RSI={rsi_val:.1f})")
+
+        elif indicator_type == "macd":
+            fast   = primary.get("fast", 12)
+            slow   = primary.get("slow", 26)
+            signal = primary.get("signal_period", 9)
+            macd_line, sig_line, hist = _calc_macd(close, fast, slow, signal)
+            m = _last(macd_line)
+            s = _last(sig_line)
+            h = _last(hist)
+
+            if m is None or s is None:
+                result["reason"] = f"MACD({fast},{slow},{signal}) insufficient data"
+                return result
+
+            h_prev = _last(hist[:-1]) if len(hist) >= 2 else None
+
+            if entry_trigger == "macd_crosses_signal" or not entry_trigger:
+                if direction == "long":
+                    if h is not None and h > 0 and (h_prev is not None and h_prev <= 0):
+                        entry_signal = True
+                        reason_parts.append(f"MACD crossed above signal (hist={h:.4f})")
+                    elif h is not None and h > 0:
+                        entry_signal = True
+                        reason_parts.append(f"MACD above signal (hist={h:.4f})")
+                else:
+                    if h is not None and h < 0 and (h_prev is not None and h_prev >= 0):
+                        entry_signal = True
+                        reason_parts.append(f"MACD crossed below signal (hist={h:.4f})")
+                    elif h is not None and h < 0:
+                        entry_signal = True
+                        reason_parts.append(f"MACD below signal (hist={h:.4f})")
+
+            if exit_trigger == "macd_crosses_signal" or not exit_trigger:
+                if direction == "long" and h is not None and h < 0:
+                    exit_signal = True
+                    reason_parts.append(f"MACD below signal — exit (hist={h:.4f})")
+                elif direction == "short" and h is not None and h > 0:
+                    exit_signal = True
+                    reason_parts.append(f"MACD above signal — exit (hist={h:.4f})")
+
+        elif indicator_type == "stochastic":
+            k_period = primary.get("k_period", 14)
+            d_period = primary.get("d_period", 3)
+            overbought = primary.get("overbought", 80)
+            oversold   = primary.get("oversold", 20)
+            k_vals, d_vals = _calc_stochastic(high, low, close, k_period, d_period)
+            k_val = _last(k_vals)
+            d_val = _last(d_vals)
+
+            if k_val is None:
+                result["reason"] = f"Stochastic({k_period},{d_period}) insufficient data"
+                return result
+
+            if direction == "long":
+                if k_val < oversold:
+                    entry_signal = True
+                    reason_parts.append(f"Stochastic %K={k_val:.1f} < {oversold} (oversold)")
+                if k_val > overbought:
+                    exit_signal = True
+                    reason_parts.append(f"Stochastic %K={k_val:.1f} > {overbought} — exit")
+            else:
+                if k_val > overbought:
+                    entry_signal = True
+                    reason_parts.append(f"Stochastic %K={k_val:.1f} > {overbought} (overbought)")
+                if k_val < oversold:
+                    exit_signal = True
+                    reason_parts.append(f"Stochastic %K={k_val:.1f} < {oversold} — exit")
+
+        elif indicator_type == "atr_expansion":
+            atr_period = primary.get("period", 14)
+            threshold  = primary.get("threshold", 1.0)
+            atr = _calc_atr(high, low, close, period=atr_period)
+            valid_atr = [v for v in atr if v is not None]
+
+            if len(valid_atr) < 6:
+                result["reason"] = f"ATR({atr_period}) insufficient data"
+                return result
+
+            current_atr = valid_atr[-1]
+            recent_avg  = sum(valid_atr[-6:-1]) / 5
+            expanding   = current_atr > (recent_avg * threshold)
+
+            if expanding:
+                entry_signal = True
+                reason_parts.append(
+                    f"ATR expanding: {current_atr:.2f} > {recent_avg:.2f}*{threshold}"
+                )
+            else:
+                exit_signal = True
+                reason_parts.append(
+                    f"ATR contracting: {current_atr:.2f} <= {recent_avg:.2f}*{threshold} — exit"
+                )
+
+        elif indicator_type == "vwap":
+            vwap = _calc_vwap(high, low, close, volume)
+            vwap_val = _last(vwap)
+
+            if vwap_val is None:
+                result["reason"] = "VWAP insufficient data"
+                return result
+
+            if entry_trigger == "price_above_vwap" or (not entry_trigger and direction == "long"):
+                if current_price > vwap_val:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} above VWAP ${vwap_val:.2f}"
+                    )
+            elif entry_trigger == "price_below_vwap" or (not entry_trigger and direction == "short"):
+                if current_price < vwap_val:
+                    entry_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} below VWAP ${vwap_val:.2f}"
+                    )
+
+            if exit_trigger == "price_below_vwap" or (not exit_trigger and direction == "long"):
+                if current_price < vwap_val:
+                    exit_signal = True
+                    reason_parts.append(
+                        f"Price ${current_price:.2f} below VWAP ${vwap_val:.2f} — exit"
+                    )
+            elif exit_trigger == "price_above_vwap" or (not exit_trigger and direction == "short"):
+                if current_price > vwap_val:
+                    exit_signal = True
+                    reason_parts.append(f"Price above VWAP — exit")
+
+        else:
+            # Unrecognized indicator type — cannot resolve from schema
+            return None
+
+        # ── Apply confirmation filter to entry signal ─────────────────────────
+        if entry_signal and not confirmation_met:
+            entry_signal = False
+            reason_parts.append(f"Entry blocked: {confirmation_desc}")
+
+        if entry_signal and confirmation_met and confirmation_desc:
+            reason_parts.append(f"Confirmed: {confirmation_desc}")
+
+        # ── Build result ──────────────────────────────────────────────────────
+        result["entry"]  = entry_signal and not exit_signal
+        result["exit"]   = exit_signal
+        result["reason"] = " | ".join(reason_parts) if reason_parts else "No signal"
+
+        # ── Annotate stop loss info from schema (consumed by position sizing) ─
+        if stop_cfg:
+            stop_type = stop_cfg.get("type", "")
+            if stop_type == "atr_based":
+                atr = _calc_atr(high, low, close)
+                current_atr = _last(atr)
+                if current_atr:
+                    multiplier = stop_cfg.get("multiplier", 2.0)
+                    result["stop_distance"] = current_atr * multiplier
+            elif stop_type == "percent":
+                pct = stop_cfg.get("percent", 1.0)
+                result["stop_distance"] = current_price * (pct / 100)
+            elif stop_type == "fixed":
+                result["stop_distance"] = stop_cfg.get("distance", current_price * 0.01)
+
+        log.info("Schema-resolved signal for %s: entry=%s exit=%s side=%s | %s",
+                 indicator_type, result["entry"], result["exit"],
+                 result["side"], result["reason"])
+        return result
+
+    except Exception as e:
+        log.warning("Schema resolution failed (%s) — falling back to name-parsing", e)
+        return None
+
+
+def get_strategy_signals(strategy_id: str, ohlcv: dict, strategy_schema: dict = None) -> dict:
+    """
+
+    # Priority 1: Schema-driven resolution (uses exact backtested parameters)
+    if strategy_schema:
+        schema_result = _resolve_from_schema(strategy_schema, ohlcv)
+        if schema_result is not None:
+            return schema_result
+
+    # Priority 2: Name-parsing (hardcoded defaults — legacy fallback)
     Generate entry/exit signals based on strategy_id and OHLCV data.
     Returns:
       {"entry": bool, "exit": bool, "side": "buy"|"sell",
@@ -725,7 +1242,9 @@ def run_virtual_account(cycle_state: Optional[dict] = None) -> dict:
                 errors.append(f"No OHLCV data for {display_name} ({ticker})")
                 continue
 
-            signals       = get_strategy_signals(strategy_id, ohlcv)
+            # Pass strategy schema so signals use backtested parameters
+            _schema = cycle_state.get("active_strategy", {}).get("strategy_schema") if cycle_state else None
+            signals = get_strategy_signals(strategy_id, ohlcv, strategy_schema=_schema)
             current_price = signals["current_price"]
 
             open_pos = next(
