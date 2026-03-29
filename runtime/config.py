@@ -54,6 +54,7 @@ SKILL_MODELS = {
     "threat-surface":    MODEL_CODER_7B,
     "cred-audit":        MODEL_CODER_7B,
     "privacy-scan":      MODEL_7B,
+    "art-director":      MODEL_7B,
 }
 
 

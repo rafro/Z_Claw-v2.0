@@ -19,6 +19,13 @@
   },
   "packet_output_path": "divisions/production/packets",
   "agents": {
+    "art-director": {
+      "schedule": "daily 07:00",
+      "skill": "art-director",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
     "prompt-craft": {
       "schedule": "on_demand",
       "skill": "prompt-craft",

@@ -242,6 +242,9 @@ def run(division: str, task: str, args: list) -> dict:
             "music-compose":      lambda: prod_orch.run_music_compose(
                                       track_type=args[0] if args else "main_theme",
                                       division=args[1] if len(args) > 1 else "trading"),
+            "art-director":       lambda: prod_orch.run_art_director(
+                                      focus_area=args[0] if args else "general",
+                                      commander=args[1] if len(args) > 1 else "generic"),
         }
         runner = task_map.get(task)
         if not runner:

@@ -27,6 +27,7 @@ from runtime.skills import (
     continuity_check,
     asset_deliver,
     qa_pipeline,
+    art_director,
 )
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,15 @@ def _build_packet(skill: str, result: dict) -> dict:
 
 
 # ── Individual skill runners ──────────────────────────────────────────────────
+
+def run_art_director(focus_area: str = "general", commander: str = "generic") -> dict:
+    result = art_director.run(focus_area=focus_area, commander=commander)
+    pkt    = _build_packet("art-director", result)
+    packet.write(pkt)
+    grant_skill_xp("art-director")
+    log.info("LYKE: art-director → %s (%d briefs)", result.get("status"), result.get("metrics", {}).get("briefs_generated", 0))
+    return pkt
+
 
 def run_prompt_craft(asset_type: str = "portrait_bust", commander: str = "generic", subject: str = "") -> dict:
     result = prompt_craft.run(asset_type=asset_type, commander=commander, subject=subject)

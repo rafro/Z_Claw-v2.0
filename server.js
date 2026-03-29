@@ -335,6 +335,7 @@ const SKILL_XP = {
   'voice-generate':     { division: 'production',     amount: 12 },
   'music-compose':      { division: 'production',     amount: 12 },
   'weekly-retrospective': { division: 'personal',     amount:  8 },
+  'art-director':       { division: 'production',     amount:  8 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -395,6 +396,7 @@ const SKILL_TASK_MAP = {
   'voice-generate':     { divState: 'production', division: 'production', task: 'voice-generate'     },
   'music-compose':      { divState: 'production', division: 'production', task: 'music-compose'      },
   'weekly-retrospective': { divState: 'personal', division: 'personal',   task: 'weekly-retrospective' },
+  'art-director':       { divState: 'production', division: 'production', task: 'art-director'       },
 };
 
 function rankForLevel(level) {
