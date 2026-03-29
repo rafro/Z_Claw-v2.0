@@ -537,7 +537,7 @@ def run(strategies: list, timeframe: str = "1d", min_trades: int = 100) -> dict:
             "mc_p95_dd": mc["mc_p95_dd"],
             "mc_risk_class": mc["mc_risk_class"],
             "score": score,
-            "projected_monthly_pct": proj_monthly,
+            "projected_monthly_pnl_pct": proj_monthly,
             "gate_failures": gate_failures,
         }
 

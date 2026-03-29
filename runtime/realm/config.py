@@ -144,6 +144,9 @@ DIVISIONS = {
             "market-scan":     {"xp":  5, "soldier": "The Signal Keeper",   "icon": "◈", "anim": "scan",    "label": "Read the Runes"},
             "virtual-trader":  {"xp":  8, "soldier": "The Shadow Runner",   "icon": "⟁", "anim": "slash",   "label": "Shadow Run"},
             "backtester":      {"xp":  5, "soldier": "The Pattern Keeper",  "icon": "◫", "anim": "circuit", "label": "Pattern Lock"},
+            "strategy-builder": {"xp": 15, "soldier": "The Architect",       "icon": "⬡", "anim": "forge",   "label": "Forge Strategy"},
+            "strategy-tester":  {"xp": 10, "soldier": "The Crucible Judge",  "icon": "⚖", "anim": "shield",  "label": "Crucible Trial"},
+            "strategy-search":  {"xp": 20, "soldier": "The Seeker",          "icon": "◉", "anim": "scan",    "label": "Strategy Hunt"},
         },
         "vocabulary": {
             "quest":       "reading the veil",
