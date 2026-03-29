@@ -4755,6 +4755,11 @@ cron.schedule('0 */6 * * *', async () => {
   await runSkillViaPython('asset-deliver', 'PRODUCTION');
 }, { timezone: TZ });
 
+// art-director daily at 7:00 AM — sets creative direction before generation runs
+cron.schedule('0 7 * * *', async () => {
+  await runSkillViaPython('art-director', 'PRODUCTION');
+}, { timezone: TZ });
+
 // asset-catalog every 12 hours
 cron.schedule('0 */12 * * *', async () => {
   await runSkillViaPython('asset-catalog', 'PRODUCTION');
