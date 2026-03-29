@@ -181,7 +181,7 @@ def run() -> dict:
         ]
 
         try:
-            llm_result = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=600)
+            llm_result = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=600, task_type="network-monitor")
             if isinstance(llm_result, dict):
                 llm_anomalies = llm_result.get("anomalies", [])
                 summary = llm_result.get("summary", "Network monitor scan complete.")

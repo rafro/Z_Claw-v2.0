@@ -200,7 +200,7 @@ def _llm_analyze(repos: list, all_flags: list) -> dict:
 
     try:
         return chat_json(use_model, messages, host=use_host,
-                         temperature=0.1, max_tokens=600)
+                         temperature=0.1, max_tokens=600, task_type="repo-monitor")
     except Exception as e:
         log.error("repo-monitor LLM analysis failed: %s", e)
         high = [f for f in all_flags if f["severity"] == "HIGH"]

@@ -201,7 +201,7 @@ def run() -> dict:
     ]
 
     try:
-        result = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=600)
+        result = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=600, task_type="mobile-audit-review")
         summary      = result.get("summary", "Mobile audit complete.") if isinstance(result, dict) else "Audit complete."
         risk_level   = result.get("risk_level", "LOW") if isinstance(result, dict) else "LOW"
         recs         = result.get("recommendations", []) if isinstance(result, dict) else []

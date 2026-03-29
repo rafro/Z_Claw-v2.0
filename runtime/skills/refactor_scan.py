@@ -113,7 +113,7 @@ def run() -> dict:
     ]
 
     try:
-        result   = chat_json(use_model, messages, host=use_host, temperature=0.1, max_tokens=800)
+        result   = chat_json(use_model, messages, host=use_host, temperature=0.1, max_tokens=800, task_type="refactor-scan")
         findings = result.get("findings", []) if isinstance(result, dict) else []
         summary  = result.get("summary", f"Scanned {len(summaries)} files.") if isinstance(result, dict) else f"Scanned {len(summaries)} files."
 

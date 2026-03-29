@@ -184,7 +184,7 @@ def _llm_briefs(shots: list, commander: str, focus_area: str,
         },
     ]
 
-    raw = chat_json(MODEL, messages, temperature=0.3, max_tokens=400)
+    raw = chat_json(MODEL, messages, temperature=0.3, max_tokens=400, task_type="art-director")
 
     # Normalise response — may be {"briefs": [...]} or just a list
     if isinstance(raw, dict):

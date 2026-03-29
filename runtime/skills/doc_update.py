@@ -100,13 +100,13 @@ def run() -> dict:
     ]
 
     try:
-        doc_content = chat(use_model, messages, host=use_host, temperature=0.3, max_tokens=700)
+        doc_content = chat(use_model, messages, host=use_host, temperature=0.3, max_tokens=700, task_type="doc-update")
     except Exception as e:
         # 14B OOM or crash — fall back to 7B if we haven't already
         if use_model != MODEL_7B and is_available(MODEL_7B, host=OLLAMA_HOST):
             log.warning("doc-update: %s failed (%s), retrying with 7B fallback", use_model, e)
             try:
-                doc_content = chat(MODEL_7B, messages, host=OLLAMA_HOST, temperature=0.3, max_tokens=700)
+                doc_content = chat(MODEL_7B, messages, host=OLLAMA_HOST, temperature=0.3, max_tokens=700, task_type="doc-update")
                 use_model = MODEL_7B
             except Exception as e2:
                 log.error("doc-update 7B fallback also failed: %s", e2)

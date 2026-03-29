@@ -186,7 +186,7 @@ def run() -> dict:
         ]
 
         try:
-            analysis = chat(MODEL, messages, host=OLLAMA_HOST, temperature=0.2, max_tokens=400)
+            analysis = chat(MODEL, messages, host=OLLAMA_HOST, temperature=0.2, max_tokens=400, task_type="weekly-retrospective")
             # Strip common LLM preamble
             lines = analysis.strip().splitlines()
             if lines and lines[0].rstrip().endswith(":"):

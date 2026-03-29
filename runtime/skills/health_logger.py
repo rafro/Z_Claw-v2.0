@@ -66,7 +66,7 @@ def parse_reply(reply_text: str) -> dict:
         {"role": "user",   "content": f"Health check-in reply:\n{reply_text}"},
     ]
     try:
-        return chat_json(MODEL, messages, temperature=0.05, max_tokens=512)
+        return chat_json(MODEL, messages, temperature=0.05, max_tokens=512, task_type="health-logger")
     except Exception as e:
         log.error("health-logger parse failed: %s", e)
         return {

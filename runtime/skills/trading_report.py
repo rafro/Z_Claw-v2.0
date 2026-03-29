@@ -149,4 +149,4 @@ def _interpret(stats: dict, trades: list, source: str) -> str:
             ),
         },
     ]
-    return chat(MODEL, messages, temperature=0.2, max_tokens=200)
+    return chat(MODEL, messages, temperature=0.2, max_tokens=200, task_type="trading-report")

@@ -136,7 +136,7 @@ def run() -> dict:
         },
     ]
 
-    analysis = chat(MODEL, messages, temperature=0.15, max_tokens=300)
+    analysis = chat(MODEL, messages, temperature=0.15, max_tokens=300, task_type="perf-correlation")
 
     return {
         "patterns":    [analysis],

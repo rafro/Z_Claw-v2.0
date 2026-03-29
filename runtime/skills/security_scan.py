@@ -150,7 +150,7 @@ def run() -> dict:
     ]
 
     try:
-        result          = chat_json(use_model, messages, host=use_host, temperature=0.05, max_tokens=800)
+        result          = chat_json(use_model, messages, host=use_host, temperature=0.05, max_tokens=800, task_type="security-scan")
         findings        = result.get("findings", static_findings) if isinstance(result, dict) else static_findings
         llm_fp_notes    = result.get("false_positives", []) if isinstance(result, dict) else []
         summary         = result.get("summary", "") if isinstance(result, dict) else ""

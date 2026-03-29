@@ -69,7 +69,7 @@ def run(error_text: str, context_files: list[str] | None = None) -> dict:
 
     try:
         result = chat_json(use_model, messages, host=use_host,
-                           temperature=0.1, max_tokens=600)
+                           temperature=0.1, max_tokens=600, task_type="debug-agent")
         if not isinstance(result, dict):
             raise ValueError(f"Unexpected response type: {type(result)}")
         return {

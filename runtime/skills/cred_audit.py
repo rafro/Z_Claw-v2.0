@@ -142,7 +142,7 @@ def run() -> dict:
     ]
 
     try:
-        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.05, max_tokens=600)
+        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.05, max_tokens=600, task_type="cred-audit")
         confirmed  = result.get("confirmed", findings[:20]) if isinstance(result, dict) else findings[:20]
         summary    = result.get("summary", f"{len(confirmed)} credential issues.") if isinstance(result, dict) else ""
         high_count = sum(1 for f in confirmed if f.get("severity") == "HIGH")

@@ -125,7 +125,7 @@ def run() -> dict:
     ]
 
     try:
-        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.05, max_tokens=600)
+        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.05, max_tokens=600, task_type="privacy-scan")
         risks      = result.get("risks", findings) if isinstance(result, dict) else findings
         summary    = result.get("summary", f"{len(risks)} privacy risks found.") if isinstance(result, dict) else ""
         high_count = sum(1 for r in risks if r.get("severity") == "HIGH")

@@ -117,7 +117,7 @@ def run() -> dict:
             {"role": "user", "content": context},
         ]
         try:
-            recommendation = chat(MODEL, messages, temperature=0.2, max_tokens=100)
+            recommendation = chat(MODEL, messages, temperature=0.2, max_tokens=100, task_type="burnout-monitor")
         except Exception as e:
             log.warning("burnout-monitor LLM failed: %s", e)
             recommendation = triggers[0]

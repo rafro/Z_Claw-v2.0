@@ -103,7 +103,7 @@ def _llm_interpret(market_data: list) -> str:
         },
     ]
     try:
-        return chat(MODEL, messages, temperature=0.2, max_tokens=120)
+        return chat(MODEL, messages, temperature=0.2, max_tokens=120, task_type="market-scan")
     except Exception as e:
         log.warning("market-scan LLM failed: %s", e)
         return snap

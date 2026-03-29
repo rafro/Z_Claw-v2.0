@@ -171,7 +171,7 @@ def _score_source(source: dict, page_text: str) -> list:
         },
     ]
     try:
-        result = chat_json(MODEL, messages, temperature=0.05, max_tokens=1024)
+        result = chat_json(MODEL, messages, temperature=0.05, max_tokens=1024, task_type="funding-finder")
         if isinstance(result, list):
             return result
         if isinstance(result, dict) and "opportunities" in result:

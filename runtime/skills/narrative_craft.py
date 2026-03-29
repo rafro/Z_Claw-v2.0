@@ -219,7 +219,7 @@ def _generate_scenes_llm(ctx: dict, event_type: str, commander: str) -> list[dic
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": _build_user_prompt(ctx, event_type, commander)},
     ]
-    result = chat_json(MODEL, messages, temperature=0.4, max_tokens=500)
+    result = chat_json(MODEL, messages, temperature=0.4, max_tokens=500, task_type="narrative-craft")
     scenes = result.get("scenes", [])
 
     # Validate and normalize each scene

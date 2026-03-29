@@ -95,7 +95,7 @@ def run() -> dict:
     ]
 
     try:
-        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=800)
+        result     = chat_json(MODEL, messages, host=OLLAMA_HOST, temperature=0.1, max_tokens=800, task_type="threat-surface")
         anomalies  = result.get("anomalies", []) if isinstance(result, dict) else []
         summary    = result.get("summary", "Threat surface scan complete.") if isinstance(result, dict) else "Scan complete."
         escalate   = result.get("escalate", False) if isinstance(result, dict) else False
