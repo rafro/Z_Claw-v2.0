@@ -296,8 +296,14 @@ def run(division: str, task: str, args: list) -> dict:
         if task == "level-design":
             return run_level_design()
         if task == "tech-spec":
-            spec_str = args[0] if args else "{}"
-            return run_tech_spec(spec_str)
+            if args:
+                try:
+                    spec = json.loads(args[0])
+                except json.JSONDecodeError:
+                    spec = {"description": args[0]}
+            else:
+                spec = {}
+            return run_tech_spec(**spec)
         if task == "playtest-report":
             return run_playtest_report()
         if task == "asset-integration":
