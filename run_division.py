@@ -245,6 +245,16 @@ def run(division: str, task: str, args: list) -> dict:
             "art-director":       lambda: prod_orch.run_art_director(
                                       focus_area=args[0] if args else "general",
                                       commander=args[1] if len(args) > 1 else "generic"),
+            "narrative-craft":    lambda: prod_orch.run_narrative_craft(
+                                      event_type=args[0] if args else "auto",
+                                      commander=args[1] if len(args) > 1 else "generic"),
+            "sfx-generate":       lambda: prod_orch.run_sfx_generate(
+                                      sfx_type=args[0] if args else "sword_slash",
+                                      variation=int(args[1]) if len(args) > 1 else 0),
+            "asset-optimize":     lambda: prod_orch.run_asset_optimize(
+                                      image_path=args[0] if args else "",
+                                      scale=int(args[1]) if len(args) > 1 else 2),
+            "voice-catalog":      lambda: prod_orch.run_voice_catalog(),
         }
         runner = task_map.get(task)
         if not runner:

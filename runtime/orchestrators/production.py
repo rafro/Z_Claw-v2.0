@@ -28,6 +28,10 @@ from runtime.skills import (
     asset_deliver,
     qa_pipeline,
     art_director,
+    narrative_craft,
+    sfx_generate,
+    asset_optimize,
+    voice_catalog,
 )
 
 log = logging.getLogger(__name__)
@@ -56,6 +60,43 @@ def run_art_director(focus_area: str = "general", commander: str = "generic") ->
     packet.write(pkt)
     grant_skill_xp("art-director")
     log.info("LYKE: art-director → %s (%d briefs)", result.get("status"), result.get("metrics", {}).get("briefs_generated", 0))
+    return pkt
+
+
+def run_narrative_craft(event_type: str = "auto", commander: str = "generic") -> dict:
+    result = narrative_craft.run(event_type=event_type, commander=commander)
+    pkt    = _build_packet("narrative-craft", result)
+    packet.write(pkt)
+    grant_skill_xp("narrative-craft")
+    log.info("LYKE: narrative-craft → %s (%d scenes)", result.get("status"), result.get("metrics", {}).get("scenes_generated", 0))
+    return pkt
+
+
+def run_sfx_generate(sfx_type: str = "sword_slash", variation: int = 0) -> dict:
+    result = sfx_generate.run(sfx_type=sfx_type, variation=variation)
+    pkt    = _build_packet("sfx-generate", result)
+    packet.write(pkt)
+    grant_skill_xp("sfx-generate")
+    log.info("LYKE: sfx-generate → %s (%s)", result.get("status"), sfx_type)
+    return pkt
+
+
+def run_asset_optimize(image_path: str = "", scale: int = 2, fmt: str = "webp", quality: int = 85) -> dict:
+    result = asset_optimize.run(image_path=image_path, scale=scale, format=fmt, quality=quality)
+    pkt    = _build_packet("asset-optimize", result)
+    packet.write(pkt)
+    if result.get("status") in ("success", "partial"):
+        grant_skill_xp("asset-optimize")
+    log.info("LYKE: asset-optimize → %s (method=%s)", result.get("status"), result.get("method", "unknown"))
+    return pkt
+
+
+def run_voice_catalog() -> dict:
+    result = voice_catalog.run()
+    pkt    = _build_packet("voice-catalog", result)
+    packet.write(pkt)
+    grant_skill_xp("voice-catalog")
+    log.info("LYKE: voice-catalog → %s (coverage=%s%%)", result.get("status"), result.get("metrics", {}).get("coverage_pct", 0))
     return pkt
 
 

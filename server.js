@@ -336,6 +336,10 @@ const SKILL_XP = {
   'music-compose':      { division: 'production',     amount: 12 },
   'weekly-retrospective': { division: 'personal',     amount:  8 },
   'art-director':       { division: 'production',     amount:  8 },
+  'narrative-craft':    { division: 'production',     amount: 10 },
+  'sfx-generate':       { division: 'production',     amount:  8 },
+  'asset-optimize':     { division: 'production',     amount:  5 },
+  'voice-catalog':      { division: 'production',     amount:  5 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -397,6 +401,10 @@ const SKILL_TASK_MAP = {
   'music-compose':      { divState: 'production', division: 'production', task: 'music-compose'      },
   'weekly-retrospective': { divState: 'personal', division: 'personal',   task: 'weekly-retrospective' },
   'art-director':       { divState: 'production', division: 'production', task: 'art-director'       },
+  'narrative-craft':    { divState: 'production', division: 'production', task: 'narrative-craft'    },
+  'sfx-generate':       { divState: 'production', division: 'production', task: 'sfx-generate'      },
+  'asset-optimize':     { divState: 'production', division: 'production', task: 'asset-optimize'    },
+  'voice-catalog':      { divState: 'production', division: 'production', task: 'voice-catalog'     },
 };
 
 function rankForLevel(level) {

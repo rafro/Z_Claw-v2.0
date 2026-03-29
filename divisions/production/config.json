@@ -148,6 +148,34 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
+    },
+    "narrative-craft": {
+      "schedule": "on_demand",
+      "skill": "narrative-craft",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "sfx-generate": {
+      "schedule": "on_demand",
+      "skill": "sfx-generate",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "asset-optimize": {
+      "schedule": "on_demand",
+      "skill": "asset-optimize",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
+    },
+    "voice-catalog": {
+      "schedule": "on_demand",
+      "skill": "voice-catalog",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle"
     }
   }
 }
