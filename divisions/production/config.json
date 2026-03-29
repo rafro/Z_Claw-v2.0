@@ -141,13 +141,6 @@
       "enabled": true,
       "last_run": null,
       "status": "idle"
-    },
-    "qa-pipeline": {
-      "schedule": "on_demand",
-      "skill": "qa-pipeline",
-      "enabled": true,
-      "last_run": null,
-      "status": "idle"
     }
   }
 }

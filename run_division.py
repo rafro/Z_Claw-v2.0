@@ -236,6 +236,12 @@ def run(division: str, task: str, args: list) -> dict:
             "production-digest":  lambda: prod_orch.run_production_digest(),
             "qa-pipeline":        lambda: prod_orch.run_qa_pipeline(
                                       commander=args[0] if args else "generic"),
+            "voice-generate":     lambda: prod_orch.run_voice_generate(
+                                      commander=args[0] if args else "generic",
+                                      line_type=args[1] if len(args) > 1 else "greeting"),
+            "music-compose":      lambda: prod_orch.run_music_compose(
+                                      track_type=args[0] if args else "main_theme",
+                                      division=args[1] if len(args) > 1 else "trading"),
         }
         runner = task_map.get(task)
         if not runner:

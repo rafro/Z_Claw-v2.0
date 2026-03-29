@@ -332,6 +332,9 @@ const SKILL_XP = {
   'asset-deliver':      { division: 'production',     amount:  5 },
   'production-digest':  { division: 'production',     amount: 10 },
   'qa-pipeline':        { division: 'production',     amount: 12 },
+  'voice-generate':     { division: 'production',     amount: 12 },
+  'music-compose':      { division: 'production',     amount: 12 },
+  'weekly-retrospective': { division: 'personal',     amount:  8 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -389,6 +392,9 @@ const SKILL_TASK_MAP = {
   'asset-deliver':      { divState: 'production', division: 'production', task: 'asset-deliver'      },
   'production-digest':  { divState: 'production', division: 'production', task: 'production-digest'  },
   'qa-pipeline':        { divState: 'production', division: 'production', task: 'qa-pipeline'        },
+  'voice-generate':     { divState: 'production', division: 'production', task: 'voice-generate'     },
+  'music-compose':      { divState: 'production', division: 'production', task: 'music-compose'      },
+  'weekly-retrospective': { divState: 'personal', division: 'personal',   task: 'weekly-retrospective' },
 };
 
 function rankForLevel(level) {
@@ -4737,6 +4743,22 @@ cron.schedule('0 10 * * *', async () => {
 // asset-deliver every 6 hours
 cron.schedule('0 */6 * * *', async () => {
   await runSkillViaPython('asset-deliver', 'PRODUCTION');
+}, { timezone: TZ });
+
+// asset-catalog every 12 hours
+cron.schedule('0 */12 * * *', async () => {
+  await runSkillViaPython('asset-catalog', 'PRODUCTION');
+}, { timezone: TZ });
+
+// production-digest daily at 8:00 PM
+cron.schedule('0 20 * * *', async () => {
+  await runSkillViaPython('production-digest', 'PRODUCTION');
+}, { timezone: TZ });
+
+// ── Personal Division — weekly retrospective ─────────────────────────────
+// Weekly retrospective Monday at 8:00 AM
+cron.schedule('0 8 * * 1', async () => {
+  await runSkillViaPython('weekly-retrospective', 'PERSONAL');
 }, { timezone: TZ });
 
 // ── Briefings ──────────────────────────────────────────────────────────────
