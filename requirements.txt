@@ -13,5 +13,15 @@ pandas>=2.0.0
 # Optional — only needed if Gemini provider is used
 # google-generativeai>=0.8.0
 
+# Production — media generation (only needed for LYKE's forge skills)
+# These are heavy ML packages. Skip if not using image/voice/music generation.
+# numpy>=1.24.0
+# scipy>=1.11.0
+# Pillow>=10.0.0
+# transformers>=4.35.0
+# torch>=2.0.0
+# torch-directml>=0.2.0       # AMD GPU acceleration (Windows only)
+# TTS>=0.22.0                  # Coqui XTTS v2 voice synthesis
+
 # Dev / testing
 pytest>=9.0.0
