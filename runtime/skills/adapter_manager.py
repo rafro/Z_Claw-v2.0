@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 from runtime.config import STATE_DIR
+from runtime.tools.atomic_write import atomic_write_json
 
 log = logging.getLogger(__name__)
 
@@ -40,9 +41,7 @@ def _load_registry() -> dict:
 
 
 def _save_registry(registry: dict) -> None:
-    REGISTRY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
-        json.dump(registry, f, indent=2)
+    atomic_write_json(REGISTRY_FILE, registry)
 
 
 def _load_active_map() -> dict:
@@ -56,9 +55,7 @@ def _load_active_map() -> dict:
 
 
 def _save_active_map(active_map: dict) -> None:
-    ACTIVE_MAP_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(ACTIVE_MAP_FILE, "w", encoding="utf-8") as f:
-        json.dump(active_map, f, indent=2)
+    atomic_write_json(ACTIVE_MAP_FILE, active_map)
 
 
 def _sync_active_map(registry: dict) -> dict:
