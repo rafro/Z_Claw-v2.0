@@ -45,7 +45,7 @@ Every LLM call is captured → human-reviewed → domain-split → formatted for
 - Cross-division pipeline: Game Dev **designs** → Production **builds** assets → Game Dev **integrates** and tests
 - Asset integration reads production packets (asset-catalog, asset-deliver, qa-pipeline) to track delivery gaps
 - All skills capture training data for QVAC domain-specific fine-tuning
-- Scheduled: game-design (daily 09:00), balance-audit (daily 20:00), asset-integration (12h), gamedev-digest (daily 21:00)
+- Scheduled: morning design cycle (daily 07:00 — game-design → character → enemy → item), afternoon code cycle (daily 13:00 — code-generate → review → test → iterate), balance-audit (daily 20:00), asset-integration (12h), gamedev-digest (daily 21:00), game-factory full pipeline (weekly Saturday 04:00)
 
 ### Division Wiring Audit + Fixes
 - **14 missing XP definitions** added (10 production, 4 sentinel) — skills were running but earning 0 XP silently
