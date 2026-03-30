@@ -4942,10 +4942,7 @@ cron.schedule('0 20 * * *', async () => {
 }, { timezone: TZ });
 
 // ── Game Development Division — The Eternal Engine ───────────────────────
-// game-design daily at 9:00 AM
-cron.schedule('0 9 * * *', async () => {
-  await runSkillViaPython('game-design', 'GAMEDEV');
-}, { timezone: TZ });
+// game-design runs as part of the 07:00 morning design cycle (no separate cron needed)
 
 // balance-audit daily at 8:00 PM
 cron.schedule('0 20 * * *', async () => {
