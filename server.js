@@ -356,6 +356,11 @@ const SKILL_XP = {
   'playtest-report':    { division: 'gamedev',        amount: 15 },
   'asset-integration':  { division: 'gamedev',        amount:  8 },
   'gamedev-digest':     { division: 'gamedev',        amount: 10 },
+  'code-generate':      { division: 'gamedev',        amount: 15 },
+  'code-review':        { division: 'gamedev',        amount: 10 },
+  'code-test':          { division: 'gamedev',        amount:  8 },
+  'build-pipeline':     { division: 'gamedev',        amount: 12 },
+  'scene-assemble':     { division: 'gamedev',        amount: 12 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -435,6 +440,11 @@ const SKILL_TASK_MAP = {
   'playtest-report':    { divState: 'gamedev', division: 'gamedev', task: 'playtest-report'    },
   'asset-integration':  { divState: 'gamedev', division: 'gamedev', task: 'asset-integration'  },
   'gamedev-digest':     { divState: 'gamedev', division: 'gamedev', task: 'gamedev-digest'     },
+  'code-generate':      { divState: 'gamedev', division: 'gamedev', task: 'code-generate'    },
+  'code-review':        { divState: 'gamedev', division: 'gamedev', task: 'code-review'      },
+  'code-test':          { divState: 'gamedev', division: 'gamedev', task: 'code-test'        },
+  'build-pipeline':     { divState: 'gamedev', division: 'gamedev', task: 'build-pipeline'   },
+  'scene-assemble':     { divState: 'gamedev', division: 'gamedev', task: 'scene-assemble'   },
 };
 
 function rankForLevel(level) {
@@ -2754,6 +2764,11 @@ function handleMobileDivisions(res) {
         playtest_report:    readPkt('gamedev', 'playtest-report'),
         asset_integration:  readPkt('gamedev', 'asset-integration'),
         gamedev_digest:     readPkt('gamedev', 'gamedev-digest'),
+        code_generate:      readPkt('gamedev', 'code-generate'),
+        code_review:        readPkt('gamedev', 'code-review'),
+        code_test:          readPkt('gamedev', 'code-test'),
+        build_pipeline:     readPkt('gamedev', 'build-pipeline'),
+        scene_assemble:     readPkt('gamedev', 'scene-assemble'),
       },
     });
   } catch(e) {

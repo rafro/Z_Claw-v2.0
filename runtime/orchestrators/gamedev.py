@@ -4,16 +4,19 @@ Skills: game-design, balance-audit -> Tier 1 (7B local).
         mechanic-prototype, level-design, tech-spec -> Tier 1 (7B local).
         playtest-report -> Tier 1.
         asset-integration -> Tier 0 (deterministic cross-division packet reader).
+        code-generate, code-review, code-test -> Tier 1 (coder models).
+        build-pipeline, scene-assemble -> Tier 1.
         gamedev-digest -> orchestrator synthesis (reads all gamedev packets).
 """
 
 import logging
 
-from runtime.config import SKILL_MODELS, OLLAMA_HOST, MODEL_7B
+from runtime.config import SKILL_MODELS, OLLAMA_HOST, MODEL_7B, MODEL_CODER_14B, MODEL_CODER_7B
 from runtime.ollama_client import chat, is_available
 from runtime.skills import (
     game_design, mechanic_prototype, balance_audit,
     level_design, tech_spec, playtest_report, asset_integration,
+    code_generate, code_review, code_test, build_pipeline, scene_assemble,
 )
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
@@ -32,6 +35,11 @@ def _synthesize_gamedev_state(
     tech_pkt: dict | None,
     playtest_pkt: dict | None,
     asset_pkt: dict | None,
+    code_gen_pkt: dict | None = None,
+    code_rev_pkt: dict | None = None,
+    code_test_pkt: dict | None = None,
+    build_pkt: dict | None = None,
+    scene_pkt: dict | None = None,
 ) -> str:
     """
     Cross-skill synthesis: combine all gamedev skill outputs into an executive
@@ -47,6 +55,11 @@ def _synthesize_gamedev_state(
         ("Tech Spec", tech_pkt),
         ("Playtest Report", playtest_pkt),
         ("Asset Integration", asset_pkt),
+        ("Code Generate", code_gen_pkt),
+        ("Code Review", code_rev_pkt),
+        ("Code Test", code_test_pkt),
+        ("Build Pipeline", build_pkt),
+        ("Scene Assemble", scene_pkt),
     ]:
         if pkt_data:
             summaries[label] = pkt_data.get("summary", "No data.")
@@ -67,7 +80,8 @@ def _synthesize_gamedev_state(
                 "You are ARDENT, Warden of the Eternal Engine — the Game Development "
                 "Division orchestrator for Z_Claw. Given today's outputs from game design, "
                 "mechanic prototyping, balance auditing, level design, tech specs, playtesting, "
-                "and asset integration, write a 2-3 sentence executive summary for Matthew. "
+                "asset integration, code generation, code review, code testing, build pipeline, "
+                "and scene assembly, write a 2-3 sentence executive summary for Matthew. "
                 "Highlight: progress on the current game project, any blockers or risks, "
                 "and what the next priority should be. Be direct — no filler."
             ),
@@ -287,6 +301,170 @@ def run_asset_integration() -> dict:
     return pkt
 
 
+def run_code_generate(**kwargs) -> dict:
+    """Generate code from a spec, mechanic prototype, or tech-spec packet."""
+    log.info("=== Game Dev Division: code-generate run ===")
+
+    result = code_generate.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        action_items.append(packet.action_item(
+            f"[CODE-GEN] {finding.get('description', 'Action required')}",
+            priority=finding.get("priority", "normal"),
+            requires_matthew=False,
+        ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="code-generate",
+        status=result["status"],
+        summary=result.get("summary", "Code generation complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("code-generate")
+    log.info("Code-generate packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_code_review(**kwargs) -> dict:
+    """Review generated or hand-written code for quality and correctness."""
+    log.info("=== Game Dev Division: code-review run ===")
+
+    result = code_review.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[CODE-REVIEW {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="code-review",
+        status=result["status"],
+        summary=result.get("summary", "Code review complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("code-review")
+    log.info(
+        "Code-review packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_code_test(**kwargs) -> dict:
+    """Generate or execute tests for game code."""
+    log.info("=== Game Dev Division: code-test run ===")
+
+    result = code_test.run(**kwargs)
+
+    action_items = []
+    for failure in result.get("failures", []):
+        action_items.append(packet.action_item(
+            f"[TEST FAIL] {failure.get('test', 'unknown')}: "
+            f"{failure.get('reason', 'assertion failed')}",
+            priority="high",
+            requires_matthew=False,
+        ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="code-test",
+        status=result["status"],
+        summary=result.get("summary", "Code test pass complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("code-test")
+    log.info(
+        "Code-test packet written. Status=%s failures=%d",
+        result["status"], len(result.get("failures", [])),
+    )
+    return pkt
+
+
+def run_build_pipeline(**kwargs) -> dict:
+    """Run or validate the project build pipeline."""
+    log.info("=== Game Dev Division: build-pipeline run ===")
+
+    result = build_pipeline.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="build-pipeline",
+        status=result["status"],
+        summary=result.get("summary", "Build pipeline check complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("build-pipeline")
+    log.info("Build-pipeline packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_scene_assemble(**kwargs) -> dict:
+    """Assemble a game scene from design, level, and asset packets."""
+    log.info("=== Game Dev Division: scene-assemble run ===")
+
+    result = scene_assemble.run(**kwargs)
+
+    action_items = []
+    for asset in result.get("missing_assets", []):
+        action_items.append(packet.action_item(
+            f"[SCENE] Missing asset: {asset.get('name', 'unknown')} "
+            f"({asset.get('type', 'unknown type')})",
+            priority="normal",
+            requires_matthew=False,
+        ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="scene-assemble",
+        status=result["status"],
+        summary=result.get("summary", "Scene assembly complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("scene-assemble")
+    log.info(
+        "Scene-assemble packet written. Status=%s missing_assets=%d",
+        result["status"], len(result.get("missing_assets", [])),
+    )
+    return pkt
+
+
 def run_gamedev_digest() -> dict:
     """
     Orchestrator synthesis — reads all gamedev skill packets and produces
@@ -302,15 +480,24 @@ def run_gamedev_digest() -> dict:
     tech_pkt     = packet.read_fresh("gamedev", "tech-spec", 4320)
     playtest_pkt = packet.read_fresh("gamedev", "playtest-report", 1440)
     asset_pkt    = packet.read_fresh("gamedev", "asset-integration", 1440)
+    code_gen_pkt  = packet.read_fresh("gamedev", "code-generate", 4320)
+    code_rev_pkt  = packet.read_fresh("gamedev", "code-review", 4320)
+    code_test_pkt = packet.read_fresh("gamedev", "code-test", 4320)
+    build_pkt     = packet.read_fresh("gamedev", "build-pipeline", 4320)
+    scene_pkt     = packet.read_fresh("gamedev", "scene-assemble", 4320)
 
     synthesis = _synthesize_gamedev_state(
         design_pkt, mechanic_pkt, balance_pkt,
         level_pkt, tech_pkt, playtest_pkt, asset_pkt,
+        code_gen_pkt, code_rev_pkt, code_test_pkt,
+        build_pkt, scene_pkt,
     )
 
     # Aggregate escalation signals
     all_pkts = [design_pkt, mechanic_pkt, balance_pkt, level_pkt,
-                tech_pkt, playtest_pkt, asset_pkt]
+                tech_pkt, playtest_pkt, asset_pkt,
+                code_gen_pkt, code_rev_pkt, code_test_pkt,
+                build_pkt, scene_pkt]
     escalate = any(
         p.get("escalate", False) for p in all_pkts if p
     )
@@ -336,6 +523,11 @@ def run_gamedev_digest() -> dict:
             "has_tech_spec":      bool(tech_pkt),
             "has_playtest":       bool(playtest_pkt),
             "has_asset_check":    bool(asset_pkt),
+            "has_code_generate":  bool(code_gen_pkt),
+            "has_code_review":    bool(code_rev_pkt),
+            "has_code_test":      bool(code_test_pkt),
+            "has_build_pipeline": bool(build_pkt),
+            "has_scene_assemble": bool(scene_pkt),
         },
         escalate=escalate,
         escalation_reason=" | ".join(escalation_reasons) if escalation_reasons else "",

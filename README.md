@@ -1,6 +1,6 @@
 # Z_Claw v2.0 — Personal AI Orchestration Platform
 
-A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 9 specialized agent divisions (~71 agents) across trading, game development, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
+A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 9 specialized agent divisions (~76 agents) across trading, game development, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
 
 Built for two users: **Tyler** (PC dashboard, port 3000) and **Matthew** (mobile PWA via Tailscale, iPhone 16 Pro Max).
 
@@ -94,7 +94,7 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 └──────────────────────┬──────────────────────────────────┘
                        │ HTTP / SSE / WebSocket
 ┌──────────────────────▼──────────────────────────────────┐
-│  Python Skill Runtime (~71 agents)                       │
+│  Python Skill Runtime (~76 agents)                       │
 │                                                         │
 │  runtime/orchestrators/   Per-division LLM orchestrators │
 │  runtime/skills/          Individual agent skill files   │
@@ -117,7 +117,7 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 | **Personal** | LYRIN | The Ember Covenant | 4 | Health logging, burnout detection, performance correlation, weekly retros |
 | **OP-Sec** | ZETH | The Nullward Circle | 8 | Device posture, breach monitoring, credential audit, network profiling, mobile audit |
 | **Production** | LYKE | The Lykeon Forge | 24 | Art direction, image/video/voice/music/SFX generation, QA, QVAC training |
-| **Game Dev** | ARDENT | The Eternal Engine | 8 | Game design, mechanic prototyping, balance audits, level design, playtesting, asset integration |
+| **Game Dev** | ARDENT | The Eternal Engine | 13 | Game design, mechanic prototyping, balance audits, level design, playtesting, asset integration, code generation, code review, testing, build pipeline, scene assembly |
 | **Sentinel** | — | — | 4 | Provider health, queue monitoring, agent-network staleness (XP feeds OP-Sec) |
 
 ### Cross-Division Data Flows
@@ -256,7 +256,7 @@ The `training_manifest.py` module implements hydration-inspired lineage tracking
 | Layer | Tech |
 |---|---|
 | Mission Control | Node.js 20, PM2 |
-| Skills | Python 3.13 (~71 agents across 9 divisions) |
+| Skills | Python 3.13 (~76 agents across 9 divisions) |
 | Local LLM | Ollama (Qwen2.5 7B / Coder 14B, AMD ROCm/Vulkan) |
 | Cloud LLM | Groq 70B, DeepSeek, Gemini (escalation only) |
 | Image/Video | ComfyUI + AnimateDiff-Evolved |

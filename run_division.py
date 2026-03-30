@@ -43,6 +43,13 @@ Usage:
   python run_division.py gamedev playtest-report
   python run_division.py gamedev asset-integration
   python run_division.py gamedev gamedev-digest
+  python run_division.py gamedev code-generate '{"system_name":"combat","target":"godot"}'
+  python run_division.py gamedev code-review combat_system.gd
+  python run_division.py gamedev code-test status
+  python run_division.py gamedev code-test generate
+  python run_division.py gamedev build-pipeline status
+  python run_division.py gamedev build-pipeline package godot
+  python run_division.py gamedev scene-assemble '{"level_name":"forest_01","target":"godot"}'
   python run_division.py sentinel provider-health
   python run_division.py sentinel queue-monitor
   python run_division.py sentinel sentinel-digest
@@ -286,6 +293,8 @@ def run(division: str, task: str, args: list) -> dict:
             run_game_design, run_mechanic_prototype, run_balance_audit,
             run_level_design, run_tech_spec, run_playtest_report,
             run_asset_integration, run_gamedev_digest,
+            run_code_generate, run_code_review, run_code_test,
+            run_build_pipeline, run_scene_assemble,
         )
         if task == "game-design":
             return run_game_design()
@@ -310,6 +319,38 @@ def run(division: str, task: str, args: list) -> dict:
             return run_asset_integration()
         if task == "gamedev-digest":
             return run_gamedev_digest()
+        if task == "code-generate":
+            kwargs = {}
+            if args:
+                try:
+                    kwargs = json.loads(args[0])
+                except json.JSONDecodeError:
+                    kwargs = {"system_name": args[0]}
+            return run_code_generate(**kwargs)
+        if task == "code-review":
+            kwargs = {}
+            if args:
+                try:
+                    kwargs = json.loads(args[0])
+                except json.JSONDecodeError:
+                    kwargs = {"file_path": args[0]}
+            return run_code_review(**kwargs)
+        if task == "code-test":
+            kwargs = {"action": args[0] if args else "status"}
+            return run_code_test(**kwargs)
+        if task == "build-pipeline":
+            kwargs = {"action": args[0] if args else "status"}
+            if len(args) > 1:
+                kwargs["target"] = args[1]
+            return run_build_pipeline(**kwargs)
+        if task == "scene-assemble":
+            kwargs = {}
+            if args:
+                try:
+                    kwargs = json.loads(args[0])
+                except json.JSONDecodeError:
+                    kwargs = {"level_name": args[0]}
+            return run_scene_assemble(**kwargs)
         raise ValueError(f"Unknown task for gamedev: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────

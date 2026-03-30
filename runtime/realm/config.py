@@ -403,6 +403,8 @@ DIVISIONS = {
             {"name": "Calibrate the Engine","desc": "Balances numbers, curves, and feedback loops until the system feels right"},
             {"name": "Map the Terrain",    "desc": "Designs levels, encounters, and spatial flow for player progression"},
             {"name": "Seal the Build",     "desc": "Runs full playtest gauntlet and signs off the release candidate"},
+            {"name": "Forge the Code",    "desc": "Transforms blueprints into executable game code — the Engine's core power"},
+            {"name": "Weave the World",   "desc": "Assembles assets, scenes, and systems into a playable whole"},
         ],
         "skills": {
             "game-design":        {"xp": 15, "soldier": "The Visionary",         "icon": "🎮", "anim": "draft",     "label": "Draft the World"},
@@ -413,6 +415,11 @@ DIVISIONS = {
             "playtest-report":    {"xp": 15, "soldier": "The Trial Master",      "icon": "🎯", "anim": "trial",     "label": "Run the Gauntlet"},
             "asset-integration":  {"xp":  8, "soldier": "The Assembler",         "icon": "🧩", "anim": "assemble",  "label": "Assemble the World"},
             "gamedev-digest":     {"xp": 10, "soldier": "The Engine Voice",      "icon": "⬡",  "anim": "report",    "label": "The Engine Report"},
+            "code-generate":      {"xp": 15, "soldier": "The Code Forger",       "icon": "⌨",  "anim": "forge",     "label": "Forge the Code"},
+            "code-review":        {"xp": 10, "soldier": "The Code Arbiter",      "icon": "⚖",  "anim": "scan",      "label": "Judge the Code"},
+            "code-test":          {"xp":  8, "soldier": "The Trial Runner",      "icon": "⚡",  "anim": "spark",     "label": "Run the Trials"},
+            "build-pipeline":     {"xp": 12, "soldier": "The Build Master",      "icon": "📦", "anim": "forge",     "label": "Package the Engine"},
+            "scene-assemble":     {"xp": 12, "soldier": "The Scene Weaver",      "icon": "🗺",  "anim": "compose",   "label": "Weave the World"},
         },
         "vocabulary": {
             "quest":       "building the world",

@@ -79,6 +79,46 @@
       "last_run": null,
       "status": "idle",
       "notes": "Daily synthesis of all game dev activity. Reads all gamedev skill packets."
+    },
+    "code-generate": {
+      "schedule": "on_demand",
+      "skill": "code-generate",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Generates game source code from tech specs and GDD. Uses Coder 14B for higher quality. Supports godot, pygame, generic targets."
+    },
+    "code-review": {
+      "schedule": "on_demand",
+      "skill": "code-review",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Reviews generated game code for bugs, architecture issues, and best practices. Uses Coder 14B."
+    },
+    "code-test": {
+      "schedule": "on_demand",
+      "skill": "code-test",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Generates and runs test suites for game code. LLM for generation, deterministic for execution."
+    },
+    "build-pipeline": {
+      "schedule": "on_demand",
+      "skill": "build-pipeline",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Packages game projects for distribution. Pure Python — no LLM needed."
+    },
+    "scene-assemble": {
+      "schedule": "on_demand",
+      "skill": "scene-assemble",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Wires Production's delivered assets into game scenes. Reads level-design specs and production packets."
     }
   }
 }
