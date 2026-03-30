@@ -6,6 +6,10 @@ Skills: game-design, balance-audit -> Tier 1 (7B local).
         asset-integration -> Tier 0 (deterministic cross-division packet reader).
         code-generate, code-review, code-test -> Tier 1 (coder models).
         build-pipeline, scene-assemble -> Tier 1.
+        character-designer, item-forge, enemy-designer -> Tier 1.
+        quest-writer, story-writer -> Tier 1.
+        skill-tree-builder, asset-requester -> Tier 1.
+        project-init, iteration-runner, data-populate -> Tier 1.
         gamedev-digest -> orchestrator synthesis (reads all gamedev packets).
 """
 
@@ -17,6 +21,9 @@ from runtime.skills import (
     game_design, mechanic_prototype, balance_audit,
     level_design, tech_spec, playtest_report, asset_integration,
     code_generate, code_review, code_test, build_pipeline, scene_assemble,
+    character_designer, item_forge, enemy_designer, quest_writer,
+    story_writer, skill_tree_builder, asset_requester, project_init,
+    iteration_runner, data_populate,
 )
 from runtime import packet
 from runtime.tools.xp import grant_skill_xp
@@ -40,6 +47,16 @@ def _synthesize_gamedev_state(
     code_test_pkt: dict | None = None,
     build_pkt: dict | None = None,
     scene_pkt: dict | None = None,
+    character_pkt: dict | None = None,
+    item_pkt: dict | None = None,
+    enemy_pkt: dict | None = None,
+    quest_pkt: dict | None = None,
+    story_pkt: dict | None = None,
+    skill_tree_pkt: dict | None = None,
+    asset_req_pkt: dict | None = None,
+    project_pkt: dict | None = None,
+    iteration_pkt: dict | None = None,
+    data_pop_pkt: dict | None = None,
 ) -> str:
     """
     Cross-skill synthesis: combine all gamedev skill outputs into an executive
@@ -60,6 +77,16 @@ def _synthesize_gamedev_state(
         ("Code Test", code_test_pkt),
         ("Build Pipeline", build_pkt),
         ("Scene Assemble", scene_pkt),
+        ("Character Designer", character_pkt),
+        ("Item Forge", item_pkt),
+        ("Enemy Designer", enemy_pkt),
+        ("Quest Writer", quest_pkt),
+        ("Story Writer", story_pkt),
+        ("Skill Tree Builder", skill_tree_pkt),
+        ("Asset Requester", asset_req_pkt),
+        ("Project Init", project_pkt),
+        ("Iteration Runner", iteration_pkt),
+        ("Data Populate", data_pop_pkt),
     ]:
         if pkt_data:
             summaries[label] = pkt_data.get("summary", "No data.")
@@ -81,7 +108,9 @@ def _synthesize_gamedev_state(
                 "Division orchestrator for Z_Claw. Given today's outputs from game design, "
                 "mechanic prototyping, balance auditing, level design, tech specs, playtesting, "
                 "asset integration, code generation, code review, code testing, build pipeline, "
-                "and scene assembly, write a 2-3 sentence executive summary for Matthew. "
+                "scene assembly, character design, item forging, enemy design, quest writing, "
+                "story writing, skill tree building, asset requesting, project init, iteration "
+                "running, and data population, write a 2-3 sentence executive summary for Matthew. "
                 "Highlight: progress on the current game project, any blockers or risks, "
                 "and what the next priority should be. Be direct — no filler."
             ),
@@ -465,6 +494,318 @@ def run_scene_assemble(**kwargs) -> dict:
     return pkt
 
 
+def run_character_designer(**kwargs) -> dict:
+    """Design game characters — stats, abilities, backstory, visual direction."""
+    log.info("=== Game Dev Division: character-designer run ===")
+
+    result = character_designer.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[CHARACTER {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="character-designer",
+        status=result["status"],
+        summary=result.get("summary", "Character design complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("character-designer")
+    log.info(
+        "Character-designer packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_item_forge(**kwargs) -> dict:
+    """Forge game items — weapons, armor, consumables, crafting recipes."""
+    log.info("=== Game Dev Division: item-forge run ===")
+
+    result = item_forge.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[ITEM {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="item-forge",
+        status=result["status"],
+        summary=result.get("summary", "Item forge complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("item-forge")
+    log.info(
+        "Item-forge packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_enemy_designer(**kwargs) -> dict:
+    """Design enemies — AI behavior, stats, attack patterns, loot tables."""
+    log.info("=== Game Dev Division: enemy-designer run ===")
+
+    result = enemy_designer.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[ENEMY {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="enemy-designer",
+        status=result["status"],
+        summary=result.get("summary", "Enemy design complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("enemy-designer")
+    log.info(
+        "Enemy-designer packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_quest_writer(**kwargs) -> dict:
+    """Write game quests — objectives, dialogue, reward structures, branching paths."""
+    log.info("=== Game Dev Division: quest-writer run ===")
+
+    result = quest_writer.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="quest-writer",
+        status=result["status"],
+        summary=result.get("summary", "Quest writing complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("quest-writer")
+    log.info("Quest-writer packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_story_writer(**kwargs) -> dict:
+    """Write game narrative — lore, world-building, character arcs, cutscene scripts."""
+    log.info("=== Game Dev Division: story-writer run ===")
+
+    result = story_writer.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="story-writer",
+        status=result["status"],
+        summary=result.get("summary", "Story writing complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("story-writer")
+    log.info("Story-writer packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_skill_tree_builder(**kwargs) -> dict:
+    """Build skill trees — progression nodes, unlock conditions, balance curves."""
+    log.info("=== Game Dev Division: skill-tree-builder run ===")
+
+    result = skill_tree_builder.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[SKILL-TREE {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="skill-tree-builder",
+        status=result["status"],
+        summary=result.get("summary", "Skill tree build complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("skill-tree-builder")
+    log.info(
+        "Skill-tree-builder packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_asset_requester(**kwargs) -> dict:
+    """Generate asset requests — sprites, models, audio, UI elements needed by design."""
+    log.info("=== Game Dev Division: asset-requester run ===")
+
+    result = asset_requester.run(**kwargs)
+
+    action_items = []
+    for req in result.get("requests", []):
+        action_items.append(packet.action_item(
+            f"[ASSET-REQ] {req.get('asset', 'unknown')}: {req.get('reason', 'needed')}",
+            priority=req.get("priority", "normal"),
+            requires_matthew=False,
+        ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="asset-requester",
+        status=result["status"],
+        summary=result.get("summary", "Asset request generation complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("asset-requester")
+    log.info(
+        "Asset-requester packet written. Status=%s requests=%d",
+        result["status"], len(result.get("requests", [])),
+    )
+    return pkt
+
+
+def run_project_init(**kwargs) -> dict:
+    """Initialize a new game project — scaffold directories, configs, starter templates."""
+    log.info("=== Game Dev Division: project-init run ===")
+
+    result = project_init.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="project-init",
+        status=result["status"],
+        summary=result.get("summary", "Project initialization complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("project-init")
+    log.info("Project-init packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_iteration_runner(**kwargs) -> dict:
+    """Run a design iteration cycle — gather feedback, apply changes, validate."""
+    log.info("=== Game Dev Division: iteration-runner run ===")
+
+    result = iteration_runner.run(**kwargs)
+
+    action_items = []
+    for finding in result.get("findings", []):
+        if finding.get("severity") in ("high", "critical"):
+            action_items.append(packet.action_item(
+                f"[ITERATION {finding['severity'].upper()}] "
+                f"{finding.get('description', 'Issue detected')}",
+                priority="high",
+                requires_matthew=False,
+            ))
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="iteration-runner",
+        status=result["status"],
+        summary=result.get("summary", "Iteration cycle complete."),
+        metrics=result.get("metrics", {}),
+        action_items=action_items,
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("iteration-runner")
+    log.info(
+        "Iteration-runner packet written. Status=%s findings=%d",
+        result["status"], len(result.get("findings", [])),
+    )
+    return pkt
+
+
+def run_data_populate(**kwargs) -> dict:
+    """Populate game data tables — stats, drop rates, spawn tables, config values."""
+    log.info("=== Game Dev Division: data-populate run ===")
+
+    result = data_populate.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="data-populate",
+        status=result["status"],
+        summary=result.get("summary", "Data population complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("data-populate")
+    log.info("Data-populate packet written. Status=%s", result["status"])
+    return pkt
+
+
 def run_gamedev_digest() -> dict:
     """
     Orchestrator synthesis — reads all gamedev skill packets and produces
@@ -485,19 +826,35 @@ def run_gamedev_digest() -> dict:
     code_test_pkt = packet.read_fresh("gamedev", "code-test", 4320)
     build_pkt     = packet.read_fresh("gamedev", "build-pipeline", 4320)
     scene_pkt     = packet.read_fresh("gamedev", "scene-assemble", 4320)
+    character_pkt  = packet.read_fresh("gamedev", "character-designer", 4320)
+    item_pkt       = packet.read_fresh("gamedev", "item-forge", 4320)
+    enemy_pkt      = packet.read_fresh("gamedev", "enemy-designer", 4320)
+    quest_pkt      = packet.read_fresh("gamedev", "quest-writer", 4320)
+    story_pkt      = packet.read_fresh("gamedev", "story-writer", 4320)
+    skill_tree_pkt = packet.read_fresh("gamedev", "skill-tree-builder", 4320)
+    asset_req_pkt  = packet.read_fresh("gamedev", "asset-requester", 4320)
+    project_pkt    = packet.read_fresh("gamedev", "project-init", 4320)
+    iteration_pkt  = packet.read_fresh("gamedev", "iteration-runner", 4320)
+    data_pop_pkt   = packet.read_fresh("gamedev", "data-populate", 4320)
 
     synthesis = _synthesize_gamedev_state(
         design_pkt, mechanic_pkt, balance_pkt,
         level_pkt, tech_pkt, playtest_pkt, asset_pkt,
         code_gen_pkt, code_rev_pkt, code_test_pkt,
         build_pkt, scene_pkt,
+        character_pkt, item_pkt, enemy_pkt, quest_pkt,
+        story_pkt, skill_tree_pkt, asset_req_pkt,
+        project_pkt, iteration_pkt, data_pop_pkt,
     )
 
     # Aggregate escalation signals
     all_pkts = [design_pkt, mechanic_pkt, balance_pkt, level_pkt,
                 tech_pkt, playtest_pkt, asset_pkt,
                 code_gen_pkt, code_rev_pkt, code_test_pkt,
-                build_pkt, scene_pkt]
+                build_pkt, scene_pkt,
+                character_pkt, item_pkt, enemy_pkt, quest_pkt,
+                story_pkt, skill_tree_pkt, asset_req_pkt,
+                project_pkt, iteration_pkt, data_pop_pkt]
     escalate = any(
         p.get("escalate", False) for p in all_pkts if p
     )
@@ -528,6 +885,16 @@ def run_gamedev_digest() -> dict:
             "has_code_test":      bool(code_test_pkt),
             "has_build_pipeline": bool(build_pkt),
             "has_scene_assemble": bool(scene_pkt),
+            "has_character_designer": bool(character_pkt),
+            "has_item_forge":         bool(item_pkt),
+            "has_enemy_designer":     bool(enemy_pkt),
+            "has_quest_writer":       bool(quest_pkt),
+            "has_story_writer":       bool(story_pkt),
+            "has_skill_tree_builder": bool(skill_tree_pkt),
+            "has_asset_requester":    bool(asset_req_pkt),
+            "has_project_init":       bool(project_pkt),
+            "has_iteration_runner":   bool(iteration_pkt),
+            "has_data_populate":      bool(data_pop_pkt),
         },
         escalate=escalate,
         escalation_reason=" | ".join(escalation_reasons) if escalation_reasons else "",

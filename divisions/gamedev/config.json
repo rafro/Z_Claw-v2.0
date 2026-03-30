@@ -119,6 +119,86 @@
       "last_run": null,
       "status": "idle",
       "notes": "Wires Production's delivered assets into game scenes. Reads level-design specs and production packets."
+    },
+    "character-designer": {
+      "schedule": "on_demand",
+      "skill": "character-designer",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Designs player and NPC characters with stats, backstory, visual identity, and class archetypes."
+    },
+    "item-forge": {
+      "schedule": "on_demand",
+      "skill": "item-forge",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Creates game items — weapons, armor, consumables — with stats, rarity tiers, and lore."
+    },
+    "enemy-designer": {
+      "schedule": "on_demand",
+      "skill": "enemy-designer",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Designs enemies and bosses with AI behaviors, attack patterns, phases, and loot tables."
+    },
+    "quest-writer": {
+      "schedule": "on_demand",
+      "skill": "quest-writer",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Writes quest definitions — objectives, branching dialogue, rewards, and narrative hooks."
+    },
+    "story-writer": {
+      "schedule": "on_demand",
+      "skill": "story-writer",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Writes game narrative — acts, chapters, world lore, and character arcs."
+    },
+    "skill-tree-builder": {
+      "schedule": "on_demand",
+      "skill": "skill-tree-builder",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Designs class skill trees with abilities, prerequisites, and balance curves."
+    },
+    "asset-requester": {
+      "schedule": "on_demand",
+      "skill": "asset-requester",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Generates asset request manifests for Production division. Schedule: after content design runs."
+    },
+    "project-init": {
+      "schedule": "on_demand",
+      "skill": "project-init",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Run once to initialize project structure. Scaffolds Godot/Pygame project with standard layout."
+    },
+    "iteration-runner": {
+      "schedule": "on_demand",
+      "skill": "iteration-runner",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Automated code iteration loop. Generate, review, fix, test — repeats until code passes."
+    },
+    "data-populate": {
+      "schedule": "on_demand",
+      "skill": "data-populate",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Run after content design to generate balance data. Populates item tables, enemy stats, XP curves."
     }
   }
 }

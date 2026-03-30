@@ -50,6 +50,16 @@ Usage:
   python run_division.py gamedev build-pipeline status
   python run_division.py gamedev build-pipeline package godot
   python run_division.py gamedev scene-assemble '{"level_name":"forest_01","target":"godot"}'
+  python run_division.py gamedev character-designer '{"name":"Kira","role":"hero","class_type":"mage"}'
+  python run_division.py gamedev item-forge '{"item_name":"flame_sword","item_type":"weapon","rarity":"epic"}'
+  python run_division.py gamedev enemy-designer '{"name":"dragon_lord","enemy_type":"boss"}'
+  python run_division.py gamedev quest-writer '{"quest_name":"the_lost_tome","quest_type":"main"}'
+  python run_division.py gamedev story-writer '{"section":"act","act_number":1}'
+  python run_division.py gamedev skill-tree-builder '{"class_type":"mage"}'
+  python run_division.py gamedev asset-requester all
+  python run_division.py gamedev project-init godot MyGame
+  python run_division.py gamedev iteration-runner '{"system_name":"combat","target":"godot"}'
+  python run_division.py gamedev data-populate
   python run_division.py sentinel provider-health
   python run_division.py sentinel queue-monitor
   python run_division.py sentinel sentinel-digest
@@ -295,6 +305,10 @@ def run(division: str, task: str, args: list) -> dict:
             run_asset_integration, run_gamedev_digest,
             run_code_generate, run_code_review, run_code_test,
             run_build_pipeline, run_scene_assemble,
+            run_character_designer, run_item_forge, run_enemy_designer,
+            run_quest_writer, run_story_writer, run_skill_tree_builder,
+            run_asset_requester, run_project_init, run_iteration_runner,
+            run_data_populate,
         )
         if task == "game-design":
             return run_game_design()
@@ -351,6 +365,57 @@ def run(division: str, task: str, args: list) -> dict:
                 except json.JSONDecodeError:
                     kwargs = {"level_name": args[0]}
             return run_scene_assemble(**kwargs)
+        if task == "character-designer":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"name": args[0]}
+            return run_character_designer(**kwargs)
+        if task == "item-forge":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"item_name": args[0]}
+            return run_item_forge(**kwargs)
+        if task == "enemy-designer":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"name": args[0]}
+            return run_enemy_designer(**kwargs)
+        if task == "quest-writer":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"quest_name": args[0]}
+            return run_quest_writer(**kwargs)
+        if task == "story-writer":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"section": args[0]}
+            return run_story_writer(**kwargs)
+        if task == "skill-tree-builder":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"class_type": args[0]}
+            return run_skill_tree_builder(**kwargs)
+        if task == "asset-requester":
+            kwargs = {"request_type": args[0] if args else "all"}
+            return run_asset_requester(**kwargs)
+        if task == "project-init":
+            kwargs = {"target": args[0] if args else "godot"}
+            if len(args) > 1: kwargs["project_name"] = args[1]
+            return run_project_init(**kwargs)
+        if task == "iteration-runner":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"system_name": args[0]}
+            return run_iteration_runner(**kwargs)
+        if task == "data-populate":
+            return run_data_populate()
         raise ValueError(f"Unknown task for gamedev: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────

@@ -361,6 +361,16 @@ const SKILL_XP = {
   'code-test':          { division: 'gamedev',        amount:  8 },
   'build-pipeline':     { division: 'gamedev',        amount: 12 },
   'scene-assemble':     { division: 'gamedev',        amount: 12 },
+  'character-designer':  { division: 'gamedev',      amount: 12 },
+  'item-forge':          { division: 'gamedev',      amount: 10 },
+  'enemy-designer':      { division: 'gamedev',      amount: 12 },
+  'quest-writer':        { division: 'gamedev',      amount: 12 },
+  'story-writer':        { division: 'gamedev',      amount: 15 },
+  'skill-tree-builder':  { division: 'gamedev',      amount: 10 },
+  'asset-requester':     { division: 'gamedev',      amount:  8 },
+  'project-init':        { division: 'gamedev',      amount: 10 },
+  'iteration-runner':    { division: 'gamedev',      amount: 15 },
+  'data-populate':       { division: 'gamedev',      amount:  8 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -445,6 +455,16 @@ const SKILL_TASK_MAP = {
   'code-test':          { divState: 'gamedev', division: 'gamedev', task: 'code-test'        },
   'build-pipeline':     { divState: 'gamedev', division: 'gamedev', task: 'build-pipeline'   },
   'scene-assemble':     { divState: 'gamedev', division: 'gamedev', task: 'scene-assemble'   },
+  'character-designer':  { divState: 'gamedev', division: 'gamedev', task: 'character-designer'  },
+  'item-forge':          { divState: 'gamedev', division: 'gamedev', task: 'item-forge'          },
+  'enemy-designer':      { divState: 'gamedev', division: 'gamedev', task: 'enemy-designer'      },
+  'quest-writer':        { divState: 'gamedev', division: 'gamedev', task: 'quest-writer'        },
+  'story-writer':        { divState: 'gamedev', division: 'gamedev', task: 'story-writer'        },
+  'skill-tree-builder':  { divState: 'gamedev', division: 'gamedev', task: 'skill-tree-builder'  },
+  'asset-requester':     { divState: 'gamedev', division: 'gamedev', task: 'asset-requester'     },
+  'project-init':        { divState: 'gamedev', division: 'gamedev', task: 'project-init'        },
+  'iteration-runner':    { divState: 'gamedev', division: 'gamedev', task: 'iteration-runner'    },
+  'data-populate':       { divState: 'gamedev', division: 'gamedev', task: 'data-populate'       },
 };
 
 function rankForLevel(level) {
@@ -2769,6 +2789,16 @@ function handleMobileDivisions(res) {
         code_test:          readPkt('gamedev', 'code-test'),
         build_pipeline:     readPkt('gamedev', 'build-pipeline'),
         scene_assemble:     readPkt('gamedev', 'scene-assemble'),
+        character_designer:  readPkt('gamedev', 'character-designer'),
+        item_forge:          readPkt('gamedev', 'item-forge'),
+        enemy_designer:      readPkt('gamedev', 'enemy-designer'),
+        quest_writer:        readPkt('gamedev', 'quest-writer'),
+        story_writer:        readPkt('gamedev', 'story-writer'),
+        skill_tree_builder:  readPkt('gamedev', 'skill-tree-builder'),
+        asset_requester:     readPkt('gamedev', 'asset-requester'),
+        project_init:        readPkt('gamedev', 'project-init'),
+        iteration_runner:    readPkt('gamedev', 'iteration-runner'),
+        data_populate:       readPkt('gamedev', 'data-populate'),
       },
     });
   } catch(e) {
