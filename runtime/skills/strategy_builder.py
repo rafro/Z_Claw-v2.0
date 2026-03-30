@@ -89,7 +89,7 @@ def _load_instruments() -> list[dict]:
         log.warning("Could not load assets.json (%s) — using fallback", e)
         return [
             {"name": "SPX500", "ticker": "^GSPC", "futures": "MES"},
-            {"name": "NAS100", "ticker": "^NDX", "futures": "MNQ"},
+            {"name": "NAS100", "ticker": "^IXIC", "futures": "MNQ"},
             {"name": "XAUUSD", "ticker": "GC=F", "futures": "MGC"},
             {"name": "US30", "ticker": "^DJI", "futures": "MYM"},
         ]

@@ -1,7 +1,7 @@
 """
 Market data provider factory.
 Selects the best available provider based on configuration and API keys.
-Priority: databento (best quality) > alpaca (free, good) > yfinance (fallback)
+Priority: tradovate > databento > alpaca > csv > yfinance
 """
 
 from __future__ import annotations
@@ -20,10 +20,12 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
 
     Args:
         preference: Provider selection strategy.
-            "auto"      — best available (databento > alpaca > yfinance)
-            "yfinance"  — force Yahoo Finance
-            "alpaca"    — force Alpaca Markets
-            "databento" — force Databento
+            "auto"       — best available (tradovate > databento > alpaca > csv > yfinance)
+            "yfinance"   — force Yahoo Finance
+            "alpaca"     — force Alpaca Markets
+            "databento"  — force Databento
+            "tradovate"  — force Tradovate
+            "csv"        — force CSV file provider
 
     Returns:
         A configured MarketDataProvider instance.
@@ -37,6 +39,18 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         preference = os.getenv("MARKET_DATA_PROVIDER", "auto")
 
     # ── Explicit provider requests ───────────────────────────────────────
+    if preference == "tradovate":
+        from providers.market_data.tradovate_provider import TradovateProvider
+        provider = TradovateProvider()
+        if provider.is_available():
+            log.info("Market data provider: tradovate (explicit)")
+            return provider
+        raise RuntimeError(
+            "Tradovate provider requested but not available — "
+            "check TRADOVATE_USERNAME/PASSWORD/APP_ID/CID or "
+            "TRADOVATE_ACCESS_TOKEN in .env"
+        )
+
     if preference == "databento":
         from providers.market_data.databento_provider import DatabentoProvider
         provider = DatabentoProvider()
@@ -59,6 +73,18 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
             "check ALPACA_API_KEY and ALPACA_SECRET_KEY in .env"
         )
 
+    if preference == "csv":
+        from providers.market_data.csv_provider import CSVProvider
+        provider = CSVProvider()
+        if provider.is_available():
+            log.info("Market data provider: csv (explicit)")
+            return provider
+        raise RuntimeError(
+            "CSV provider requested but not available — "
+            "no .csv files found in state/trading/historical/ "
+            "(or MARKET_DATA_CSV_DIR)"
+        )
+
     if preference == "yfinance":
         from providers.market_data.yfinance_provider import YFinanceProvider
         provider = YFinanceProvider()
@@ -71,7 +97,20 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         )
 
     # ── Auto selection: best available ───────────────────────────────────
-    # 1. Databento (paid, highest quality CME futures data)
+    # 1. Tradovate (free with prop firm account — actual CME futures data)
+    if os.getenv("TRADOVATE_ACCESS_TOKEN") or (
+        os.getenv("TRADOVATE_USERNAME") and os.getenv("TRADOVATE_PASSWORD")
+    ):
+        try:
+            from providers.market_data.tradovate_provider import TradovateProvider
+            provider = TradovateProvider()
+            if provider.is_available():
+                log.info("Market data provider: tradovate (auto)")
+                return provider
+        except Exception as e:
+            log.debug("Tradovate auto-check failed: %s", e)
+
+    # 2. Databento (paid, highest quality CME futures data)
     if os.getenv("DATABENTO_API_KEY"):
         try:
             from providers.market_data.databento_provider import DatabentoProvider
@@ -82,7 +121,7 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         except Exception as e:
             log.debug("Databento auto-check failed: %s", e)
 
-    # 2. Alpaca (free, good quality stock/ETF data with 1m history)
+    # 3. Alpaca (free, good quality stock/ETF data with 1m history)
     if os.getenv("ALPACA_API_KEY") and os.getenv("ALPACA_SECRET_KEY"):
         try:
             from providers.market_data.alpaca_provider import AlpacaProvider
@@ -93,7 +132,17 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         except Exception as e:
             log.debug("Alpaca auto-check failed: %s", e)
 
-    # 3. yfinance (always available, no API key needed)
+    # 4. CSV (local file exports — better quality than yfinance proxies)
+    try:
+        from providers.market_data.csv_provider import CSVProvider
+        provider = CSVProvider()
+        if provider.is_available():
+            log.info("Market data provider: csv (auto)")
+            return provider
+    except Exception as e:
+        log.debug("CSV auto-check failed: %s", e)
+
+    # 5. yfinance (always available, no API key needed)
     from providers.market_data.yfinance_provider import YFinanceProvider
     provider = YFinanceProvider()
     log.info("Market data provider: yfinance (fallback)")

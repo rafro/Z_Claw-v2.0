@@ -39,6 +39,14 @@ ALPACA_API_KEY      = os.getenv("ALPACA_API_KEY", "")
 ALPACA_SECRET_KEY   = os.getenv("ALPACA_SECRET_KEY", "")
 DATABENTO_API_KEY   = os.getenv("DATABENTO_API_KEY", "")
 
+# ── Tradovate (free with MFF/Apex — actual CME futures) ──────────────────────
+TRADOVATE_USERNAME     = os.getenv("TRADOVATE_USERNAME", "")
+TRADOVATE_PASSWORD     = os.getenv("TRADOVATE_PASSWORD", "")
+TRADOVATE_APP_ID       = os.getenv("TRADOVATE_APP_ID", "")
+TRADOVATE_CID          = os.getenv("TRADOVATE_CID", "")
+TRADOVATE_ACCESS_TOKEN = os.getenv("TRADOVATE_ACCESS_TOKEN", "")
+TRADOVATE_DEMO         = os.getenv("TRADOVATE_DEMO", "false").lower() == "true"
+
 # ── Division model routing ────────────────────────────────────────────────────
 # DEPRECATED: Use providers.router.ProviderRouter().get_provider(task_type) instead.
 # This dict is kept for backward compatibility with any code that still imports it.
