@@ -10,6 +10,12 @@ Skills: game-design, balance-audit -> Tier 1 (7B local).
         quest-writer, story-writer -> Tier 1.
         skill-tree-builder, asset-requester -> Tier 1.
         project-init, iteration-runner, data-populate -> Tier 1.
+        game-factory -> Tier 1 (master pipeline, chains all gamedev skills).
+        production-bridge -> Tier 1 (cross-division production wiring).
+        game-runner -> Tier 1 (launch and execute game builds).
+        auto-playtest -> Tier 1 (automated playtesting).
+        visual-qa -> Tier 1 (visual quality assurance).
+        refine-loop -> Tier 1 (iterative refinement pipeline).
         gamedev-digest -> orchestrator synthesis (reads all gamedev packets).
 """
 
@@ -57,6 +63,12 @@ def _synthesize_gamedev_state(
     project_pkt: dict | None = None,
     iteration_pkt: dict | None = None,
     data_pop_pkt: dict | None = None,
+    factory_pkt: dict | None = None,
+    bridge_pkt: dict | None = None,
+    runner_pkt: dict | None = None,
+    playtest_auto_pkt: dict | None = None,
+    visual_qa_pkt: dict | None = None,
+    refine_pkt: dict | None = None,
 ) -> str:
     """
     Cross-skill synthesis: combine all gamedev skill outputs into an executive
@@ -87,6 +99,12 @@ def _synthesize_gamedev_state(
         ("Project Init", project_pkt),
         ("Iteration Runner", iteration_pkt),
         ("Data Populate", data_pop_pkt),
+        ("Game Factory", factory_pkt),
+        ("Production Bridge", bridge_pkt),
+        ("Game Runner", runner_pkt),
+        ("Auto Playtest", playtest_auto_pkt),
+        ("Visual QA", visual_qa_pkt),
+        ("Refine Loop", refine_pkt),
     ]:
         if pkt_data:
             summaries[label] = pkt_data.get("summary", "No data.")
@@ -110,7 +128,9 @@ def _synthesize_gamedev_state(
                 "asset integration, code generation, code review, code testing, build pipeline, "
                 "scene assembly, character design, item forging, enemy design, quest writing, "
                 "story writing, skill tree building, asset requesting, project init, iteration "
-                "running, and data population, write a 2-3 sentence executive summary for Matthew. "
+                "running, data population, the game factory pipeline, production bridging, "
+                "game running, auto-playtesting, visual QA, and refine loops, "
+                "write a 2-3 sentence executive summary for Matthew. "
                 "Highlight: progress on the current game project, any blockers or risks, "
                 "and what the next priority should be. Be direct — no filler."
             ),
@@ -806,6 +826,150 @@ def run_data_populate(**kwargs) -> dict:
     return pkt
 
 
+def run_game_factory(**kwargs) -> dict:
+    """Master pipeline — chains all gamedev skills autonomously."""
+    log.info("=== Game Dev Division: game-factory run ===")
+
+    from runtime.skills import game_factory
+    result = game_factory.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="game-factory",
+        status=result["status"],
+        summary=result.get("summary", "Game factory pipeline complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("game-factory")
+    log.info("Game-factory pipeline complete. Status=%s", result["status"])
+    return pkt
+
+
+def run_production_bridge(**kwargs) -> dict:
+    """Cross-division production wiring — bridges gamedev specs to production assets."""
+    log.info("=== Game Dev Division: production-bridge run ===")
+
+    from runtime.skills import production_bridge
+    result = production_bridge.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="production-bridge",
+        status=result["status"],
+        summary=result.get("summary", "Production bridge complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("production-bridge")
+    log.info("Production-bridge packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_game_runner(**kwargs) -> dict:
+    """Launch and execute game builds for testing."""
+    log.info("=== Game Dev Division: game-runner run ===")
+
+    from runtime.skills import game_runner
+    result = game_runner.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="game-runner",
+        status=result["status"],
+        summary=result.get("summary", "Game runner complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("game-runner")
+    log.info("Game-runner packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_auto_playtest(**kwargs) -> dict:
+    """Automated playtesting — runs game scenarios and captures metrics."""
+    log.info("=== Game Dev Division: auto-playtest run ===")
+
+    from runtime.skills import auto_playtest
+    result = auto_playtest.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="auto-playtest",
+        status=result["status"],
+        summary=result.get("summary", "Auto playtest complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("auto-playtest")
+    log.info("Auto-playtest packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_visual_qa(**kwargs) -> dict:
+    """Visual quality assurance — inspects game screenshots and sprites."""
+    log.info("=== Game Dev Division: visual-qa run ===")
+
+    from runtime.skills import visual_qa
+    result = visual_qa.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="visual-qa",
+        status=result["status"],
+        summary=result.get("summary", "Visual QA complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("visual-qa")
+    log.info("Visual-qa packet written. Status=%s", result["status"])
+    return pkt
+
+
+def run_refine_loop(**kwargs) -> dict:
+    """Iterative refinement pipeline — cycles through generate/test/fix until quality passes."""
+    log.info("=== Game Dev Division: refine-loop run ===")
+
+    from runtime.skills import refine_loop
+    result = refine_loop.run(**kwargs)
+
+    pkt = packet.build(
+        division="gamedev",
+        skill="refine-loop",
+        status=result["status"],
+        summary=result.get("summary", "Refine loop complete."),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("refine-loop")
+    log.info("Refine-loop packet written. Status=%s", result["status"])
+    return pkt
+
+
 def run_gamedev_digest() -> dict:
     """
     Orchestrator synthesis — reads all gamedev skill packets and produces
@@ -836,6 +1000,12 @@ def run_gamedev_digest() -> dict:
     project_pkt    = packet.read_fresh("gamedev", "project-init", 4320)
     iteration_pkt  = packet.read_fresh("gamedev", "iteration-runner", 4320)
     data_pop_pkt   = packet.read_fresh("gamedev", "data-populate", 4320)
+    factory_pkt    = packet.read_fresh("gamedev", "game-factory", 10080)     # weekly
+    bridge_pkt     = packet.read_fresh("gamedev", "production-bridge", 4320)
+    runner_pkt     = packet.read_fresh("gamedev", "game-runner", 4320)
+    playtest_auto_pkt = packet.read_fresh("gamedev", "auto-playtest", 4320)
+    visual_qa_pkt  = packet.read_fresh("gamedev", "visual-qa", 4320)
+    refine_pkt     = packet.read_fresh("gamedev", "refine-loop", 4320)
 
     synthesis = _synthesize_gamedev_state(
         design_pkt, mechanic_pkt, balance_pkt,
@@ -845,6 +1015,8 @@ def run_gamedev_digest() -> dict:
         character_pkt, item_pkt, enemy_pkt, quest_pkt,
         story_pkt, skill_tree_pkt, asset_req_pkt,
         project_pkt, iteration_pkt, data_pop_pkt,
+        factory_pkt, bridge_pkt, runner_pkt,
+        playtest_auto_pkt, visual_qa_pkt, refine_pkt,
     )
 
     # Aggregate escalation signals
@@ -854,7 +1026,9 @@ def run_gamedev_digest() -> dict:
                 build_pkt, scene_pkt,
                 character_pkt, item_pkt, enemy_pkt, quest_pkt,
                 story_pkt, skill_tree_pkt, asset_req_pkt,
-                project_pkt, iteration_pkt, data_pop_pkt]
+                project_pkt, iteration_pkt, data_pop_pkt,
+                factory_pkt, bridge_pkt, runner_pkt,
+                playtest_auto_pkt, visual_qa_pkt, refine_pkt]
     escalate = any(
         p.get("escalate", False) for p in all_pkts if p
     )
@@ -895,6 +1069,12 @@ def run_gamedev_digest() -> dict:
             "has_project_init":       bool(project_pkt),
             "has_iteration_runner":   bool(iteration_pkt),
             "has_data_populate":      bool(data_pop_pkt),
+            "has_game_factory":       bool(factory_pkt),
+            "has_production_bridge":  bool(bridge_pkt),
+            "has_game_runner":        bool(runner_pkt),
+            "has_auto_playtest":      bool(playtest_auto_pkt),
+            "has_visual_qa":          bool(visual_qa_pkt),
+            "has_refine_loop":        bool(refine_pkt),
         },
         escalate=escalate,
         escalation_reason=" | ".join(escalation_reasons) if escalation_reasons else "",

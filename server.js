@@ -371,6 +371,12 @@ const SKILL_XP = {
   'project-init':        { division: 'gamedev',      amount: 10 },
   'iteration-runner':    { division: 'gamedev',      amount: 15 },
   'data-populate':       { division: 'gamedev',      amount:  8 },
+  'game-factory':        { division: 'gamedev',      amount: 50 },
+  'production-bridge':   { division: 'gamedev',      amount: 10 },
+  'game-runner':         { division: 'gamedev',      amount:  8 },
+  'auto-playtest':       { division: 'gamedev',      amount: 12 },
+  'visual-qa':           { division: 'gamedev',      amount: 10 },
+  'refine-loop':         { division: 'gamedev',      amount: 20 },
 };
 
 const PYTHON_EXE = 'C:/Users/Tyler/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe';
@@ -465,6 +471,12 @@ const SKILL_TASK_MAP = {
   'project-init':        { divState: 'gamedev', division: 'gamedev', task: 'project-init'        },
   'iteration-runner':    { divState: 'gamedev', division: 'gamedev', task: 'iteration-runner'    },
   'data-populate':       { divState: 'gamedev', division: 'gamedev', task: 'data-populate'       },
+  'game-factory':        { divState: 'gamedev', division: 'gamedev', task: 'game-factory'        },
+  'production-bridge':   { divState: 'gamedev', division: 'gamedev', task: 'production-bridge'   },
+  'game-runner':         { divState: 'gamedev', division: 'gamedev', task: 'game-runner'         },
+  'auto-playtest':       { divState: 'gamedev', division: 'gamedev', task: 'auto-playtest'       },
+  'visual-qa':           { divState: 'gamedev', division: 'gamedev', task: 'visual-qa'           },
+  'refine-loop':         { divState: 'gamedev', division: 'gamedev', task: 'refine-loop'         },
 };
 
 function rankForLevel(level) {
@@ -2799,6 +2811,12 @@ function handleMobileDivisions(res) {
         project_init:        readPkt('gamedev', 'project-init'),
         iteration_runner:    readPkt('gamedev', 'iteration-runner'),
         data_populate:       readPkt('gamedev', 'data-populate'),
+        game_factory:        readPkt('gamedev', 'game-factory'),
+        production_bridge:   readPkt('gamedev', 'production-bridge'),
+        game_runner:         readPkt('gamedev', 'game-runner'),
+        auto_playtest:       readPkt('gamedev', 'auto-playtest'),
+        visual_qa:           readPkt('gamedev', 'visual-qa'),
+        refine_loop:         readPkt('gamedev', 'refine-loop'),
       },
     });
   } catch(e) {
@@ -4942,6 +4960,30 @@ cron.schedule('0 */12 * * *', async () => {
 // gamedev-digest daily at 9:00 PM
 cron.schedule('0 21 * * *', async () => {
   await runSkillViaPython('gamedev-digest', 'GAMEDEV');
+}, { timezone: TZ });
+
+// game-factory master pipeline — weekly Saturday 04:00
+cron.schedule('0 4 * * 6', async () => {
+  logActivity('GAMEDEV', 'Game Factory master pipeline starting (weekly Saturday)...', 'blue');
+  await runSkillViaPython('game-factory', 'GAMEDEV');
+}, { timezone: TZ });
+
+// Morning design cycle — daily 07:00: game-design → character-designer → enemy-designer → item-forge
+cron.schedule('0 7 * * *', async () => {
+  logActivity('GAMEDEV', 'Morning design cycle starting (design → character → enemy → item)...', 'blue');
+  await runSkillViaPython('game-design', 'GAMEDEV');
+  await runSkillViaPython('character-designer', 'GAMEDEV');
+  await runSkillViaPython('enemy-designer', 'GAMEDEV');
+  await runSkillViaPython('item-forge', 'GAMEDEV');
+}, { timezone: TZ });
+
+// Afternoon code cycle — daily 13:00: code-generate → code-review → code-test → iteration-runner
+cron.schedule('0 13 * * *', async () => {
+  logActivity('GAMEDEV', 'Afternoon code cycle starting (generate → review → test → iterate)...', 'blue');
+  await runSkillViaPython('code-generate', 'GAMEDEV');
+  await runSkillViaPython('code-review', 'GAMEDEV');
+  await runSkillViaPython('code-test', 'GAMEDEV');
+  await runSkillViaPython('iteration-runner', 'GAMEDEV');
 }, { timezone: TZ });
 
 // ── Personal Division — weekly retrospective ─────────────────────────────

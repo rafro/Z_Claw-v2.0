@@ -433,6 +433,12 @@ DIVISIONS = {
             "project-init":        {"xp": 10, "soldier": "The Founder",          "icon": "🏗",  "anim": "forge",   "label": "Lay the Foundation"},
             "iteration-runner":    {"xp": 15, "soldier": "The Iteration Master",  "icon": "🔄", "anim": "circuit", "label": "Run the Gauntlet"},
             "data-populate":       {"xp":  8, "soldier": "The Data Forger",      "icon": "📊", "anim": "circuit", "label": "Forge the Numbers"},
+            "game-factory":        {"xp": 50, "soldier": "The Grand Architect",  "icon": "🏭", "anim": "forge",   "label": "Activate the Factory"},
+            "production-bridge":   {"xp": 10, "soldier": "The Supply Chain",     "icon": "🔗", "anim": "link",    "label": "Bridge the Forge"},
+            "game-runner":         {"xp":  8, "soldier": "The Test Pilot",       "icon": "🎮", "anim": "spark",   "label": "Launch the Engine"},
+            "auto-playtest":       {"xp": 12, "soldier": "The Ghost Player",     "icon": "👻", "anim": "circuit", "label": "Unleash the Ghost"},
+            "visual-qa":           {"xp": 10, "soldier": "The Eye of Quality",   "icon": "👁",  "anim": "scan",    "label": "Inspect the Vision"},
+            "refine-loop":         {"xp": 20, "soldier": "The Perfectionist",    "icon": "🔄", "anim": "circuit", "label": "Refine Until Perfect"},
         },
         "vocabulary": {
             "quest":       "building the world",

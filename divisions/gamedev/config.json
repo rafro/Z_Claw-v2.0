@@ -199,6 +199,54 @@
       "last_run": null,
       "status": "idle",
       "notes": "Run after content design to generate balance data. Populates item tables, enemy stats, XP curves."
+    },
+    "game-factory": {
+      "schedule": "weekly saturday 04:00",
+      "skill": "game-factory",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Master pipeline — chains all gamedev skills autonomously. Runs weekly Saturday 04:00."
+    },
+    "production-bridge": {
+      "schedule": "on_demand",
+      "skill": "production-bridge",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Cross-division wiring — bridges gamedev specs to production asset pipeline."
+    },
+    "game-runner": {
+      "schedule": "on_demand",
+      "skill": "game-runner",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Launches and executes game builds for testing. Supports pygame and godot targets."
+    },
+    "auto-playtest": {
+      "schedule": "on_demand",
+      "skill": "auto-playtest",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Automated playtesting — runs game scenarios, captures metrics, flags issues."
+    },
+    "visual-qa": {
+      "schedule": "on_demand",
+      "skill": "visual-qa",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Visual quality assurance — inspects game screenshots, sprites, and scene renders."
+    },
+    "refine-loop": {
+      "schedule": "on_demand",
+      "skill": "refine-loop",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Iterative refinement pipeline — cycles generate/test/fix until quality passes."
     }
   }
 }

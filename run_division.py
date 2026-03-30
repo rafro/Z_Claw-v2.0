@@ -60,6 +60,12 @@ Usage:
   python run_division.py gamedev project-init godot MyGame
   python run_division.py gamedev iteration-runner '{"system_name":"combat","target":"godot"}'
   python run_division.py gamedev data-populate
+  python run_division.py gamedev game-factory '{"target":"pygame"}'
+  python run_division.py gamedev production-bridge '{"target":"pygame"}'
+  python run_division.py gamedev game-runner pygame
+  python run_division.py gamedev auto-playtest pygame
+  python run_division.py gamedev visual-qa pygame
+  python run_division.py gamedev refine-loop '{"target":"pygame"}'
   python run_division.py sentinel provider-health
   python run_division.py sentinel queue-monitor
   python run_division.py sentinel sentinel-digest
@@ -309,6 +315,8 @@ def run(division: str, task: str, args: list) -> dict:
             run_quest_writer, run_story_writer, run_skill_tree_builder,
             run_asset_requester, run_project_init, run_iteration_runner,
             run_data_populate,
+            run_game_factory, run_production_bridge, run_game_runner,
+            run_auto_playtest, run_visual_qa, run_refine_loop,
         )
         if task == "game-design":
             return run_game_design()
@@ -416,6 +424,33 @@ def run(division: str, task: str, args: list) -> dict:
             return run_iteration_runner(**kwargs)
         if task == "data-populate":
             return run_data_populate()
+        if task == "game-factory":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"target": args[0]}
+            return run_game_factory(**kwargs)
+        if task == "production-bridge":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"target": args[0]}
+            return run_production_bridge(**kwargs)
+        if task == "game-runner":
+            kwargs = {"target": args[0] if args else "pygame"}
+            return run_game_runner(**kwargs)
+        if task == "auto-playtest":
+            kwargs = {"target": args[0] if args else "pygame"}
+            return run_auto_playtest(**kwargs)
+        if task == "visual-qa":
+            kwargs = {"target": args[0] if args else "pygame"}
+            return run_visual_qa(**kwargs)
+        if task == "refine-loop":
+            kwargs = {}
+            if args:
+                try: kwargs = json.loads(args[0])
+                except json.JSONDecodeError: kwargs = {"target": args[0]}
+            return run_refine_loop(**kwargs)
         raise ValueError(f"Unknown task for gamedev: {task}")
 
     # ── Realm Keeper (cross-division, pure Python) ────────────────────────────
