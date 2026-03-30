@@ -33,6 +33,12 @@ MODEL_CODER_7B  = os.getenv("MODEL_CODER_7B",  "qwen2.5-coder:7b-instruct-q4_K_M
 MODEL_CODER_14B = os.getenv("MODEL_CODER_14B", "qwen2.5-coder:14b-instruct-q4_K_M")
 MODEL_14B_HOST  = os.getenv("MODEL_14B_HOST",  "http://localhost:11434")
 
+# ── Market Data Provider ─────────────────────────────────────────────────────
+MARKET_DATA_PROVIDER = os.getenv("MARKET_DATA_PROVIDER", "auto")  # auto, yfinance, alpaca, databento
+ALPACA_API_KEY      = os.getenv("ALPACA_API_KEY", "")
+ALPACA_SECRET_KEY   = os.getenv("ALPACA_SECRET_KEY", "")
+DATABENTO_API_KEY   = os.getenv("DATABENTO_API_KEY", "")
+
 # ── Division model routing ────────────────────────────────────────────────────
 # DEPRECATED: Use providers.router.ProviderRouter().get_provider(task_type) instead.
 # This dict is kept for backward compatibility with any code that still imports it.

@@ -30,7 +30,8 @@ def _load_assets() -> list[dict]:
 
 def _fetch_markets(instruments: list[dict]) -> tuple[list, list[str]]:
     """
-    Fetch daily OHLCV for all instruments via yfinance.
+    Fetch daily OHLCV for all instruments via best available provider.
+    Falls back to yfinance if the provider module is unavailable or fails.
     Returns (market_list, errors).
     Each item: {"name", "ticker", "asset_class", "current_price",
                 "price_change_pct_1d", "total_volume",
@@ -38,41 +39,78 @@ def _fetch_markets(instruments: list[dict]) -> tuple[list, list[str]]:
     """
     results = []
     errors  = []
+
+    # Try the new provider abstraction first
+    provider = None
     try:
-        import yfinance as yf
-        for inst in instruments:
-            name   = inst["name"]
-            ticker = inst["ticker"]
-            try:
-                df = yf.download(ticker, period="5d", interval="1d",
-                                 auto_adjust=False, progress=False)
-                if df.empty or len(df) < 2:
-                    errors.append(f"{name}: no data returned")
-                    continue
-                if hasattr(df.columns, "levels"):
-                    df.columns = df.columns.get_level_values(0)
-                closes  = df["Close"].tolist()
-                volumes = df["Volume"].tolist()
-                current = float(closes[-1])
-                prev    = float(closes[-2])
-                chg_pct = ((current - prev) / prev * 100) if prev else 0.0
-                results.append({
-                    "name":               name,
-                    "ticker":             ticker,
-                    "futures":            inst.get("futures", ""),
-                    "asset_class":        inst.get("asset_class", ""),
-                    "current_price":      round(current, 2),
-                    "price_change_pct_1d": round(chg_pct, 2),
-                    "total_volume":       float(volumes[-1]) if volumes else 0.0,
-                    "notable_move_pct":   inst.get("notable_move_pct", 1.5),
-                    "strong_move_pct":    inst.get("strong_move_pct", 3.0),
-                })
-            except Exception as e:
-                errors.append(f"{name} ({ticker}): {e}")
+        from providers.market_data import get_provider
+        provider = get_provider()
     except ImportError:
-        errors.append("yfinance not installed — run: pip install yfinance pandas")
+        pass  # providers module not available, fall through to yfinance
     except Exception as e:
-        errors.append(f"market fetch error: {e}")
+        log.warning("Market data provider init failed, falling back to yfinance: %s", e)
+
+    for inst in instruments:
+        name   = inst["name"]
+        ticker = inst["ticker"]
+
+        # Attempt provider-based fetch
+        if provider is not None:
+            try:
+                data = provider.fetch_ohlcv(ticker, timeframe="1d")
+                if data and data.get("close") and len(data["close"]) >= 2:
+                    closes  = data["close"]
+                    volumes = data.get("volume", [])
+                    current = float(closes[-1])
+                    prev    = float(closes[-2])
+                    chg_pct = ((current - prev) / prev * 100) if prev else 0.0
+                    results.append({
+                        "name":               name,
+                        "ticker":             ticker,
+                        "futures":            inst.get("futures", ""),
+                        "asset_class":        inst.get("asset_class", ""),
+                        "current_price":      round(current, 2),
+                        "price_change_pct_1d": round(chg_pct, 2),
+                        "total_volume":       float(volumes[-1]) if volumes else 0.0,
+                        "notable_move_pct":   inst.get("notable_move_pct", 1.5),
+                        "strong_move_pct":    inst.get("strong_move_pct", 3.0),
+                    })
+                    continue  # success via provider, skip yfinance
+            except Exception as e:
+                log.warning("Provider fetch failed for %s, falling back to yfinance: %s", name, e)
+
+        # Existing yfinance code as fallback
+        try:
+            import yfinance as yf
+            df = yf.download(ticker, period="5d", interval="1d",
+                             auto_adjust=False, progress=False)
+            if df.empty or len(df) < 2:
+                errors.append(f"{name}: no data returned")
+                continue
+            if hasattr(df.columns, "levels"):
+                df.columns = df.columns.get_level_values(0)
+            closes  = df["Close"].tolist()
+            volumes = df["Volume"].tolist()
+            current = float(closes[-1])
+            prev    = float(closes[-2])
+            chg_pct = ((current - prev) / prev * 100) if prev else 0.0
+            results.append({
+                "name":               name,
+                "ticker":             ticker,
+                "futures":            inst.get("futures", ""),
+                "asset_class":        inst.get("asset_class", ""),
+                "current_price":      round(current, 2),
+                "price_change_pct_1d": round(chg_pct, 2),
+                "total_volume":       float(volumes[-1]) if volumes else 0.0,
+                "notable_move_pct":   inst.get("notable_move_pct", 1.5),
+                "strong_move_pct":    inst.get("strong_move_pct", 3.0),
+            })
+        except ImportError:
+            errors.append("yfinance not installed — run: pip install yfinance pandas")
+            break  # no point trying other instruments
+        except Exception as e:
+            errors.append(f"{name} ({ticker}): {e}")
+
     return results, errors
 
 

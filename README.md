@@ -261,6 +261,7 @@ The `training_manifest.py` module implements hydration-inspired lineage tracking
 | Skills | Python 3.13 (~89 agents across 9 divisions) |
 | Local LLM | Ollama (Qwen2.5 7B / Coder 14B, AMD ROCm/Vulkan) |
 | Cloud LLM | Groq 70B, DeepSeek, Gemini (escalation only) |
+| Market Data | yfinance (free), Alpaca (free 1m), Databento (paid CME futures) |
 | Image/Video | ComfyUI + AnimateDiff-Evolved |
 | Music | HuggingFace MusicGen + torch-directml |
 | Voice | Coqui XTTS v2 |
@@ -331,11 +332,11 @@ The trading division is built for futures prop firm evaluation and funded accoun
 | Loss streak | 5 consecutive | 30-min cooldown, then half size |
 | Contract limits | 5/instrument, 10 total | Clamp or skip entry |
 | Correlation | > 0.80 | Block correlated entries |
-| Per-instrument slippage | SPX=3, Gold=8, Crude=5, Bonds=3 bps | Applied to every fill |
+| Per-instrument slippage | SPX=3, NAS=4, US30=3, Gold=8, Crude=5, Bonds=3 bps | Applied to every fill |
 
 ### Daytrading Support
 - **4x daily execution**: 03:00 (Pre-London), 10:00 (NY Open), 15:00 (NY Afternoon), 18:00 (NY Close)
-- **Multi-timeframe**: Primary timeframe for direction + entry timeframe for timing
+- **Default timeframes**: 1h primary (direction) + 15m entry (timing) — optimized for daytrading
 - **Time-of-day filters**: ny_rth, ny_extended, london, asia sessions + allowed/blocked hours
 - **Session-aware data**: RTH-only bar filtering for cleaner analysis
 
@@ -348,9 +349,21 @@ The trading division is built for futures prop firm evaluation and funded accoun
 | Instrument | Ticker | Futures | Slippage |
 |---|---|---|---|
 | SPX500 | ^GSPC | MES | 3 bps |
+| NAS100 | ^IXIC | MNQ | 4 bps |
+| US30 | ^DJI | MYM | 3 bps |
 | XAUUSD | GC=F | MGC | 8 bps |
 | CRUDE | CL=F | MCL | 5 bps |
 | BONDS | ZN=F | MBT | 3 bps |
+
+### Market Data Providers
+
+| Provider | Resolution | Futures? | Cost | Quality |
+|---|---|---|---|---|
+| **yfinance** (default) | 15m-1d | Proxied via indices | Free | Sufficient for daily strategies |
+| **Alpaca** | 1m-1d | Proxied via ETFs (SPY/QQQ/GLD/DIA) | Free | Best free option for daytrading |
+| **Databento** | 1m-tick | Actual CME futures (MES/MNQ/MGC/MYM) | ~$100-150/mo | Institutional grade |
+
+Provider selection is automatic: databento > alpaca > yfinance. Set `MARKET_DATA_PROVIDER` in `.env` to override. All providers return the same OHLCV format — the trading pipeline doesn't change.
 
 ---
 

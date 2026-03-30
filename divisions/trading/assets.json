@@ -1,9 +1,11 @@
 {
   "_comment": "Instrument registry — diversified for prop firm trading.",
   "instruments": [
-    { "name": "SPX500", "ticker": "^GSPC",  "futures": "MES",  "asset_class": "equity_index", "notable_move_pct": 1.5, "strong_move_pct": 3.0 },
-    { "name": "XAUUSD", "ticker": "GC=F",   "futures": "MGC",  "asset_class": "commodity",    "notable_move_pct": 1.5, "strong_move_pct": 3.0 },
-    { "name": "CRUDE",  "ticker": "CL=F",   "futures": "MCL",  "asset_class": "commodity",    "notable_move_pct": 2.0, "strong_move_pct": 4.0 },
-    { "name": "BONDS",  "ticker": "ZN=F",   "futures": "MBT",  "asset_class": "fixed_income", "notable_move_pct": 0.5, "strong_move_pct": 1.0 }
+    { "name": "SPX500", "ticker": "^GSPC",  "futures": "MES",  "asset_class": "equity_index", "notable_move_pct": 1.5, "strong_move_pct": 3.0, "etf_proxy": "SPY" },
+    { "name": "XAUUSD", "ticker": "GC=F",   "futures": "MGC",  "asset_class": "commodity",    "notable_move_pct": 1.5, "strong_move_pct": 3.0, "etf_proxy": "GLD" },
+    { "name": "NAS100", "ticker": "^IXIC",  "futures": "MNQ",  "exchange": "CME", "asset_class": "equity_index", "notable_move_pct": 1.5, "strong_move_pct": 3.0, "slippage_bps": 4, "session": "ny_extended", "etf_proxy": "QQQ", "notes": "Micro Nasdaq 100 — tech-heavy, higher volatility than SPX" },
+    { "name": "US30",   "ticker": "^DJI",   "futures": "MYM",  "exchange": "CME", "asset_class": "equity_index", "notable_move_pct": 1.5, "strong_move_pct": 3.0, "slippage_bps": 3, "session": "ny_extended", "etf_proxy": "DIA", "notes": "Micro Dow Jones — 30 blue chips, lower beta than NAS100" },
+    { "name": "CRUDE",  "ticker": "CL=F",   "futures": "MCL",  "asset_class": "commodity",    "notable_move_pct": 2.0, "strong_move_pct": 4.0, "etf_proxy": "USO" },
+    { "name": "BONDS",  "ticker": "ZN=F",   "futures": "MBT",  "asset_class": "fixed_income", "notable_move_pct": 0.5, "strong_move_pct": 1.0, "etf_proxy": "TLT" }
   ]
 }

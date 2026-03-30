@@ -10,6 +10,7 @@ import math
 import random
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from runtime.tools.trading import load_cycle_state, load_active_strategy
 
@@ -17,6 +18,41 @@ log = logging.getLogger(__name__)
 
 PACKET_PATH = Path("divisions/trading/packets/backtester.json")
 OOS_MIN_TRADES = 50
+
+
+def _fetch_historical_ohlcv(ticker: str, timeframe: str = "1d",
+                             start: str = None) -> Optional[dict]:
+    """
+    Fetch historical OHLCV via best available market data provider.
+    Falls back to virtual_account's fetch_ohlcv (which itself falls back to yfinance).
+
+    Args:
+        ticker:    Symbol (e.g. "^GSPC", "GC=F").
+        timeframe: Bar size — "15m", "1h", "4h", "1d".
+        start:     ISO date string for history start (e.g. "2024-01-01").
+    """
+    # Try the new provider abstraction first
+    try:
+        from providers.market_data import get_provider
+        provider = get_provider()
+        result = provider.fetch_ohlcv(ticker, timeframe=timeframe, start=start)
+        if result:
+            return result
+    except ImportError:
+        pass  # providers module not available, fall through
+    except Exception as e:
+        log.warning("Market data provider failed for backtester, falling back: %s", e)
+
+    # Fall back to virtual_account's fetch_ohlcv (which itself falls back to yfinance)
+    try:
+        from runtime.tools.virtual_account import fetch_ohlcv
+        return fetch_ohlcv(ticker, timeframe=timeframe)
+    except ImportError:
+        log.warning("virtual_account.fetch_ohlcv not available")
+        return None
+    except Exception as e:
+        log.warning("fetch_ohlcv fallback failed: %s", e)
+        return None
 
 
 def run() -> dict:

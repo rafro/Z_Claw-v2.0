@@ -27,7 +27,7 @@ def _load_instruments() -> dict[str, str]:
         return {inst["name"]: inst["ticker"] for inst in data.get("instruments", [])}
     except Exception as e:
         log.warning("Could not load assets.json (%s) — using fallback instruments", e)
-        return {"SPX500": "^GSPC", "XAUUSD": "GC=F"}
+        return {"SPX500": "^GSPC", "XAUUSD": "GC=F", "NAS100": "^IXIC", "US30": "^DJI"}
 
 
 INSTRUMENTS = _load_instruments()
@@ -56,6 +56,8 @@ INSTRUMENT_SLIPPAGE_BPS = {
     "XAUUSD": 8,
     "CRUDE":  5,
     "BONDS":  3,
+    "NAS100": 4,
+    "US30":   3,
 }
 
 # Diversified pairwise correlations — all below 0.80 threshold
@@ -63,9 +65,18 @@ INSTRUMENT_CORRELATIONS = {
     ("SPX500", "XAUUSD"): -0.15,
     ("SPX500", "CRUDE"):   0.40,
     ("SPX500", "BONDS"):  -0.30,
+    ("SPX500", "NAS100"):  0.92,
+    ("SPX500", "US30"):    0.95,
     ("XAUUSD", "CRUDE"):   0.25,
     ("XAUUSD", "BONDS"):   0.20,
     ("CRUDE",  "BONDS"):  -0.15,
+    ("NAS100", "US30"):    0.90,
+    ("NAS100", "XAUUSD"): -0.10,
+    ("NAS100", "CRUDE"):   0.35,
+    ("NAS100", "BONDS"):  -0.25,
+    ("US30",   "XAUUSD"): -0.12,
+    ("US30",   "CRUDE"):   0.38,
+    ("US30",   "BONDS"):  -0.28,
 }
 MAX_PORTFOLIO_CORRELATION = 0.80
 
@@ -200,7 +211,9 @@ def _resample_4h(ohlcv: dict) -> dict:
 
 def fetch_ohlcv(ticker: str, timeframe: str = "1d", session: str = "all") -> Optional[dict]:
     """
-    Fetch OHLCV via yfinance for the given timeframe (15m, 1h, 4h, 1d).
+    Fetch OHLCV via best available market data provider.
+    Falls back to yfinance if the provider module is unavailable or fails.
+
     4h is fetched as 1h then resampled. Returns dict with lists:
     date, open, high, low, close, volume.
 
@@ -214,6 +227,19 @@ def fetch_ohlcv(ticker: str, timeframe: str = "1d", session: str = "all") -> Opt
                    "london"   — London session 08:00-16:30 UTC.
                    Ignored for daily ("1d") timeframe.
     """
+    # Try the new provider abstraction first
+    try:
+        from providers.market_data import get_provider
+        provider = get_provider()
+        result = provider.fetch_ohlcv(ticker, timeframe=timeframe, session=session)
+        if result:
+            return result
+    except ImportError:
+        pass  # providers module not available, fall through to yfinance
+    except Exception as e:
+        log.warning("Market data provider failed, falling back to yfinance: %s", e)
+
+    # Existing yfinance code as fallback
     yf_interval, yf_period = _TF_MAP.get(timeframe, ("1d", "3mo"))
     try:
         import yfinance as yf

@@ -112,6 +112,8 @@ def _build_prompt(
         "You generate structured JSON strategy schemas that are machine-parseable. "
         "Target: prop firm compliant strategies with max 8% Monte Carlo drawdown and "
         "profit factor between 2.0 and 4.0.\n\n"
+        "Focus on DAYTRADING strategies using intraday timeframes (1h primary, 15m entry). "
+        "Every strategy MUST include entry_timeframe for multi-timeframe confirmation.\n\n"
         "Available instruments: " + inst_names + "\n\n"
         "IMPORTANT: Respond with ONLY a JSON object. No markdown, no explanation."
     )
@@ -119,7 +121,7 @@ def _build_prompt(
     user_content = (
         f"Generate exactly {num_strategies} diverse trading strategies as JSON.\n\n"
         f"Schema requirements for each strategy:\n"
-        f"- id: unique string (e.g. 'strat_bb_rsi_1d_001')\n"
+        f"- id: unique string (e.g. 'strat_bb_rsi_1h_001')\n"
         f"- name: descriptive human-readable name\n"
         f"- primary_indicator: one of {json.dumps(INDICATOR_TYPES)}\n"
         f"- confirmation: object with 'type' (one of {json.dumps(CONFIRMATION_TYPES)}) "
@@ -132,8 +134,8 @@ def _build_prompt(
         f"'atr_multiple' (float, e.g. 1.5-3.0), 'max_pct' (float, e.g. 0.02)\n"
         f"- metadata: object with:\n"
         f"  - timeframe: primary timeframe, one of {json.dumps(TIMEFRAMES)} (default '{timeframe}')\n"
-        f"  - entry_timeframe: (optional) lower timeframe for entry timing (multi-timeframe)\n"
-        f"    Example: timeframe='1d' for direction, entry_timeframe='1h' for timing\n"
+        f"  - entry_timeframe: lower timeframe for entry timing (multi-timeframe, REQUIRED)\n"
+        f"    Example: timeframe='1h' for direction, entry_timeframe='15m' for timing\n"
         f"  - direction: one of {json.dumps(DIRECTIONS)}\n"
         f"  - session: one of {json.dumps(SESSIONS)} (when to fetch data)\n"
         f"  - allowed_sessions: (optional) list from {json.dumps(ALLOWED_SESSIONS)} "
@@ -143,7 +145,7 @@ def _build_prompt(
         f"Design constraints:\n"
         f"- Max 8% Monte Carlo drawdown\n"
         f"- Profit factor target: 2.0-4.0\n"
-        f"- At least 1 strategy should use multi-timeframe (daily direction + hourly entry)\n"
+        f"- ALL strategies should use multi-timeframe (1h direction + 15m entry preferred)\n"
         f"- At least 1 strategy should use an intermarket confirmation\n"
         f"- Diverse indicator mix — avoid duplicating primary_indicator types\n\n"
         f"Respond with: {{\"strategies\": [...]}}"
@@ -245,7 +247,7 @@ def _ensure_id(strat: dict) -> dict:
     """Ensure strategy has a unique ID."""
     if not strat.get("id"):
         indicator = strat.get("primary_indicator", "unknown")
-        tf = strat.get("metadata", {}).get("timeframe", "1d")
+        tf = strat.get("metadata", {}).get("timeframe", "1h")
         strat["id"] = f"strat_{indicator}_{tf}_{uuid.uuid4().hex[:6]}"
     return strat
 
@@ -259,8 +261,8 @@ def _generate_fallback_strategies() -> list[dict]:
     """
     return [
         {
-            "id": "strat_bb_atr_1d_tpl01",
-            "name": "Bollinger Band Squeeze Reversal — Daily",
+            "id": "strat_bb_atr_1h_tpl01",
+            "name": "Bollinger Band Squeeze Reversal — Hourly/15m Entry",
             "primary_indicator": "bollinger_bands",
             "confirmation": {
                 "type": "atr_expansion",
@@ -269,9 +271,9 @@ def _generate_fallback_strategies() -> list[dict]:
             "entry": {
                 "trigger": "price_touch_band",
                 "conditions": [
-                    "price touches lower Bollinger band",
+                    "price touches lower Bollinger band on 1h",
                     "ATR expanding above 5-bar average",
-                    "close above lower band on signal bar",
+                    "15m close above lower band confirms entry",
                 ],
             },
             "exit": {
@@ -288,7 +290,8 @@ def _generate_fallback_strategies() -> list[dict]:
                 "max_pct": 0.02,
             },
             "metadata": {
-                "timeframe": "1d",
+                "timeframe": "1h",
+                "entry_timeframe": "15m",
                 "direction": "long",
                 "session": "rth",
                 "allowed_sessions": ["ny_rth"],
@@ -325,8 +328,10 @@ def _generate_fallback_strategies() -> list[dict]:
             },
             "metadata": {
                 "timeframe": "4h",
+                "entry_timeframe": "15m",
                 "direction": "both",
-                "session": "all",
+                "session": "rth",
+                "allowed_sessions": ["ny_rth", "london"],
             },
         },
         {
@@ -367,9 +372,9 @@ def _generate_fallback_strategies() -> list[dict]:
             },
         },
         {
-            # Multi-timeframe: daily direction + hourly entry
+            # Multi-timeframe: 1h direction + 15m entry
             "id": "strat_ema_stoch_mtf_tpl04",
-            "name": "Daily EMA Direction + Hourly Stochastic Entry (Multi-TF)",
+            "name": "Hourly EMA Direction + 15m Stochastic Entry (Multi-TF)",
             "primary_indicator": "ema_above_price",
             "confirmation": {
                 "type": "stochastic",
@@ -378,17 +383,17 @@ def _generate_fallback_strategies() -> list[dict]:
             "entry": {
                 "trigger": "pullback_to_level",
                 "conditions": [
-                    "daily: price above EMA50 (bullish bias)",
-                    "hourly: stochastic %K crosses above %D from below 20",
-                    "hourly: price pulls back to EMA20 on entry timeframe",
+                    "1h: price above EMA50 (bullish bias)",
+                    "15m: stochastic %K crosses above %D from below 20",
+                    "15m: price pulls back to EMA20 on entry timeframe",
                 ],
             },
             "exit": {
                 "trigger": "target_r_multiple",
                 "target_r": 3.0,
                 "conditions": [
-                    "stochastic %K above 80",
-                    "or daily EMA direction reversal",
+                    "stochastic %K above 80 on 15m",
+                    "or 1h EMA direction reversal",
                     "or target R-multiple hit",
                 ],
             },
@@ -398,8 +403,8 @@ def _generate_fallback_strategies() -> list[dict]:
                 "max_pct": 0.02,
             },
             "metadata": {
-                "timeframe": "1d",
-                "entry_timeframe": "1h",
+                "timeframe": "1h",
+                "entry_timeframe": "15m",
                 "direction": "long",
                 "session": "rth",
                 "allowed_sessions": ["ny_rth"],
@@ -408,8 +413,8 @@ def _generate_fallback_strategies() -> list[dict]:
         },
         {
             # Intermarket strategy
-            "id": "strat_rsi_intermarket_1d_tpl05",
-            "name": "RSI with Gold-SPX Intermarket Divergence — Daily",
+            "id": "strat_rsi_intermarket_1h_tpl05",
+            "name": "RSI with Gold-SPX Intermarket Divergence — Hourly",
             "primary_indicator": "rsi",
             "confirmation": {
                 "type": "intermarket_divergence",
@@ -423,9 +428,10 @@ def _generate_fallback_strategies() -> list[dict]:
             "entry": {
                 "trigger": "momentum_shift",
                 "conditions": [
-                    "RSI crosses above 30 from oversold",
+                    "RSI crosses above 30 from oversold on 1h",
                     "XAUUSD showing strength (rising) while SPX500 oversold",
                     "intermarket divergence detected in last 10 bars",
+                    "15m confirms momentum shift with rising close",
                 ],
             },
             "exit": {
@@ -443,9 +449,11 @@ def _generate_fallback_strategies() -> list[dict]:
                 "max_pct": 0.025,
             },
             "metadata": {
-                "timeframe": "1d",
+                "timeframe": "1h",
+                "entry_timeframe": "15m",
                 "direction": "long",
-                "session": "all",
+                "session": "rth",
+                "allowed_sessions": ["ny_rth", "london"],
             },
         },
     ]
@@ -455,7 +463,7 @@ def _generate_fallback_strategies() -> list[dict]:
 
 def run(
     num_strategies: int = 5,
-    timeframe: str = "1d",
+    timeframe: str = "1h",
     feedback: Optional[dict] = None,
     retired_patterns: Optional[list] = None,
 ) -> dict:

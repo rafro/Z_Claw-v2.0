@@ -23,5 +23,9 @@ pandas>=2.0.0
 # torch-directml>=0.2.0       # AMD GPU acceleration (Windows only)
 # TTS>=0.22.0                  # Coqui XTTS v2 voice synthesis
 
+# Market data — better than yfinance for daytrading backtesting
+# alpaca-py>=0.20.0              # Free 1-min stock/ETF data (unlimited history)
+# databento>=0.30.0              # Paid CME futures data (institutional quality)
+
 # Dev / testing
 pytest>=9.0.0

@@ -427,7 +427,7 @@ def _projected_monthly_pct(trades: list[dict], total_bars: int) -> float:
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-def run(strategies: list, timeframe: str = "1d", min_trades: int = 100) -> dict:
+def run(strategies: list, timeframe: str = "1h", min_trades: int = 100) -> dict:
     """
     Backtest each strategy against historical data for all 4 instruments.
 
