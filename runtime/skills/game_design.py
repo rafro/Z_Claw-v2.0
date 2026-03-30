@@ -17,6 +17,70 @@ MODEL = MODEL_7B
 GDD_DIR = STATE_DIR / "gamedev"
 GDD_FILE = GDD_DIR / "gdd.json"
 
+GENRE_TEMPLATES = {
+    "roguelike": {
+        "core_loop": "Enter dungeon → explore rooms → fight enemies → collect loot → die → restart with meta-progression",
+        "mechanics": [
+            {"name": "procedural_generation", "description": "Randomly generated dungeon layouts each run"},
+            {"name": "permadeath", "description": "Death is permanent — restart from beginning"},
+            {"name": "meta_progression", "description": "Unlock permanent upgrades between runs"},
+            {"name": "loot_system", "description": "Random item drops with rarity tiers"},
+        ],
+        "progression": {"type": "meta", "currency": "souls", "unlocks": ["characters", "items", "abilities"]},
+        "art_style": "pixel art, dark fantasy",
+        "target_platform": "PC",
+    },
+    "platformer": {
+        "core_loop": "Navigate levels → avoid hazards → defeat enemies → reach goal → unlock next level",
+        "mechanics": [
+            {"name": "jumping", "description": "Variable-height jump with coyote time"},
+            {"name": "wall_sliding", "description": "Slide down walls and wall-jump"},
+            {"name": "dash", "description": "Short burst of speed with cooldown"},
+            {"name": "collectibles", "description": "Coins and power-ups scattered through levels"},
+        ],
+        "progression": {"type": "linear", "levels": 20, "worlds": 4},
+        "art_style": "pixel art, vibrant colors",
+        "target_platform": "PC",
+    },
+    "rpg": {
+        "core_loop": "Explore world → accept quests → fight enemies → gain XP → level up → equip gear",
+        "mechanics": [
+            {"name": "turn_based_combat", "description": "Party-based combat with action queue"},
+            {"name": "party_management", "description": "Recruit and manage a party of 4"},
+            {"name": "equipment", "description": "Weapons, armor, accessories with stat bonuses"},
+            {"name": "crafting", "description": "Combine materials into items and equipment"},
+            {"name": "dialogue_choices", "description": "Branching dialogue affecting story and relationships"},
+        ],
+        "progression": {"type": "xp_levels", "max_level": 50, "classes": ["warrior", "mage", "rogue", "healer"]},
+        "art_style": "pixel art, fantasy",
+        "target_platform": "PC",
+    },
+    "action": {
+        "core_loop": "Fight enemies → dodge attacks → use abilities → defeat boss → progress to next area",
+        "mechanics": [
+            {"name": "real_time_combat", "description": "Fast-paced combat with combos and dodging"},
+            {"name": "abilities", "description": "Unlockable special attacks with cooldowns"},
+            {"name": "dodge_roll", "description": "Invincibility-frame dodge with stamina cost"},
+            {"name": "boss_fights", "description": "Multi-phase boss encounters with patterns to learn"},
+        ],
+        "progression": {"type": "ability_unlock", "areas": 5},
+        "art_style": "pixel art, action-oriented",
+        "target_platform": "PC",
+    },
+    "puzzle": {
+        "core_loop": "Observe puzzle → experiment with mechanics → solve puzzle → unlock next",
+        "mechanics": [
+            {"name": "block_pushing", "description": "Push blocks onto switches to open doors"},
+            {"name": "light_manipulation", "description": "Redirect beams of light using mirrors"},
+            {"name": "gravity_switching", "description": "Toggle gravity direction"},
+            {"name": "time_rewind", "description": "Rewind time to undo mistakes"},
+        ],
+        "progression": {"type": "linear", "chapters": 6, "puzzles_per_chapter": 10},
+        "art_style": "minimalist, clean lines",
+        "target_platform": "PC",
+    },
+}
+
 
 def _load_gdd() -> dict:
     """Load the current game design document state, or return empty scaffold."""
@@ -66,6 +130,20 @@ def run(**kwargs) -> dict:
 
     if genre and not gdd.get("genre"):
         gdd["genre"] = genre
+
+    # If genre matches a template and GDD is mostly empty, apply template
+    if gdd.get("genre") and gdd["genre"].lower() in GENRE_TEMPLATES:
+        template = GENRE_TEMPLATES[gdd["genre"].lower()]
+        if not gdd.get("core_loop"):
+            gdd["core_loop"] = template.get("core_loop", "")
+        if not gdd.get("mechanics"):
+            gdd["mechanics"] = template.get("mechanics", [])
+        if not gdd.get("progression"):
+            gdd["progression"] = template.get("progression", {})
+        if not gdd.get("art_style"):
+            gdd["art_style"] = template.get("art_style", "")
+        if not gdd.get("target_platform"):
+            gdd["target_platform"] = template.get("target_platform", "")
 
     # Build context from existing GDD
     gdd_context = ""

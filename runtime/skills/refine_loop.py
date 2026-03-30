@@ -854,6 +854,54 @@ def run(**kwargs) -> dict:
             )
             break
 
+    # ── Save lessons learned for future code-generate runs ──────────────
+    if total_issues_fixed > 0:
+        lessons_file = GAMEDEV_DIR / "lessons-learned.json"
+        existing_lessons: list[dict] = []
+        if lessons_file.exists():
+            try:
+                with open(lessons_file, encoding="utf-8") as f:
+                    existing_lessons = json.load(f)
+            except Exception:
+                pass
+
+        new_lessons: list[dict] = []
+        for iter_entry in iteration_log:
+            for detail in iter_entry.get("fix_details", []):
+                if detail.get("result") == "applied":
+                    new_lessons.append({
+                        "system": detail.get("file", "unknown"),
+                        "issue": f"{detail.get('issues_count', 0)} issue(s) fixed in {detail.get('file', 'unknown')}",
+                        "source": "refine-loop",
+                        "severity": "fixed",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+
+        # Also capture the original issue descriptions from the feedback
+        # by re-reading the last batch of extracted issues
+        try:
+            last_feedback = _read_all_feedback()
+            last_issues = _extract_all_issues(last_feedback)
+            for iss in last_issues:
+                if iss.get("description"):
+                    new_lessons.append({
+                        "system": iss.get("file_path", "unknown"),
+                        "issue": iss.get("description", ""),
+                        "source": iss.get("source", "unknown"),
+                        "severity": iss.get("severity", "unknown"),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+        except Exception:
+            pass
+
+        # Keep last 50 lessons to avoid unbounded growth
+        all_lessons = (existing_lessons + new_lessons)[-50:]
+        try:
+            with open(lessons_file, "w", encoding="utf-8") as f:
+                json.dump(all_lessons, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            log.warning("Failed to save lessons-learned: %s", e)
+
     # ── Build result ─────────────────────────────────────────────────────
     iterations_run = len(iteration_log)
     if initial_score is None:

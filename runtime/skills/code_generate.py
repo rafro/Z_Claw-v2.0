@@ -191,6 +191,20 @@ def run(**kwargs) -> dict:
     if description:
         user_parts.append(f"Additional requirements: {description}")
 
+    # Load lessons from previous refine-loop runs
+    lessons_file = GAMEDEV_DIR / "lessons-learned.json"
+    if lessons_file.exists():
+        try:
+            with open(lessons_file, encoding="utf-8") as f:
+                all_lessons = json.load(f)
+            # Filter to lessons relevant to this system
+            relevant = [l for l in all_lessons if system_name and system_name.lower() in l.get("system", "").lower()]
+            if relevant:
+                lessons_text = "\n".join(f"- {l['issue']}" for l in relevant[-5:])  # Last 5 relevant
+                user_parts.append(f"\nPast issues to avoid (from previous builds):\n{lessons_text}")
+        except Exception:
+            pass  # Lessons file is optional
+
     user_prompt = "\n\n".join(user_parts)
     system_prompt = _build_system_prompt(target)
 

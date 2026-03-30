@@ -1,6 +1,6 @@
 """
 game-factory skill — Master pipeline that autonomously creates a game from scratch.
-Chains all 23 gamedev skills in 5 stages: Design -> Specs -> Assets -> Code -> Ship.
+Chains gamedev skills in 6 stages: Preflight -> Design -> Specs -> Assets -> Code -> Ship.
 Each stage gates on critical failure. Pipeline state saved for resume capability.
 Tier 1 for synthesis, Tier 0 for orchestration logic.
 """
@@ -20,10 +20,11 @@ from runtime.orchestrators.gamedev import (
     run_enemy_designer, run_item_forge, run_quest_writer,
     run_skill_tree_builder, run_tech_spec, run_mechanic_prototype,
     run_level_design, run_data_populate, run_balance_audit,
-    run_asset_requester, run_asset_integration,
+    run_asset_requester, run_production_bridge, run_asset_integration,
     run_project_init, run_code_generate, run_code_review,
     run_code_test, run_iteration_runner, run_scene_assemble,
-    run_build_pipeline, run_gamedev_digest,
+    run_build_pipeline, run_game_runner, run_auto_playtest,
+    run_refine_loop, run_gamedev_digest,
 )
 
 log = logging.getLogger(__name__)
@@ -38,9 +39,55 @@ RUNS_PATH = FACTORY_DIR / "factory-runs.jsonl"
 # Each skill_step is (label, callable, kwargs_override | None)
 # ---------------------------------------------------------------------------
 
-STAGE_NAMES = ("DESIGN", "SPECS", "ASSETS", "CODE", "SHIP")
+STAGE_NAMES = ("PREFLIGHT", "DESIGN", "SPECS", "ASSETS", "CODE", "SHIP")
 
 _SENTINEL = object()  # used for deferred kwargs that depend on run() args
+
+
+def _run_preflight(target="pygame", **kwargs):
+    """Stage 0: Verify environment before starting the pipeline."""
+    from runtime.ollama_client import is_available
+    from runtime.config import MODEL_7B, OLLAMA_HOST
+    import shutil
+
+    checks = {}
+    issues = []
+
+    # Check Ollama
+    ollama_ok = is_available(MODEL_7B, host=OLLAMA_HOST)
+    checks["ollama"] = ollama_ok
+    if not ollama_ok:
+        issues.append("Ollama not available — LLM skills will return degraded results")
+
+    # Check target engine
+    if target == "godot":
+        godot_ok = shutil.which("godot") is not None
+        checks["godot"] = godot_ok
+        if not godot_ok:
+            issues.append("Godot binary not found in PATH — game-runner and build-pipeline will skip Godot features")
+
+    # Check state directory writable
+    try:
+        test_file = STATE_DIR / "gamedev" / ".preflight-test"
+        test_file.parent.mkdir(parents=True, exist_ok=True)
+        test_file.write_text("ok")
+        test_file.unlink()
+        checks["state_writable"] = True
+    except Exception:
+        checks["state_writable"] = False
+        issues.append("Cannot write to state/gamedev/ directory")
+
+    status = "success" if not issues else "partial"
+    escalate = not checks.get("state_writable", True)  # Only escalate if can't write state
+
+    return {
+        "status": status,
+        "summary": f"Preflight: {len(checks) - len(issues)}/{len(checks)} checks passed." + (f" Issues: {'; '.join(issues)}" if issues else ""),
+        "metrics": checks,
+        "escalate": escalate,
+        "escalation_reason": "; ".join(issues) if escalate else "",
+        "action_items": [{"priority": "high", "description": issue} for issue in issues],
+    }
 
 
 def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | None]]]]:
@@ -49,7 +96,24 @@ def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | No
     (stage_name, [(step_label, callable, extra_kwargs | None), ...]).
     `target` is threaded into steps that need it.
     """
+    # Build code-generate steps from tech specs
+    code_gen_steps = []
+    specs_dir = STATE_DIR / "gamedev" / "tech-specs"
+    if specs_dir.exists():
+        spec_files = sorted(specs_dir.glob("*.json"))
+        if spec_files:
+            for spec_file in spec_files:
+                system_name = spec_file.stem
+                code_gen_steps.append(
+                    (f"code-generate:{system_name}", run_code_generate, {"system_name": system_name, "target": target})
+                )
+    if not code_gen_steps:
+        code_gen_steps = [("code-generate", run_code_generate, {"target": target})]
+
     return [
+        ("PREFLIGHT", [
+            ("preflight-check", _run_preflight, {"target": target}),
+        ]),
         ("DESIGN", [
             ("game-design",        run_game_design,        None),
             ("story-writer",       run_story_writer,       {"section": "overview"}),
@@ -67,12 +131,13 @@ def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | No
             ("balance-audit",       run_balance_audit,       None),
         ]),
         ("ASSETS", [
-            ("asset-requester",    run_asset_requester,    None),
-            ("asset-integration",  run_asset_integration,  None),
+            ("asset-requester",     run_asset_requester,     None),
+            ("production-bridge",   run_production_bridge,   None),
+            ("asset-integration",   run_asset_integration,   None),
         ]),
         ("CODE", [
             ("project-init",      run_project_init,      {"target": target}),
-            ("code-generate",     run_code_generate,     None),
+            *code_gen_steps,
             ("code-review",       run_code_review,       None),
             ("code-test-gen",     run_code_test,         {"action": "generate"}),
             ("code-test-run",     run_code_test,         {"action": "run"}),
@@ -81,6 +146,9 @@ def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | No
         ]),
         ("SHIP", [
             ("build-pipeline",    run_build_pipeline,    {"action": "package", "target": target}),
+            ("game-runner",       run_game_runner,       {"target": target}),
+            ("auto-playtest",     run_auto_playtest,     {"target": target}),
+            ("refine-loop",       run_refine_loop,       {"target": target}),
             ("gamedev-digest",    run_gamedev_digest,    None),
         ]),
     ]
@@ -94,6 +162,7 @@ _DEFAULT_CONFIG: dict[str, Any] = {
     "default_target": "pygame",
     "max_retries_per_skill": 1,
     "halt_on_critical": True,
+    "production_bridge_enabled": True,
     "created_at": None,  # filled on first write
 }
 
