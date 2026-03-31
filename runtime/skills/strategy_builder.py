@@ -65,7 +65,7 @@ EXIT_TRIGGERS = [
     "indicator_reversal",
 ]
 
-TIMEFRAMES = ["15m", "1h", "4h", "1d"]
+TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"]
 DIRECTIONS = ["long", "short", "both"]
 SESSIONS = ["rth", "extended", "london", "all"]
 ALLOWED_SESSIONS = ["ny_rth", "london", "asia"]
