@@ -301,6 +301,7 @@ const SKILL_XP = {
   'dev-digest':         { division: 'dev_automation', amount:  5 },
   'auto-fix':           { division: 'dev_automation', amount: 15 },
   'ci-runner':          { division: 'dev_automation', amount:  5 },
+  'regression-guard':   { division: 'dev_automation', amount:  8 },
   'dev-pipeline':       { division: 'dev_automation', amount: 10 },
   // Personal — The Ember Covenant
   'health-logger':      { division: 'personal',       amount: 15 },
@@ -409,6 +410,7 @@ const SKILL_TASK_MAP = {
   'dev-digest':       { divState: 'dev_automation', division: 'dev-automation', task: 'dev-digest'       },
   'auto-fix':         { divState: 'dev_automation', division: 'dev-automation', task: 'auto-fix'         },
   'ci-runner':        { divState: 'dev_automation', division: 'dev-automation', task: 'ci-runner'        },
+  'regression-guard': { divState: 'dev_automation', division: 'dev-automation', task: 'regression-guard' },
   // OP-Sec Division
   'mobile-audit-review': { divState: 'op_sec', division: 'op-sec', task: 'mobile-audit-review' },
   'device-posture':   { divState: 'op_sec', division: 'op-sec', task: 'device-posture'  },
@@ -2734,6 +2736,7 @@ function handleMobileDivisions(res) {
         artifact_manager: readPkt('dev-automation', 'artifact-manager'),
         auto_fix:    readPkt('dev-automation', 'auto-fix'),
         ci_runner:   readPkt('dev-automation', 'ci-runner'),
+        regression_guard: readPkt('dev-automation', 'regression-guard'),
       },
       op_sec: {
         device_posture:  readPkt('op-sec', 'device-posture'),
@@ -3082,6 +3085,7 @@ function handleMobileBattlesToday(res) {
       'dev-digest':          { label: 'Codex Report',         soldier: 'The Chronicler',        icon: '◉', anim: 'circuit' },
       'auto-fix':            { label: 'Auto-Forge the Fix',  soldier: 'The Auto Smith',        icon: '🔧', anim: 'circuit' },
       'ci-runner':           { label: 'Validate the Change', soldier: 'The Gate Keeper',       icon: '✓',  anim: 'circuit' },
+      'regression-guard':    { label: 'Guard the Codex',      soldier: 'The Sentinel Smith',    icon: '🛡', anim: 'shield'  },
       'dev-pipeline':        { label: 'Lay the Foundation',   soldier: 'The Architect',         icon: '⬢', anim: 'circuit' },
       // Nullward Circle (op_sec)
       'device-posture':      { label: 'Inspect the Veil',     soldier: 'The Posture Guard',     icon: '⬡', anim: 'shield'  },
@@ -4715,6 +4719,7 @@ async function processControlQueue() {
       'dev-digest':       'DEV',
       'auto-fix':         'DEV_AUTO',
       'ci-runner':        'DEV_AUTO',
+      'regression-guard': 'DEV_AUTO',
       'device-posture':   'OP_SEC',
       'breach-check':     'OP_SEC',
       'threat-surface':   'OP_SEC',

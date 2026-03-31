@@ -75,6 +75,14 @@
       "last_run": null,
       "status": "idle",
       "notes": "Validates code changes with syntax check + pytest. Called by auto-fix after applying changes."
+    },
+    "regression-guard": {
+      "schedule": "on_demand",
+      "skill": "regression-guard",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Checks for accidentally removed functions/classes before auto-fix commits. Called automatically by auto-fix."
     }
   }
 }

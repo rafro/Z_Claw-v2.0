@@ -196,6 +196,7 @@ DIVISIONS = {
             "dev-digest":       {"xp":  5, "soldier": "The Chronicler",       "icon": "◉", "anim": "circuit", "label": "Codex Report"},
             "auto-fix":         {"xp": 15, "soldier": "The Auto Smith",       "icon": "🔧", "anim": "circuit", "label": "Auto-Forge the Fix"},
             "ci-runner":        {"xp":  5, "soldier": "The Gate Keeper",      "icon": "✓",  "anim": "circuit", "label": "Validate the Change"},
+            "regression-guard": {"xp": 8, "soldier": "The Sentinel Smith", "icon": "🛡", "anim": "shield", "label": "Guard the Codex"},
             "dev-pipeline":     {"xp": 10, "soldier": "The Architect",        "icon": "⬢", "anim": "circuit", "label": "Lay the Foundation"},
         },
         "vocabulary": {

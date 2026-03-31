@@ -6902,6 +6902,7 @@ const DIVISION_AGENTS = {
     { skill: 'doc-update',      label: 'Doc Update',     schedule: '13:00' },
     { skill: 'artifact-manager',label: 'Artifacts',      schedule: '03:00' },
     { skill: 'dev-digest',      label: 'Dev Digest',     schedule: '15:00' },
+    { skill: 'regression-guard',label: 'Regression Guard',schedule: 'on-demand' },
   ],
   op_sec:         [
     { skill: 'device-posture',  label: 'Device Posture', schedule: '08:00' },
@@ -7146,7 +7147,7 @@ function _renderDivisionPackets(key, divData) {
   const packetNames = {
     opportunity:    { job_intake: 'Job Intake', funding_finder: 'Funding Finder', application_tracker: 'App Tracker' },
     personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation', personal_digest: 'Personal Digest', weekly_retrospective: 'Weekly Retro' },
-    dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager', auto_fix: 'Auto-Fix', ci_runner: 'CI Runner' },
+    dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager', auto_fix: 'Auto-Fix', ci_runner: 'CI Runner', regression_guard: 'Regression Guard' },
     op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest', network_monitor: 'Network Monitor' },
     production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog', model_trainer: 'Model Trainer', adapter_manager: 'Adapter Manager' },
     sentinel:       { provider_health: 'Provider Health', queue_monitor: 'Queue Monitor', agent_network_monitor: 'Agent Net Monitor', sentinel_digest: 'Sentinel Digest' },
@@ -8080,7 +8081,7 @@ function _connectWebSocket() {
 const _DIV_SKILLS = {
   opportunity:    ['job-intake','hard-filter','funding-finder'],
   trading:        ['market-scan','virtual-trader','trading-report'],
-  dev_automation: ['repo-monitor','refactor-scan','doc-update','debug-agent','artifact-manager','dev-digest'],
+  dev_automation: ['repo-monitor','refactor-scan','doc-update','debug-agent','artifact-manager','dev-digest','regression-guard'],
   personal:       ['health-logger','burnout-monitor','perf-correlation','personal-digest'],
   op_sec:         ['device-posture','breach-check','threat-surface','cred-audit','security-scan','privacy-scan','opsec-digest'],
   production:     ['image-generate','sprite-generate','asset-catalog','production-digest'],
@@ -8304,7 +8305,7 @@ setTimeout(_patchChatMode, 0);
 const _SKILL_GROUPS = [
   { label: 'VAEL — Opportunity', color: '#f59e0b', skills: ['job-intake','hard-filter','funding-finder','application-tracker'] },
   { label: 'SEREN — Trading',    color: '#06b6d4', skills: ['market-scan','virtual-trader','trading-report','backtester','strategy-builder','strategy-tester','strategy-search'] },
-  { label: 'KAELEN — Dev',       color: '#a78bfa', skills: ['repo-monitor','refactor-scan','doc-update','debug-agent','artifact-manager','dev-digest','auto-fix','ci-runner','dev-pipeline'] },
+  { label: 'KAELEN — Dev',       color: '#a78bfa', skills: ['repo-monitor','refactor-scan','doc-update','debug-agent','artifact-manager','dev-digest','auto-fix','ci-runner','regression-guard','dev-pipeline'] },
   { label: 'LYRIN — Personal',   color: '#10b981', skills: ['health-logger','burnout-monitor','perf-correlation','weekly-retrospective','personal-digest'] },
   { label: 'ZETH — Op-Sec',      color: '#ef4444', skills: ['device-posture','breach-check','threat-surface','security-scan','cred-audit','privacy-scan','opsec-digest','network-monitor','mobile-audit-review'] },
   { label: 'LYKE — Forge',       color: '#f97316', skills: ['image-generate','sprite-generate','asset-catalog','production-digest','prompt-craft','video-generate','voice-generate','music-compose','graphic-design','style-check','image-review','audio-test','video-review','storyboard-compose','continuity-check','asset-deliver','qa-pipeline','narrative-craft','sfx-generate','asset-optimize','voice-catalog','model-trainer','adapter-manager','art-director'] },
@@ -8518,6 +8519,7 @@ const _SKILL_ABILITY_NAMES = {
   // KAELEN extras
   'auto-fix':           'Auto-Fix',
   'ci-runner':          'CI Runner',
+  'regression-guard':   'Regression Guard',
   'dev-pipeline':       'Dev Pipeline',
   // VAEL extras
   'application-tracker':'App Tracker',
@@ -8619,6 +8621,7 @@ const _SKILL_ABILITY_DESC = {
   // KAELEN extras
   'auto-fix':           'Auto-detect and fix code issues',
   'ci-runner':          'Run CI/CD pipeline checks',
+  'regression-guard':   'Checks for accidentally removed code symbols',
   'dev-pipeline':       'Full dev build pipeline',
   // VAEL extras
   'application-tracker':'Track submitted applications',

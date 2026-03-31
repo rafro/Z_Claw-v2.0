@@ -360,6 +360,24 @@ def run_auto_fix(**kwargs) -> dict:
     return pkt
 
 
+def run_regression_guard(**kwargs) -> dict:
+    """Regression guard — checks for accidentally removed code symbols."""
+    log.info("=== Dev Automation Division: regression-guard run ===")
+    from runtime.skills import regression_guard
+    result = regression_guard.run(**kwargs)
+    pkt = packet.build(
+        division="dev-automation", skill="regression-guard",
+        status=result["status"], summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result["status"] == "pass":
+        grant_skill_xp("regression-guard")
+    return pkt
+
+
 def run_ci_runner(**kwargs) -> dict:
     """CI runner — validates code changes."""
     log.info("=== Dev Automation Division: ci-runner run ===")

@@ -22,6 +22,7 @@ Usage:
   python run_division.py dev-automation auto-fix
   python run_division.py dev-automation auto-fix '{"dry_run":true}'
   python run_division.py dev-automation ci-runner runtime/skills/market_scan.py
+  python run_division.py dev-automation regression-guard runtime/skills/market_scan.py
   python run_division.py dev pipeline '<json_spec>'
   python run_division.py op-sec mobile-audit-review
   python run_division.py op-sec network-monitor
@@ -185,7 +186,7 @@ def run(division: str, task: str, args: list) -> dict:
         from runtime.orchestrators.dev_automation import (
             run_repo_monitor, run_debug_agent, run_refactor_scan,
             run_doc_update, run_artifact_manager, run_dev_digest,
-            run_auto_fix, run_ci_runner,
+            run_auto_fix, run_ci_runner, run_regression_guard,
         )
         if task == "repo-monitor":
             return run_repo_monitor()
@@ -213,6 +214,9 @@ def run(division: str, task: str, args: list) -> dict:
         if task == "ci-runner":
             kwargs = {"file_path": args[0] if args else ""}
             return run_ci_runner(**kwargs)
+        if task == "regression-guard":
+            kwargs = {"file_path": args[0] if args else ""}
+            return run_regression_guard(**kwargs)
         raise ValueError(f"Unknown task for dev-automation: {task}")
 
     # ── Dev Pipeline (new — supplements dev-automation) ───────────────────────

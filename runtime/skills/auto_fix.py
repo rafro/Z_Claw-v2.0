@@ -492,6 +492,25 @@ def run(**kwargs) -> dict:
             failed += 1
             continue
 
+        # Regression guard — check for accidentally removed symbols
+        try:
+            from runtime.skills.regression_guard import run as regression_run
+            guard_result = regression_run(file_path=str(file_path))
+            if not guard_result.get("safe", True):
+                # Critical symbols removed — revert immediately
+                log.warning("Regression guard BLOCKED fix for %s: %s", file_path.name, guard_result.get("summary", ""))
+                shutil.copy2(str(backup_path), str(file_path))
+                # Log as failed with reason
+                fix_entry["status"] = "blocked"
+                fix_entry["reason"] = f"Regression guard: {guard_result.get('summary', 'removed critical symbols')}"
+                fixes.append(fix_entry)
+                failed += 1
+                continue  # skip to next finding
+        except ImportError:
+            pass  # regression_guard not available, continue without it
+        except Exception as e:
+            log.warning("Regression guard check failed: %s — continuing without guard", e)
+
         # Run CI check
         try:
             from runtime.skills.ci_runner import run as ci_run
