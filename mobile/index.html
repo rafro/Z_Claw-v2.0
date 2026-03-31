@@ -6962,6 +6962,7 @@ const DIVISION_AGENTS = {
     { skill: 'build-pipeline',     label: 'Build Pipeline',     schedule: 'demand' },
     { skill: 'scene-assemble',     label: 'Scene Assemble',     schedule: 'demand' },
     { skill: 'iteration-runner',   label: 'Iteration Runner',   schedule: 'demand' },
+    { skill: 'playtest-report',    label: 'Playtest Report',    schedule: 'demand' },
     { skill: 'game-factory',       label: 'Game Factory',       schedule: 'demand' },
     { skill: 'game-runner',        label: 'Game Runner',        schedule: 'demand' },
     { skill: 'auto-playtest',      label: 'Auto-Playtest',      schedule: 'demand' },
@@ -7145,7 +7146,7 @@ function _renderDivisionPackets(key, divData) {
   const packetNames = {
     opportunity:    { job_intake: 'Job Intake', funding_finder: 'Funding Finder', application_tracker: 'App Tracker' },
     personal:       { health_logger: 'Health Logger', burnout_monitor: 'Burnout Monitor', perf_correlation: 'Perf Correlation', personal_digest: 'Personal Digest', weekly_retrospective: 'Weekly Retro' },
-    dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager' },
+    dev_automation: { repo_monitor: 'Repo Monitor', refactor_scan: 'Refactor Scan', doc_update: 'Doc Update', dev_digest: 'Dev Digest', artifact_manager: 'Artifact Manager', auto_fix: 'Auto-Fix', ci_runner: 'CI Runner' },
     op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest', network_monitor: 'Network Monitor' },
     production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog', model_trainer: 'Model Trainer', adapter_manager: 'Adapter Manager' },
     sentinel:       { provider_health: 'Provider Health', queue_monitor: 'Queue Monitor', agent_network_monitor: 'Agent Net Monitor', sentinel_digest: 'Sentinel Digest' },
@@ -8315,6 +8316,7 @@ const _SKILL_GROUPS = [
       'item-forge', 'quest-writer', 'skill-tree-builder',
       // Specs
       'tech-spec', 'mechanic-prototype', 'level-design', 'data-populate', 'balance-audit',
+      'playtest-report',
       // Assets
       'asset-requester', 'production-bridge', 'asset-integration',
       // Code
@@ -8573,6 +8575,7 @@ const _SKILL_ABILITY_NAMES = {
   'build-pipeline':     'Build Pipeline',
   'scene-assemble':     'Scene Assemble',
   'iteration-runner':   'Iteration Runner',
+  'playtest-report':    'Playtest Report',
   'game-factory':       'Game Factory',
   'game-runner':        'Game Runner',
   'auto-playtest':      'Auto-Playtest',
@@ -8673,6 +8676,7 @@ const _SKILL_ABILITY_DESC = {
   'build-pipeline':     'Build and package the game',
   'scene-assemble':     'Assemble game scenes from assets',
   'iteration-runner':   'Run iteration cycle on the build',
+  'playtest-report':    'Analyze playtest data and flag issues',
   'game-factory':       'Full autonomous game creation',
   'game-runner':        'Launch and run the game build',
   'auto-playtest':      'Automated gameplay testing',
