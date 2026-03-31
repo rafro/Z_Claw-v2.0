@@ -301,7 +301,7 @@ def run_market_scan() -> dict:
     return pkt
 
 
-def run_strategy_builder(num_strategies: int = 5, timeframe: str = "1d") -> dict:
+def run_strategy_builder(num_strategies: int = 5, timeframe: str = "5m") -> dict:
     """Generate new trading strategies using local LLM."""
     log.info("=== Trading Division: strategy-builder run ===")
     result = strategy_builder.run(num_strategies=num_strategies, timeframe=timeframe)
@@ -319,7 +319,7 @@ def run_strategy_builder(num_strategies: int = 5, timeframe: str = "1d") -> dict
     return pkt
 
 
-def run_strategy_tester(strategies: list = None, timeframe: str = "1d") -> dict:
+def run_strategy_tester(strategies: list = None, timeframe: str = "5m") -> dict:
     """Backtest generated strategies against historical data."""
     log.info("=== Trading Division: strategy-tester run ===")
     result = strategy_tester.run(strategies=strategies or [], timeframe=timeframe)
@@ -337,7 +337,7 @@ def run_strategy_tester(strategies: list = None, timeframe: str = "1d") -> dict:
     return pkt
 
 
-def run_strategy_search(max_attempts: int = 10, timeframe: str = "1d") -> dict:
+def run_strategy_search(max_attempts: int = 10, timeframe: str = "5m") -> dict:
     """Search loop: generate → test → filter → repeat until prop-firm winner found."""
     log.info("=== Trading Division: strategy-search run ===")
     result = strategy_search.run(max_attempts=max_attempts, timeframe=timeframe)
