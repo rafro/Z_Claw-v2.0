@@ -4170,6 +4170,13 @@ const server = http.createServer(async (req, res) => {
         let extraArgs = [];
         if (body.params?.prompt && ['image-generate', 'sprite-generate'].includes(skill)) {
           extraArgs = ['portrait_bust', 'generic', body.params.prompt];
+        } else if (skill === 'game-factory' && body.params?.prompt) {
+          // Parse game-factory prompt: extract engine/genre from text, pass rest as creative direction
+          const text = body.params.prompt.toLowerCase();
+          const target = text.includes('godot') ? 'godot' : 'pygame';
+          const genres = ['roguelike','platformer','rpg','action','puzzle'];
+          const genre = genres.find(g => text.includes(g)) || 'roguelike';
+          extraArgs = [JSON.stringify({ target, genre, prompt: body.params.prompt })];
         } else if (body.params) {
           extraArgs = [JSON.stringify(body.params)];
         }

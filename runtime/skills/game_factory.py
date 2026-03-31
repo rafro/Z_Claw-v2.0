@@ -90,11 +90,12 @@ def _run_preflight(target="pygame", **kwargs):
     }
 
 
-def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | None]]]]:
+def _build_stages(target: str, genre: str = "", prompt: str = "") -> list[tuple[str, list[tuple[str, Any, dict | None]]]]:
     """
     Construct the stage list.  Each stage is a tuple of
     (stage_name, [(step_label, callable, extra_kwargs | None), ...]).
     `target` is threaded into steps that need it.
+    `genre` and `prompt` are passed to game-design for creative direction.
     """
     # Build code-generate steps from tech specs
     code_gen_steps = []
@@ -115,7 +116,7 @@ def _build_stages(target: str) -> list[tuple[str, list[tuple[str, Any, dict | No
             ("preflight-check", _run_preflight, {"target": target}),
         ]),
         ("DESIGN", [
-            ("game-design",        run_game_design,        None),
+            ("game-design",        run_game_design,        {"genre": genre, "prompt": prompt} if (genre or prompt) else None),
             ("story-writer",       run_story_writer,       {"section": "overview"}),
             ("character-designer", run_character_designer,  None),
             ("enemy-designer",     run_enemy_designer,      None),
@@ -289,16 +290,18 @@ def run(**kwargs) -> dict:
 
     config = _load_config()
     target = kwargs.get("target", config.get("default_target", "pygame"))
+    genre = kwargs.get("genre", "")
+    prompt = kwargs.get("prompt", "")
     requested_stages = kwargs.get("stages", None)  # None means "all"
     resume = kwargs.get("resume", False)
 
     log.info(
-        "=== GAME FACTORY: starting pipeline  target=%s  resume=%s  stages=%s ===",
-        target, resume, requested_stages or "ALL",
+        "=== GAME FACTORY: starting pipeline  target=%s  genre=%s  resume=%s  stages=%s ===",
+        target, genre or "auto", resume, requested_stages or "ALL",
     )
 
     # Build the stage definitions
-    all_stages = _build_stages(target)
+    all_stages = _build_stages(target, genre=genre, prompt=prompt)
 
     # Filter to requested stages (preserve ordering)
     if requested_stages:
