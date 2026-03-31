@@ -6939,6 +6939,36 @@ const DIVISION_AGENTS = {
     { skill: 'model-trainer',    label: 'Model Trainer',    schedule: 'demand' },
     { skill: 'adapter-manager',  label: 'Adapter Manager',  schedule: 'demand' },
   ],
+  gamedev:        [
+    { skill: 'game-design',        label: 'Game Design',        schedule: 'demand' },
+    { skill: 'story-writer',       label: 'Story Writer',       schedule: 'demand' },
+    { skill: 'character-designer',  label: 'Character Designer', schedule: 'demand' },
+    { skill: 'enemy-designer',     label: 'Enemy Designer',     schedule: 'demand' },
+    { skill: 'item-forge',         label: 'Item Forge',         schedule: 'demand' },
+    { skill: 'quest-writer',       label: 'Quest Writer',       schedule: 'demand' },
+    { skill: 'skill-tree-builder', label: 'Skill Tree Builder', schedule: 'demand' },
+    { skill: 'tech-spec',          label: 'Tech Spec',          schedule: 'demand' },
+    { skill: 'mechanic-prototype', label: 'Mechanic Proto',     schedule: 'demand' },
+    { skill: 'level-design',       label: 'Level Design',       schedule: 'demand' },
+    { skill: 'data-populate',      label: 'Data Populate',      schedule: 'demand' },
+    { skill: 'balance-audit',      label: 'Balance Audit',      schedule: 'demand' },
+    { skill: 'asset-requester',    label: 'Asset Requester',    schedule: 'demand' },
+    { skill: 'production-bridge',  label: 'Prod Bridge',        schedule: 'demand' },
+    { skill: 'asset-integration',  label: 'Asset Integration',  schedule: 'demand' },
+    { skill: 'project-init',       label: 'Project Init',       schedule: 'demand' },
+    { skill: 'code-generate',      label: 'Code Generate',      schedule: 'demand' },
+    { skill: 'code-review',        label: 'Code Review',        schedule: 'demand' },
+    { skill: 'code-test',          label: 'Code Test',          schedule: 'demand' },
+    { skill: 'build-pipeline',     label: 'Build Pipeline',     schedule: 'demand' },
+    { skill: 'scene-assemble',     label: 'Scene Assemble',     schedule: 'demand' },
+    { skill: 'iteration-runner',   label: 'Iteration Runner',   schedule: 'demand' },
+    { skill: 'game-factory',       label: 'Game Factory',       schedule: 'demand' },
+    { skill: 'game-runner',        label: 'Game Runner',        schedule: 'demand' },
+    { skill: 'auto-playtest',      label: 'Auto-Playtest',      schedule: 'demand' },
+    { skill: 'visual-qa',          label: 'Visual QA',          schedule: 'demand' },
+    { skill: 'refine-loop',        label: 'Refine Loop',        schedule: 'demand' },
+    { skill: 'gamedev-digest',     label: 'GameDev Digest',     schedule: 'demand' },
+  ],
   sentinel:       [
     { skill: 'provider-health',       label: 'Provider Health',    schedule: '2h' },
     { skill: 'queue-monitor',         label: 'Queue Monitor',      schedule: '2h' },
@@ -6951,6 +6981,7 @@ const DIVISION_AGENTS = {
 const DIV_PRIMARY_SKILL = {
   trading: 'trading-report', opportunity: 'job-intake', personal: 'health-logger',
   dev_automation: 'repo-monitor', op_sec: 'device-posture', production: 'production-digest',
+  gamedev: 'gamedev-digest', sentinel: 'sentinel-digest',
 };
 
 // ── Run a skill from mobile UI ───────────────────────────────────────────────
@@ -6992,7 +7023,7 @@ function _divQuickActions(key) {
 function openDivisionDetail(key) {
   haptic('light');
   _detailDivKey = key;
-  const labels = { trading: 'Trading', opportunity: 'Opportunity', personal: 'Personal', dev_automation: 'Dev Automation', op_sec: 'OP-Sec', production: 'Lykeon Forge', sentinel: 'Sentinel' };
+  const labels = { trading: 'Trading', opportunity: 'Opportunity', personal: 'Personal', dev_automation: 'Dev Automation', op_sec: 'OP-Sec', production: 'Lykeon Forge', gamedev: 'ARDENT — GameDev', sentinel: 'Sentinel' };
   document.getElementById('div-detail-title').textContent = labels[key] || key.replace(/_/g, ' ');
   document.getElementById('div-detail-body').innerHTML = '<div class="loading">Loading...</div>';
   document.getElementById('div-detail-backdrop').classList.add('open');
@@ -7060,6 +7091,26 @@ function _packetCard(name, pkt, scheduleHint) {
   let html = `<div class="detail-packet">`;
   html += `<div class="detail-packet-header"><span class="detail-packet-name">${escHtml(name)}</span><span class="pill ${statusClass}">${escHtml(pkt.status || '—')}</span></div>`;
   if (pkt.summary) html += `<div class="detail-summary">${escHtml(pkt.summary)}</div>`;
+  // Game Factory pipeline progress
+  if (pkt.metrics && pkt.metrics.stages_total) {
+    const done  = pkt.metrics.stages_completed || 0;
+    const total = pkt.metrics.stages_total || 6;
+    const pct   = Math.round((done / total) * 100);
+    const stageNames = ['Design', 'Spec', 'Assets', 'Code', 'Assembly', 'QA'];
+    const currentStage = done < total ? stageNames[done] || `Stage ${done + 1}` : 'Complete';
+    const label = done >= total ? `${done}/${total} — Complete` : `Stage ${done + 1}/${total}: ${currentStage}`;
+    const passed = pkt.metrics.skills_passed ?? '—';
+    const run    = pkt.metrics.skills_run ?? '—';
+    html += `<div style="margin:8px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:11px;font-weight:700;color:#8b5cf6;">${escHtml(label)}</span>
+        <span style="font-size:10px;color:var(--subtext);">${escHtml(String(passed))}/${escHtml(String(run))} skills passed</span>
+      </div>
+      <div style="height:6px;background:rgba(139,92,246,0.12);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:#8b5cf6;border-radius:3px;transition:width 0.4s ease;"></div>
+      </div>
+    </div>`;
+  }
   // Metrics
   if (pkt.metrics && typeof pkt.metrics === 'object') {
     const entries = Object.entries(pkt.metrics).filter(([k,v]) => v !== null && v !== undefined && typeof v !== 'object');
@@ -7098,6 +7149,7 @@ function _renderDivisionPackets(key, divData) {
     op_sec:         { device_posture: 'Device Posture', threat_surface: 'Threat Surface', breach_check: 'Breach Check', cred_audit: 'Cred Audit', security_scan: 'Security Scan', privacy_scan: 'Privacy Scan', opsec_digest: 'OpSec Digest', network_monitor: 'Network Monitor' },
     production:     { image_generate: 'Image Generate', sprite_generate: 'Sprite Generate', graphic_design: 'Graphic Design', prompt_craft: 'Prompt Craft', style_check: 'Style Check', image_review: 'Image Review', audio_test: 'Audio Test', video_review: 'Video Review', storyboard_compose: 'Storyboard', continuity_check: 'Continuity', asset_catalog: 'Asset Catalog', asset_deliver: 'Asset Deliver', production_digest: 'Forge Digest', video_generate: 'Video Generate', voice_generate: 'Voice Generate', music_compose: 'Music Compose', qa_pipeline: 'QA Pipeline', art_director: 'Art Director', narrative_craft: 'Narrative Craft', sfx_generate: 'SFX Generate', asset_optimize: 'Asset Optimize', voice_catalog: 'Voice Catalog', model_trainer: 'Model Trainer', adapter_manager: 'Adapter Manager' },
     sentinel:       { provider_health: 'Provider Health', queue_monitor: 'Queue Monitor', agent_network_monitor: 'Agent Net Monitor', sentinel_digest: 'Sentinel Digest' },
+    gamedev:        { game_design: 'Game Design', story_writer: 'Story Writer', character_designer: 'Character Designer', enemy_designer: 'Enemy Designer', item_forge: 'Item Forge', quest_writer: 'Quest Writer', skill_tree_builder: 'Skill Tree', tech_spec: 'Tech Spec', mechanic_prototype: 'Mechanic Proto', level_design: 'Level Design', data_populate: 'Data Populate', balance_audit: 'Balance Audit', asset_requester: 'Asset Requester', production_bridge: 'Prod Bridge', asset_integration: 'Asset Integration', project_init: 'Project Init', code_generate: 'Code Generate', code_review: 'Code Review', code_test: 'Code Test', build_pipeline: 'Build Pipeline', scene_assemble: 'Scene Assemble', iteration_runner: 'Iteration Runner', game_factory: 'Game Factory', game_runner: 'Game Runner', auto_playtest: 'Auto-Playtest', visual_qa: 'Visual QA', refine_loop: 'Refine Loop', gamedev_digest: 'GameDev Digest' },
   };
   // Schedule hints for packets that only run on specific triggers / cadences
   const scheduleHints = {
@@ -8249,19 +8301,44 @@ function _patchChatMode() {
 setTimeout(_patchChatMode, 0);
 
 const _SKILL_GROUPS = [
-  { label: 'VAEL — Opportunity', color: '#f59e0b', skills: ['job-intake','hard-filter','funding-finder'] },
-  { label: 'SEREN — Trading',    color: '#06b6d4', skills: ['market-scan','virtual-trader','trading-report'] },
-  { label: 'KAELEN — Dev',       color: '#a78bfa', skills: ['repo-monitor','refactor-scan','doc-update','debug-agent'] },
-  { label: 'LYRIN — Personal',   color: '#10b981', skills: ['health-logger','burnout-monitor','perf-correlation'] },
-  { label: 'ZETH — Op-Sec',      color: '#ef4444', skills: ['device-posture','breach-check','threat-surface','security-scan'] },
-  { label: 'LYKE — Forge',       color: '#f97316', skills: ['image-generate','sprite-generate','asset-catalog','production-digest'] },
+  { label: 'VAEL — Opportunity', color: '#f59e0b', skills: ['job-intake','hard-filter','funding-finder','application-tracker'] },
+  { label: 'SEREN — Trading',    color: '#06b6d4', skills: ['market-scan','virtual-trader','trading-report','backtester','strategy-builder','strategy-tester','strategy-search'] },
+  { label: 'KAELEN — Dev',       color: '#a78bfa', skills: ['repo-monitor','refactor-scan','doc-update','debug-agent','artifact-manager','dev-digest','auto-fix','ci-runner','dev-pipeline'] },
+  { label: 'LYRIN — Personal',   color: '#10b981', skills: ['health-logger','burnout-monitor','perf-correlation','weekly-retrospective','personal-digest'] },
+  { label: 'ZETH — Op-Sec',      color: '#ef4444', skills: ['device-posture','breach-check','threat-surface','security-scan','cred-audit','privacy-scan','opsec-digest','network-monitor','mobile-audit-review'] },
+  { label: 'LYKE — Forge',       color: '#f97316', skills: ['image-generate','sprite-generate','asset-catalog','production-digest','prompt-craft','video-generate','voice-generate','music-compose','graphic-design','style-check','image-review','audio-test','video-review','storyboard-compose','continuity-check','asset-deliver','qa-pipeline','narrative-craft','sfx-generate','asset-optimize','voice-catalog','model-trainer','adapter-manager','art-director'] },
+  {
+    label: 'ARDENT — The Eternal Engine', color: '#8b5cf6',
+    skills: [
+      // Design
+      'game-design', 'story-writer', 'character-designer', 'enemy-designer',
+      'item-forge', 'quest-writer', 'skill-tree-builder',
+      // Specs
+      'tech-spec', 'mechanic-prototype', 'level-design', 'data-populate', 'balance-audit',
+      // Assets
+      'asset-requester', 'production-bridge', 'asset-integration',
+      // Code
+      'project-init', 'code-generate', 'code-review', 'code-test',
+      'build-pipeline', 'scene-assemble', 'iteration-runner',
+      // Factory
+      'game-factory', 'game-runner', 'auto-playtest', 'visual-qa', 'refine-loop',
+      // Digest
+      'gamedev-digest',
+    ],
+  },
+  { label: 'SENTINEL — System Health', color: '#6b7280', skills: ['provider-health','queue-monitor','agent-network-monitor','sentinel-digest'] },
 ];
 
 // Skills that require a prompt before triggering
 const _PROMPT_SKILLS = {
-  'image-generate':  { title: 'Conjure Image',  sub: 'Describe the image to generate',           btn: 'Generate', color: '#f97316' },
-  'sprite-generate': { title: 'Forge Sprite',   sub: 'Describe the sprite or character to forge', btn: 'Forge',    color: '#f97316' },
-  'debug-agent':     { title: 'Debug Strike',   sub: 'Describe the bug or issue (optional)',       btn: 'Strike',   color: '#a78bfa', optional: true },
+  'image-generate':      { title: 'Conjure Image',      sub: 'Describe the image to generate',                              btn: 'Generate', color: '#f97316' },
+  'sprite-generate':     { title: 'Forge Sprite',       sub: 'Describe the sprite or character to forge',                    btn: 'Forge',    color: '#f97316' },
+  'debug-agent':         { title: 'Debug Strike',       sub: 'Describe the bug or issue (optional)',                          btn: 'Strike',   color: '#a78bfa', optional: true },
+  'game-factory':        { title: 'Game Factory',       sub: 'Engine: pygame/godot · Genre: roguelike/platformer/rpg/action/puzzle', btn: 'Build',  color: '#8b5cf6', optional: true },
+  'dev-pipeline':        { title: 'Dev Pipeline',       sub: 'What should I build? (Language: python/javascript/gdscript)',   btn: 'Build',    color: '#a78bfa' },
+  'character-designer':  { title: 'Character Designer', sub: 'Character name (leave blank for auto) · Role: hero/npc/villain · Class: warrior/mage/rogue/healer/ranger', btn: 'Design', color: '#8b5cf6', optional: true },
+  'strategy-search':     { title: 'Strategy Search',    sub: 'Timeframe: 15m / 1h / 4h / 1d (or leave blank for all)',       btn: 'Search',   color: '#06b6d4', optional: true },
+  'auto-fix':            { title: 'Auto-Fix',           sub: 'Enter "dry-run" to preview only, or leave blank to apply fixes', btn: 'Fix',     color: '#a78bfa', optional: true },
 };
 
 // Skill combos — sequential multi-skill workflows
@@ -8350,6 +8427,56 @@ const _SKILL_COMBOS = [
     skills: ['market-scan', 'job-intake', 'device-posture'],
     color: '#8b5cf6', character: 'ALL',
   },
+  {
+    id: 'game-factory-combo', name: 'Game Factory',
+    desc: 'Full autonomous game creation pipeline.',
+    fullDesc: 'Launches the game factory which orchestrates all 6 stages of autonomous game creation: design, spec, asset request, code generation, assembly, and QA. The factory coordinates up to 15+ sub-skills automatically and produces a playable build.',
+    steps: [
+      'Runs the full game factory pipeline: design through QA in one autonomous sequence.',
+    ],
+    skills: ['game-factory'],
+    color: '#8b5cf6', character: 'ARDENT',
+    hasPrompt: true,
+    promptLabel: 'Game concept (engine + genre)',
+    promptPlaceholder: 'e.g. pygame roguelike, godot platformer…',
+  },
+  {
+    id: 'design-cycle', name: 'Design Cycle',
+    desc: 'Morning design: concept, characters, enemies, items.',
+    fullDesc: 'Runs the morning design cycle: starts with a high-level game design pass to establish the concept, then creates character profiles, enemy archetypes, and item/loot definitions. Use this to flesh out a new game idea from scratch.',
+    steps: [
+      'Establishes core game concept, loops, and design pillars.',
+      'Creates player and NPC character profiles with stats and abilities.',
+      'Designs enemy types, behaviors, and difficulty curves.',
+      'Creates items, weapons, and loot tables.',
+    ],
+    skills: ['game-design', 'character-designer', 'enemy-designer', 'item-forge'],
+    color: '#8b5cf6', character: 'ARDENT',
+  },
+  {
+    id: 'code-cycle', name: 'Code Cycle',
+    desc: 'Afternoon code: generate, review, test, iterate.',
+    fullDesc: 'Runs the afternoon code cycle: generates code modules from the current spec, reviews them for quality and correctness, executes automated tests, and runs an iteration pass to fix any issues found. Produces a tested, reviewed codebase.',
+    steps: [
+      'Generates code modules from the current game spec.',
+      'Reviews generated code for quality, patterns, and correctness.',
+      'Runs automated tests on the codebase.',
+      'Iterates on failures and applies fixes.',
+    ],
+    skills: ['code-generate', 'code-review', 'code-test', 'iteration-runner'],
+    color: '#8b5cf6', character: 'ARDENT',
+  },
+  {
+    id: 'auto-fix-combo', name: 'Auto-Fix',
+    desc: 'Find issues and fix them automatically.',
+    fullDesc: 'Runs a refactor scan to identify code issues and technical debt, then invokes auto-fix to apply corrections automatically. Use dry-run mode to preview changes before applying.',
+    steps: [
+      'Scans the codebase for refactor opportunities and technical debt.',
+      'Automatically applies fixes for identified issues.',
+    ],
+    skills: ['refactor-scan', 'auto-fix'],
+    color: '#a78bfa', character: 'KAELEN',
+  },
 ];
 
 let _skillLastRun  = {}; // skill → ISO string
@@ -8386,6 +8513,77 @@ const _SKILL_ABILITY_NAMES = {
   'sprite-generate':    'Forge Sprite',
   'asset-catalog':      'Catalog Assets',
   'production-digest':  'Forge Report',
+  // KAELEN extras
+  'auto-fix':           'Auto-Fix',
+  'ci-runner':          'CI Runner',
+  'dev-pipeline':       'Dev Pipeline',
+  // VAEL extras
+  'application-tracker':'App Tracker',
+  // SEREN extras
+  'backtester':         'Backtester',
+  'strategy-builder':   'Strategy Forge',
+  'strategy-tester':    'Strategy Test',
+  'strategy-search':    'Strategy Search',
+  // LYRIN extras
+  'weekly-retrospective':'Weekly Retro',
+  // ZETH extras
+  'network-monitor':    'Net Watch',
+  'mobile-audit-review':'Mobile Audit',
+  // LYKE extras
+  'prompt-craft':       'Prompt Craft',
+  'video-generate':     'Video Generate',
+  'voice-generate':     'Voice Generate',
+  'music-compose':      'Music Compose',
+  'graphic-design':     'Graphic Design',
+  'style-check':        'Style Check',
+  'image-review':       'Image Review',
+  'audio-test':         'Audio Test',
+  'video-review':       'Video Review',
+  'storyboard-compose': 'Storyboard',
+  'continuity-check':   'Continuity Check',
+  'asset-deliver':      'Asset Deliver',
+  'qa-pipeline':        'QA Pipeline',
+  'narrative-craft':    'Narrative Craft',
+  'sfx-generate':       'SFX Generate',
+  'asset-optimize':     'Asset Optimize',
+  'voice-catalog':      'Voice Catalog',
+  'model-trainer':      'Model Trainer',
+  'adapter-manager':    'Adapter Manager',
+  'art-director':       'Art Director',
+  // ARDENT — GameDev
+  'game-design':        'Game Design',
+  'story-writer':       'Story Writer',
+  'character-designer': 'Character Designer',
+  'enemy-designer':     'Enemy Designer',
+  'item-forge':         'Item Forge',
+  'quest-writer':       'Quest Writer',
+  'skill-tree-builder': 'Skill Tree Builder',
+  'tech-spec':          'Tech Spec',
+  'mechanic-prototype': 'Mechanic Prototype',
+  'level-design':       'Level Design',
+  'data-populate':      'Data Populate',
+  'balance-audit':      'Balance Audit',
+  'asset-requester':    'Asset Requester',
+  'production-bridge':  'Production Bridge',
+  'asset-integration':  'Asset Integration',
+  'project-init':       'Project Init',
+  'code-generate':      'Code Generate',
+  'code-review':        'Code Review',
+  'code-test':          'Code Test',
+  'build-pipeline':     'Build Pipeline',
+  'scene-assemble':     'Scene Assemble',
+  'iteration-runner':   'Iteration Runner',
+  'game-factory':       'Game Factory',
+  'game-runner':        'Game Runner',
+  'auto-playtest':      'Auto-Playtest',
+  'visual-qa':          'Visual QA',
+  'refine-loop':        'Refine Loop',
+  'gamedev-digest':     'GameDev Digest',
+  // SENTINEL
+  'provider-health':       'Provider Health',
+  'queue-monitor':         'Queue Monitor',
+  'agent-network-monitor': 'Agent Net Monitor',
+  'sentinel-digest':       'Sentinel Digest',
 };
 const _SKILL_ABILITY_DESC = {
   'job-intake':         'Hunt new targets from all sources',
@@ -8415,6 +8613,77 @@ const _SKILL_ABILITY_DESC = {
   'sprite-generate':    'Generate character sprites',
   'asset-catalog':      'Catalog all production assets',
   'production-digest':  'Production division summary',
+  // KAELEN extras
+  'auto-fix':           'Auto-detect and fix code issues',
+  'ci-runner':          'Run CI/CD pipeline checks',
+  'dev-pipeline':       'Full dev build pipeline',
+  // VAEL extras
+  'application-tracker':'Track submitted applications',
+  // SEREN extras
+  'backtester':         'Backtest strategies on historical data',
+  'strategy-builder':   'Build new trading strategies',
+  'strategy-tester':    'Validate strategy parameters',
+  'strategy-search':    'Search for optimal strategy configs',
+  // LYRIN extras
+  'weekly-retrospective':'Weekly personal retrospective',
+  // ZETH extras
+  'network-monitor':    'Monitor network for anomalies',
+  'mobile-audit-review':'Review mobile device audit logs',
+  // LYKE extras
+  'prompt-craft':       'Build optimized generation prompts',
+  'video-generate':     'Generate video content',
+  'voice-generate':     'Generate voice audio',
+  'music-compose':      'Compose background music',
+  'graphic-design':     'Produce UI elements and graphics',
+  'style-check':        'Validate visual style consistency',
+  'image-review':       'QA pass on generated images',
+  'audio-test':         'QA pass on audio files',
+  'video-review':       'QA pass on video content',
+  'storyboard-compose': 'Convert beats into shot lists',
+  'continuity-check':   'Cross-scene visual consistency',
+  'asset-deliver':      'Route approved assets to delivery',
+  'qa-pipeline':        'Run full QA pipeline',
+  'narrative-craft':    'Write narrative and dialogue',
+  'sfx-generate':       'Generate sound effects',
+  'asset-optimize':     'Optimize asset file sizes',
+  'voice-catalog':      'Catalog and index voice assets',
+  'model-trainer':      'Train or fine-tune models',
+  'adapter-manager':    'Manage LoRA/adapter weights',
+  'art-director':       'Art direction and style review',
+  // ARDENT — GameDev
+  'game-design':        'Design core game concepts and loops',
+  'story-writer':       'Write game narrative and lore',
+  'character-designer': 'Design player and NPC characters',
+  'enemy-designer':     'Design enemy types and behaviors',
+  'item-forge':         'Create items, weapons, and loot',
+  'quest-writer':       'Write quests and objectives',
+  'skill-tree-builder': 'Design skill trees and progression',
+  'tech-spec':          'Write technical specifications',
+  'mechanic-prototype': 'Prototype game mechanics',
+  'level-design':       'Design levels and environments',
+  'data-populate':      'Populate game data tables',
+  'balance-audit':      'Audit game balance and tuning',
+  'asset-requester':    'Request assets from production',
+  'production-bridge':  'Bridge gamedev and production',
+  'asset-integration':  'Integrate assets into game project',
+  'project-init':       'Initialize new game project',
+  'code-generate':      'Generate game code modules',
+  'code-review':        'Review code for quality issues',
+  'code-test':          'Run automated tests on code',
+  'build-pipeline':     'Build and package the game',
+  'scene-assemble':     'Assemble game scenes from assets',
+  'iteration-runner':   'Run iteration cycle on the build',
+  'game-factory':       'Full autonomous game creation',
+  'game-runner':        'Launch and run the game build',
+  'auto-playtest':      'Automated gameplay testing',
+  'visual-qa':          'Visual quality assurance pass',
+  'refine-loop':        'Iterative refinement cycle',
+  'gamedev-digest':     'GameDev division summary',
+  // SENTINEL
+  'provider-health':       'Check AI provider health status',
+  'queue-monitor':         'Monitor task queue depth',
+  'agent-network-monitor': 'Monitor agent network status',
+  'sentinel-digest':       'System health summary',
 };
 
 function setSkillsView(view) {

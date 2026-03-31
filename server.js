@@ -4373,10 +4373,113 @@ const server = http.createServer(async (req, res) => {
         return jsonOk(res, { commanders: status, active, total: commanders.length });
       }
 
+      // ── Game Factory Status ────────────────────────────────────────────────
+      // GET /mobile/api/gamedev/factory-status
+      if (method === 'GET' && reqPath === '/mobile/api/gamedev/factory-status') {
+        try {
+          const statePath = path.join(ROOT, 'state', 'gamedev', 'factory-state.json');
+          const runsPath = path.join(ROOT, 'state', 'gamedev', 'factory-runs.jsonl');
+
+          let currentState = null;
+          if (fs.existsSync(statePath)) {
+            currentState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+          }
+
+          // Read last 5 runs from JSONL
+          let recentRuns = [];
+          if (fs.existsSync(runsPath)) {
+            const lines = fs.readFileSync(runsPath, 'utf8').trim().split('\n').filter(Boolean);
+            recentRuns = lines.slice(-5).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+          }
+
+          return jsonOk(res, {
+            current: currentState,
+            recent_runs: recentRuns,
+            next_scheduled: 'Saturday 04:00',
+          });
+        } catch (e) {
+          return jsonOk(res, { current: null, recent_runs: [], error: e.message });
+        }
+      }
+
+      // ── Auto-Fix Log ───────────────────────────────────────────────────────
+      // GET /mobile/api/dev/auto-fix-log
+      if (method === 'GET' && reqPath === '/mobile/api/dev/auto-fix-log') {
+        try {
+          const logPath = path.join(ROOT, 'state', 'dev', 'auto-fix-log.jsonl');
+          let entries = [];
+          if (fs.existsSync(logPath)) {
+            const lines = fs.readFileSync(logPath, 'utf8').trim().split('\n').filter(Boolean);
+            entries = lines.slice(-20).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+          }
+          return jsonOk(res, { entries });
+        } catch (e) {
+          return jsonOk(res, { entries: [], error: e.message });
+        }
+      }
+
+      // ── Market Data Provider Status ────────────────────────────────────────
+      // GET /mobile/api/trading/data-provider
+      if (method === 'GET' && reqPath === '/mobile/api/trading/data-provider') {
+        const provider = process.env.MARKET_DATA_PROVIDER || 'auto';
+        const hasAlpaca = !!(process.env.ALPACA_API_KEY);
+        const hasDatabento = !!(process.env.DATABENTO_API_KEY);
+        const hasTradovate = !!(process.env.TRADOVATE_USERNAME && process.env.TRADOVATE_PASSWORD);
+
+        let active = 'yfinance';
+        if (hasTradovate && (provider === 'auto' || provider === 'tradovate')) active = 'tradovate';
+        else if (hasDatabento && (provider === 'auto' || provider === 'databento')) active = 'databento';
+        else if (hasAlpaca && (provider === 'auto' || provider === 'alpaca')) active = 'alpaca';
+
+        return jsonOk(res, {
+          configured: provider,
+          active: active,
+          providers: {
+            tradovate: hasTradovate,
+            databento: hasDatabento,
+            alpaca: hasAlpaca,
+            csv: fs.existsSync(path.join(ROOT, 'state', 'trading', 'historical')),
+            yfinance: true,
+          }
+        });
+      }
+
+      // ── Screenshots (Visual QA) ───────────────────────────────────────────
+      // GET /mobile/api/gamedev/screenshots
+      if (method === 'GET' && reqPath === '/mobile/api/gamedev/screenshots') {
+        try {
+          const screenshotsDir = path.join(ROOT, 'state', 'gamedev', 'screenshots');
+          let files = [];
+          if (fs.existsSync(screenshotsDir)) {
+            files = fs.readdirSync(screenshotsDir)
+              .filter(f => /\.(png|jpg|jpeg|gif)$/i.test(f))
+              .slice(-10)
+              .map(f => `/mobile/assets/gamedev/screenshots/${f}`);
+          }
+          return jsonOk(res, { screenshots: files });
+        } catch (e) {
+          return jsonOk(res, { screenshots: [], error: e.message });
+        }
+      }
+
       return jsonError(res, 404, 'Unknown mobile endpoint');
     } catch(e) {
       return jsonError(res, 500, e.message);
     }
+  }
+
+  // Serve screenshot files (outside auth gate — static assets)
+  if (method === 'GET' && reqPath.startsWith('/mobile/assets/gamedev/screenshots/')) {
+    const filename = reqPath.split('/').pop();
+    const filePath = path.join(ROOT, 'state', 'gamedev', 'screenshots', filename);
+    if (fs.existsSync(filePath)) {
+      const ext = path.extname(filename).toLowerCase();
+      const mimeTypes = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif' };
+      res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+      fs.createReadStream(filePath).pipe(res);
+      return;
+    }
+    return jsonError(res, 404, 'Screenshot not found');
   }
 
   serveStatic(reqPath, res);
