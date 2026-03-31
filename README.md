@@ -261,7 +261,7 @@ The `training_manifest.py` module implements hydration-inspired lineage tracking
 | Skills | Python 3.13 (~89 agents across 9 divisions) |
 | Local LLM | Ollama (Qwen2.5 7B / Coder 14B, AMD ROCm/Vulkan) |
 | Cloud LLM | Groq 70B, DeepSeek, Gemini (escalation only) |
-| Market Data | yfinance (free), Alpaca (free 1m), Databento (paid CME futures) |
+| Market Data | Tradovate (free CME futures via prop firm), Databento (paid), Alpaca (free ETF), CSV imports, yfinance (fallback) |
 | Image/Video | ComfyUI + AnimateDiff-Evolved |
 | Music | HuggingFace MusicGen + torch-directml |
 | Voice | Coqui XTTS v2 |
@@ -359,11 +359,20 @@ The trading division is built for futures prop firm evaluation and funded accoun
 
 | Provider | Resolution | Futures? | Cost | Quality |
 |---|---|---|---|---|
-| **yfinance** (default) | 15m-1d | Proxied via indices | Free | Sufficient for daily strategies |
-| **Alpaca** | 1m-1d | Proxied via ETFs (SPY/QQQ/GLD/DIA) | Free | Best free option for daytrading |
-| **Databento** | 1m-tick | Actual CME futures (MES/MNQ/MGC/MYM) | ~$100-150/mo | Institutional grade |
+| **Tradovate** | 1m-1d | Actual CME futures (MES/MNQ/MGC/MYM/MCL/MBT) | Free (with MFF/Lucid/Apex account) | Real exchange data from your prop firm |
+| **Databento** | 1m-tick | Actual CME futures | ~$100-150/mo | Institutional grade, tick-level |
+| **Alpaca** | 1m-1d | Proxied via ETFs (SPY/QQQ/GLD/DIA/USO/TLT) | Free | Best free option without prop firm account |
+| **CSV** | Any | Any (TradingView/NinjaTrader exports) | Free | Drop CSV files in `state/trading/historical/` |
+| **yfinance** (fallback) | 15m-1d | Proxied via indices | Free | Universal fallback, sufficient for daily strategies |
 
-Provider selection is automatic: databento > alpaca > yfinance. Set `MARKET_DATA_PROVIDER` in `.env` to override. All providers return the same OHLCV format — the trading pipeline doesn't change.
+Provider selection is automatic: tradovate > databento > alpaca > csv > yfinance. Set `MARKET_DATA_PROVIDER` in `.env` to override. All providers return the same OHLCV format — the trading pipeline doesn't change.
+
+**Tradovate setup** (free with MFF, Lucid, or Apex Tradovate accounts):
+1. Go to [trader.tradovate.com](https://trader.tradovate.com) → Settings → API Access
+2. Create an application → note the App ID and CID
+3. Add to `.env`: `TRADOVATE_USERNAME`, `TRADOVATE_PASSWORD`, `TRADOVATE_APP_ID`, `TRADOVATE_CID`
+4. Set `TRADOVATE_DEMO=true` for evaluation accounts, `false` for funded
+5. All trading skills automatically switch to real CME futures data
 
 ---
 
