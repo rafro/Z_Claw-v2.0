@@ -4435,12 +4435,14 @@ const server = http.createServer(async (req, res) => {
         const provider = process.env.MARKET_DATA_PROVIDER || 'auto';
         const hasAlpaca = !!(process.env.ALPACA_API_KEY);
         const hasDatabento = !!(process.env.DATABENTO_API_KEY);
+        const hasTwelveData = !!(process.env.TWELVEDATA_API_KEY);
         const hasPolygon = !!(process.env.POLYGON_API_KEY);
         const hasTradovate = !!(process.env.TRADOVATE_USERNAME && process.env.TRADOVATE_PASSWORD);
 
         let active = 'yfinance';
         if (hasTradovate && (provider === 'auto' || provider === 'tradovate')) active = 'tradovate';
         else if (hasDatabento && (provider === 'auto' || provider === 'databento')) active = 'databento';
+        else if (hasTwelveData && (provider === 'auto' || provider === 'twelvedata')) active = 'twelvedata';
         else if (hasPolygon && (provider === 'auto' || provider === 'polygon')) active = 'polygon';
         else if (hasAlpaca && (provider === 'auto' || provider === 'alpaca')) active = 'alpaca';
 
@@ -4450,6 +4452,7 @@ const server = http.createServer(async (req, res) => {
           providers: {
             tradovate: hasTradovate,
             databento: hasDatabento,
+            twelvedata: hasTwelveData,
             polygon: hasPolygon,
             alpaca: hasAlpaca,
             csv: fs.existsSync(path.join(ROOT, 'state', 'trading', 'historical')),

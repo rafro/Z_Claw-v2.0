@@ -1,7 +1,7 @@
 """
 Market data provider factory.
 Selects the best available provider based on configuration and API keys.
-Priority: tradovate > databento > polygon > alpaca > csv > yfinance
+Priority: tradovate > databento > twelvedata > polygon > alpaca > csv > yfinance
 """
 
 from __future__ import annotations
@@ -20,10 +20,11 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
 
     Args:
         preference: Provider selection strategy.
-            "auto"       — best available (tradovate > databento > polygon > alpaca > csv > yfinance)
+            "auto"       — best available (tradovate > databento > twelvedata > polygon > alpaca > csv > yfinance)
             "yfinance"   — force Yahoo Finance
             "alpaca"     — force Alpaca Markets
             "polygon"    — force Polygon.io
+            "twelvedata" — force Twelve Data
             "databento"  — force Databento
             "tradovate"  — force Tradovate
             "csv"        — force CSV file provider
@@ -61,6 +62,17 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         raise RuntimeError(
             "Databento provider requested but not available — "
             "check DATABENTO_API_KEY in .env"
+        )
+
+    if preference == "twelvedata":
+        from providers.market_data.twelvedata_provider import TwelveDataProvider
+        provider = TwelveDataProvider()
+        if provider.is_available():
+            log.info("Market data provider: twelvedata (explicit)")
+            return provider
+        raise RuntimeError(
+            "Twelve Data provider requested but not available — "
+            "check TWELVEDATA_API_KEY in .env"
         )
 
     if preference == "polygon":
@@ -133,7 +145,18 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         except Exception as e:
             log.debug("Databento auto-check failed: %s", e)
 
-    # 3. Polygon.io (free tier available — stocks, ETFs, CME futures, international)
+    # 3. Twelve Data (free — 3+ years of 1-minute ETF data, international)
+    if os.getenv("TWELVEDATA_API_KEY"):
+        try:
+            from providers.market_data.twelvedata_provider import TwelveDataProvider
+            provider = TwelveDataProvider()
+            if provider.is_available():
+                log.info("Market data provider: twelvedata (auto)")
+                return provider
+        except Exception as e:
+            log.debug("Twelve Data auto-check failed: %s", e)
+
+    # 4. Polygon.io (free tier available — stocks, ETFs, CME futures, international)
     if os.getenv("POLYGON_API_KEY"):
         try:
             from providers.market_data.polygon_provider import PolygonProvider
@@ -144,7 +167,7 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         except Exception as e:
             log.debug("Polygon auto-check failed: %s", e)
 
-    # 4. Alpaca (free, good quality stock/ETF data with 1m history)
+    # 5. Alpaca (free, good quality stock/ETF data with 1m history)
     if os.getenv("ALPACA_API_KEY") and os.getenv("ALPACA_SECRET_KEY"):
         try:
             from providers.market_data.alpaca_provider import AlpacaProvider
@@ -155,7 +178,7 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
         except Exception as e:
             log.debug("Alpaca auto-check failed: %s", e)
 
-    # 5. CSV (local file exports — better quality than yfinance proxies)
+    # 6. CSV (local file exports — better quality than yfinance proxies)
     try:
         from providers.market_data.csv_provider import CSVProvider
         provider = CSVProvider()
@@ -165,7 +188,7 @@ def get_provider(preference: str = "auto") -> MarketDataProvider:
     except Exception as e:
         log.debug("CSV auto-check failed: %s", e)
 
-    # 6. yfinance (always available, no API key needed)
+    # 7. yfinance (always available, no API key needed)
     from providers.market_data.yfinance_provider import YFinanceProvider
     provider = YFinanceProvider()
     log.info("Market data provider: yfinance (fallback)")
