@@ -34,10 +34,11 @@ MODEL_CODER_14B = os.getenv("MODEL_CODER_14B", "qwen2.5-coder:14b-instruct-q4_K_
 MODEL_14B_HOST  = os.getenv("MODEL_14B_HOST",  "http://localhost:11434")
 
 # ── Market Data Provider ─────────────────────────────────────────────────────
-MARKET_DATA_PROVIDER = os.getenv("MARKET_DATA_PROVIDER", "auto")  # auto, yfinance, alpaca, databento
+MARKET_DATA_PROVIDER = os.getenv("MARKET_DATA_PROVIDER", "auto")  # auto, yfinance, alpaca, polygon, databento
 ALPACA_API_KEY      = os.getenv("ALPACA_API_KEY", "")
 ALPACA_SECRET_KEY   = os.getenv("ALPACA_SECRET_KEY", "")
 DATABENTO_API_KEY   = os.getenv("DATABENTO_API_KEY", "")
+POLYGON_API_KEY     = os.getenv("POLYGON_API_KEY", "")
 
 # ── Tradovate (free with MFF/Apex — actual CME futures) ──────────────────────
 TRADOVATE_USERNAME     = os.getenv("TRADOVATE_USERNAME", "")
