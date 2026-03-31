@@ -9,8 +9,12 @@ This supplements (does not replace) dev_automation.py for pipeline tasks.
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+from pathlib import Path
 
 from runtime import packet
+from runtime.config import ROOT
 from runtime.tools.xp import grant_skill_xp
 from mission_control.core import MissionControl
 from runtime.workers.dev.generator import CodeGenerator
@@ -41,6 +45,9 @@ def run_dev_pipeline(spec: dict) -> dict:
     language = spec.get("language", "python")
     existing_code = spec.get("existing_code", "")
     context = spec.get("context", "")
+
+    auto_apply = spec.get("auto_apply", False)
+    auto_apply_enabled = os.getenv("AUTO_APPLY_ENABLED", "false").lower() == "true"
 
     if not description:
         pkt = packet.build(
@@ -94,10 +101,92 @@ def run_dev_pipeline(spec: dict) -> dict:
 
     # ── Step 5: Finalize ────────────────────────────────────────────────────
     fin_result = DevFinalizer().run(
-        description, gen_result, rev_result, test_result, sum_result, task_id
+        description, gen_result, rev_result, test_result, sum_result, task_id,
+        target_file=spec.get("target_file", ""),
     )
     log.info("Finalizer: artifact=%s recommendation=%s",
              fin_result.get("artifact_ref", "none"), fin_result.get("recommendation"))
+
+    # ── Auto-apply shortcut (if enabled and all conditions met) ──────────
+    if auto_apply and auto_apply_enabled:
+        can_auto = (
+            rev_result.get("verdict") == "pass"
+            and test_result.get("syntax_ok", False)
+            and not test_result.get("unsafe_patterns", [])
+            and fin_result.get("confidence", 0) > 0.8
+        )
+        if can_auto:
+            target_file = spec.get("target_file")
+            if target_file and target_file.startswith("runtime/"):
+                target_path = ROOT / target_file
+                # Backup existing file
+                if target_path.exists():
+                    shutil.copy2(target_path, str(target_path) + ".bak")
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text(gen_result["code"], encoding="utf-8")
+
+                # Run CI check
+                from runtime.skills.ci_runner import run as ci_run
+                ci_result = ci_run(file_path=str(target_path))
+                if ci_result["status"] == "failed":
+                    # Revert on CI failure
+                    bak = str(target_path) + ".bak"
+                    if Path(bak).exists():
+                        shutil.copy2(bak, target_path)
+                    log.warning("Auto-apply reverted: CI failed for %s", target_file)
+                    # Fall through to normal approval
+                else:
+                    log.info(
+                        "Auto-apply successful: %s (confidence %.2f)",
+                        target_file, fin_result.get("confidence", 0),
+                    )
+
+                    providers_used = ", ".join(filter(None, {
+                        gen_result.get("provider_used"),
+                        rev_result.get("provider_used"),
+                        sum_result.get("provider_used"),
+                    }))
+
+                    _mc.complete_task(task_id, results={
+                        "generator": gen_result,
+                        "reviewer": rev_result,
+                        "tester": test_result,
+                        "summarizer": sum_result,
+                        "finalizer": fin_result,
+                        "auto_applied": True,
+                        "target_file": target_file,
+                    })
+
+                    pkt = packet.build(
+                        division="dev",
+                        skill="dev-pipeline",
+                        status="success",
+                        summary=f"Auto-applied to {target_file}: {sum_result['summary']}",
+                        metrics={
+                            "code_length": len(gen_result.get("code", "")),
+                            "review_verdict": rev_result.get("verdict"),
+                            "syntax_ok": test_result.get("syntax_ok"),
+                            "confidence": fin_result.get("confidence"),
+                            "issue_count": len(rev_result.get("issues", [])),
+                            "auto_applied": True,
+                        },
+                        artifact_refs=[fin_result.get("artifact_ref", "")],
+                        task_id=task_id,
+                        confidence=fin_result.get("confidence"),
+                        provider_used=providers_used,
+                        approval_required=False,
+                        approval_status="auto_approved",
+                    )
+                    packet.write(pkt)
+                    grant_skill_xp("dev-pipeline")
+                    return pkt
+        else:
+            log.info(
+                "Auto-apply conditions not met (verdict=%s, syntax=%s, confidence=%.2f)",
+                rev_result.get("verdict"),
+                test_result.get("syntax_ok"),
+                fin_result.get("confidence", 0),
+            )
 
     # ── Approval gate ───────────────────────────────────────────────────────
     approval_id = _mc.request_approval(

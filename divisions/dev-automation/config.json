@@ -59,6 +59,22 @@
       "last_run": null,
       "status": "idle",
       "notes": "Daily synthesis of repo-monitor, security-scan, and refactor-scan packets."
+    },
+    "auto-fix": {
+      "schedule": "daily 16:00",
+      "skill": "auto-fix",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Reads refactor-scan and debug-agent findings, generates and applies fixes. Requires AUTO_FIX_ENABLED=true in .env."
+    },
+    "ci-runner": {
+      "schedule": "on_demand",
+      "skill": "ci-runner",
+      "enabled": true,
+      "last_run": null,
+      "status": "idle",
+      "notes": "Validates code changes with syntax check + pytest. Called by auto-fix after applying changes."
     }
   }
 }

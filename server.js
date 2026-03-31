@@ -299,6 +299,8 @@ const SKILL_XP = {
   'debug-agent':        { division: 'dev_automation', amount:  8 },
   'artifact-manager':   { division: 'dev_automation', amount:  3 },
   'dev-digest':         { division: 'dev_automation', amount:  5 },
+  'auto-fix':           { division: 'dev_automation', amount: 15 },
+  'ci-runner':          { division: 'dev_automation', amount:  5 },
   'dev-pipeline':       { division: 'dev_automation', amount: 10 },
   // Personal — The Ember Covenant
   'health-logger':      { division: 'personal',       amount: 15 },
@@ -405,6 +407,8 @@ const SKILL_TASK_MAP = {
   'doc-update':       { divState: 'dev_automation', division: 'dev-automation', task: 'doc-update'       },
   'artifact-manager': { divState: 'dev_automation', division: 'dev-automation', task: 'artifact-manager' },
   'dev-digest':       { divState: 'dev_automation', division: 'dev-automation', task: 'dev-digest'       },
+  'auto-fix':         { divState: 'dev_automation', division: 'dev-automation', task: 'auto-fix'         },
+  'ci-runner':        { divState: 'dev_automation', division: 'dev-automation', task: 'ci-runner'        },
   // OP-Sec Division
   'mobile-audit-review': { divState: 'op_sec', division: 'op-sec', task: 'mobile-audit-review' },
   'device-posture':   { divState: 'op_sec', division: 'op-sec', task: 'device-posture'  },
@@ -2728,6 +2732,8 @@ function handleMobileDivisions(res) {
         doc_update:    readPkt('dev-automation', 'doc-update'),
         dev_digest:    readPkt('dev-automation', 'dev-digest'),
         artifact_manager: readPkt('dev-automation', 'artifact-manager'),
+        auto_fix:    readPkt('dev-automation', 'auto-fix'),
+        ci_runner:   readPkt('dev-automation', 'ci-runner'),
       },
       op_sec: {
         device_posture:  readPkt('op-sec', 'device-posture'),
@@ -3074,6 +3080,8 @@ function handleMobileBattlesToday(res) {
       'debug-agent':         { label: 'Debug the Construct',  soldier: 'The Debugger',          icon: '◈', anim: 'circuit' },
       'artifact-manager':    { label: 'Temper the Pipeline',  soldier: 'The Relic Keeper',      icon: '⬡', anim: 'circuit' },
       'dev-digest':          { label: 'Codex Report',         soldier: 'The Chronicler',        icon: '◉', anim: 'circuit' },
+      'auto-fix':            { label: 'Auto-Forge the Fix',  soldier: 'The Auto Smith',        icon: '🔧', anim: 'circuit' },
+      'ci-runner':           { label: 'Validate the Change', soldier: 'The Gate Keeper',       icon: '✓',  anim: 'circuit' },
       'dev-pipeline':        { label: 'Lay the Foundation',   soldier: 'The Architect',         icon: '⬢', anim: 'circuit' },
       // Nullward Circle (op_sec)
       'device-posture':      { label: 'Inspect the Veil',     soldier: 'The Posture Guard',     icon: '⬡', anim: 'shield'  },
@@ -4602,6 +4610,8 @@ async function processControlQueue() {
       'doc-update':       'DEV',
       'artifact-manager': 'DEV',
       'dev-digest':       'DEV',
+      'auto-fix':         'DEV_AUTO',
+      'ci-runner':        'DEV_AUTO',
       'device-posture':   'OP_SEC',
       'breach-check':     'OP_SEC',
       'threat-surface':   'OP_SEC',
@@ -4851,6 +4861,11 @@ cron.schedule('0 13 * * *', async () => {
 // Artifact cleanup daily at 3:00 AM
 cron.schedule('0 3 * * *', async () => {
   await runSkillViaPython('artifact-manager', 'DEV');
+}, { timezone: TZ });
+
+// auto-fix daily at 4:00 PM (after dev-digest at 3:00 PM)
+cron.schedule('0 16 * * *', async () => {
+  await runSkillViaPython('auto-fix', 'DEV_AUTO');
 }, { timezone: TZ });
 
 // ── OP-Sec Division ────────────────────────────────────────────────────────

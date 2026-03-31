@@ -47,6 +47,11 @@ TRADOVATE_CID          = os.getenv("TRADOVATE_CID", "")
 TRADOVATE_ACCESS_TOKEN = os.getenv("TRADOVATE_ACCESS_TOKEN", "")
 TRADOVATE_DEMO         = os.getenv("TRADOVATE_DEMO", "false").lower() == "true"
 
+# ── Auto-Fix (code automation) ───────────────────────────────────────────────
+AUTO_FIX_ENABLED   = os.getenv("AUTO_FIX_ENABLED", "false").lower() == "true"
+AUTO_APPLY_ENABLED = os.getenv("AUTO_APPLY_ENABLED", "false").lower() == "true"
+AUTO_GIT_PUSH      = os.getenv("AUTO_GIT_PUSH", "false").lower() == "true"
+
 # ── Division model routing ────────────────────────────────────────────────────
 # DEPRECATED: Use providers.router.ProviderRouter().get_provider(task_type) instead.
 # This dict is kept for backward compatibility with any code that still imports it.

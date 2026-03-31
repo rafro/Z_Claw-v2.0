@@ -1,6 +1,6 @@
 # Z_Claw v2.0 — Personal AI Orchestration Platform
 
-A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 9 specialized agent divisions (~89 agents) across trading, game development, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
+A modular, locally-hosted AI automation system running on Windows 11. Z_Claw orchestrates 9 specialized agent divisions (~91 agents) across trading, game development, security, personal health, dev automation, and media production — all routed through a persistent Node.js Mission Control server with desktop and mobile dashboards.
 
 Built for two users: **Tyler** (PC dashboard, port 3000) and **Matthew** (mobile PWA via Tailscale, iPhone 16 Pro Max).
 
@@ -96,7 +96,7 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 └──────────────────────┬──────────────────────────────────┘
                        │ HTTP / SSE / WebSocket
 ┌──────────────────────▼──────────────────────────────────┐
-│  Python Skill Runtime (~89 agents)                       │
+│  Python Skill Runtime (~91 agents)                       │
 │                                                         │
 │  runtime/orchestrators/   Per-division LLM orchestrators │
 │  runtime/skills/          Individual agent skill files   │
@@ -114,7 +114,7 @@ All frontends fully synced — every agent has buttons, packet displays, and met
 |---|---|---|---|---|
 | **Trading** | SEREN | The Auric Veil | 8 | Multi-factor signals, VIX breakers, strategy build/test/search, Monte Carlo backtesting |
 | **Opportunity** | VAEL | The Dawnhunt Order | 5 | Job intake/filter, application tracking, funding discovery |
-| **Dev Automation** | KAELEN | The Iron Codex | 6 | Repo monitoring, refactoring, artifact lifecycle, dev digest |
+| **Dev Automation** | KAELEN | The Iron Codex | 8 | Repo monitoring, refactoring, artifact lifecycle, dev digest, auto-fix, CI runner |
 | **Dev** | KAELEN | The Iron Codex | 1 | Code generation pipeline (generate → review → test → summarize → finalize) |
 | **Personal** | LYRIN | The Ember Covenant | 4 | Health logging, burnout detection, performance correlation, weekly retros |
 | **OP-Sec** | ZETH | The Nullward Circle | 8 | Device posture, breach monitoring, credential audit, network profiling, mobile audit |
@@ -258,7 +258,7 @@ The `training_manifest.py` module implements hydration-inspired lineage tracking
 | Layer | Tech |
 |---|---|
 | Mission Control | Node.js 20, PM2 |
-| Skills | Python 3.13 (~89 agents across 9 divisions) |
+| Skills | Python 3.13 (~91 agents across 9 divisions) |
 | Local LLM | Ollama (Qwen2.5 7B / Coder 14B, AMD ROCm/Vulkan) |
 | Cloud LLM | Groq 70B, DeepSeek, Gemini (escalation only) |
 | Market Data | Tradovate (free CME futures via prop firm), Databento (paid), Alpaca (free ETF), CSV imports, yfinance (fallback) |

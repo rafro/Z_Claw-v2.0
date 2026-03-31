@@ -194,6 +194,8 @@ DIVISIONS = {
             "debug-agent":      {"xp":  8, "soldier": "The Debugger",         "icon": "◈", "anim": "circuit", "label": "Debug the Construct"},
             "artifact-manager": {"xp":  3, "soldier": "The Relic Keeper",     "icon": "⬡", "anim": "circuit", "label": "Temper the Pipeline"},
             "dev-digest":       {"xp":  5, "soldier": "The Chronicler",       "icon": "◉", "anim": "circuit", "label": "Codex Report"},
+            "auto-fix":         {"xp": 15, "soldier": "The Auto Smith",       "icon": "🔧", "anim": "circuit", "label": "Auto-Forge the Fix"},
+            "ci-runner":        {"xp":  5, "soldier": "The Gate Keeper",      "icon": "✓",  "anim": "circuit", "label": "Validate the Change"},
             "dev-pipeline":     {"xp": 10, "soldier": "The Architect",        "icon": "⬢", "anim": "circuit", "label": "Lay the Foundation"},
         },
         "vocabulary": {

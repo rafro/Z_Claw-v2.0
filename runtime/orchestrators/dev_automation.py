@@ -7,6 +7,7 @@ Note: security-scan migrated to op-sec division.
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 
 from runtime.config import SKILL_MODELS, MODEL_14B_HOST, MODEL_CODER_7B, MODEL_8B, OLLAMA_HOST
@@ -326,4 +327,52 @@ def run_dev_digest() -> dict:
     packet.write(pkt)
     grant_skill_xp("dev-digest")
     log.info("Dev-digest packet written. Escalate=%s TotalHigh=%d", escalate, total_high)
+
+    # Auto-trigger fixes if enabled
+    auto_fix_enabled = os.getenv("AUTO_FIX_ENABLED", "false").lower() == "true"
+    if auto_fix_enabled:
+        high_findings = sum(1 for p in [refactor_pkt, security_pkt] if p and p.get("escalate"))
+        if high_findings > 0:
+            log.info("Dev digest: %d high-priority findings, triggering auto-fix", high_findings)
+            try:
+                run_auto_fix(max_fixes=3, source="all")
+            except Exception as e:
+                log.warning("Auto-fix trigger failed: %s", e)
+
+    return pkt
+
+
+def run_auto_fix(**kwargs) -> dict:
+    """Auto-fix scan findings — applies fixes to source files."""
+    log.info("=== Dev Automation Division: auto-fix run ===")
+    from runtime.skills import auto_fix
+    result = auto_fix.run(**kwargs)
+    pkt = packet.build(
+        division="dev-automation", skill="auto-fix",
+        status=result["status"], summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result["status"] in ("success", "partial"):
+        grant_skill_xp("auto-fix")
+    return pkt
+
+
+def run_ci_runner(**kwargs) -> dict:
+    """CI runner — validates code changes."""
+    log.info("=== Dev Automation Division: ci-runner run ===")
+    from runtime.skills import ci_runner
+    result = ci_runner.run(**kwargs)
+    pkt = packet.build(
+        division="dev-automation", skill="ci-runner",
+        status=result["status"], summary=result.get("summary", ""),
+        metrics=result.get("metrics", {}),
+        escalate=result.get("escalate", False),
+        escalation_reason=result.get("escalation_reason", ""),
+    )
+    packet.write(pkt)
+    if result["status"] == "success":
+        grant_skill_xp("ci-runner")
     return pkt

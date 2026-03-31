@@ -27,6 +27,7 @@ class DevFinalizer:
         tester_result: dict,
         summarizer_result: dict,
         task_id: str = "",
+        target_file: str = "",
     ) -> dict[str, Any]:
         """
         Assemble and persist the final artifact.
@@ -39,6 +40,7 @@ class DevFinalizer:
             "approval_required": bool,
             "status": "success" | "failed",
             "provider_used": "deterministic",
+            "target_file": str,           # where to apply if auto-approved
         }
         """
         code = generator_result.get("code", "")
@@ -104,6 +106,7 @@ class DevFinalizer:
                 "approval_required": True,
                 "status": "failed",
                 "provider_used": "deterministic",
+                "target_file": target_file,
                 "error": str(e),
             }
 
@@ -114,6 +117,7 @@ class DevFinalizer:
             "approval_required": approval_required,
             "status": "success",
             "provider_used": "deterministic",
+            "target_file": target_file,
         }
 
 
