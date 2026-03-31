@@ -112,7 +112,7 @@ def _build_prompt(
         "You generate structured JSON strategy schemas that are machine-parseable. "
         "Target: prop firm compliant strategies with max 8% Monte Carlo drawdown and "
         "profit factor between 2.0 and 4.0.\n\n"
-        "Focus on DAYTRADING strategies using intraday timeframes (1h primary, 15m entry). "
+        "Focus on DAYTRADING strategies using intraday timeframes (5m primary, 1m entry, 15m confirmation). "
         "Every strategy MUST include entry_timeframe for multi-timeframe confirmation.\n\n"
         "Available instruments: " + inst_names + "\n\n"
         "IMPORTANT: Respond with ONLY a JSON object. No markdown, no explanation."
@@ -135,7 +135,8 @@ def _build_prompt(
         f"- metadata: object with:\n"
         f"  - timeframe: primary timeframe, one of {json.dumps(TIMEFRAMES)} (default '{timeframe}')\n"
         f"  - entry_timeframe: lower timeframe for entry timing (multi-timeframe, REQUIRED)\n"
-        f"    Example: timeframe='1h' for direction, entry_timeframe='15m' for timing\n"
+        f"    Example: timeframe='5m' for signals, entry_timeframe='1m' for precise entry\n"
+        f"  - confirmation_timeframe: (optional) higher timeframe for trend filter (e.g. '15m')\n"
         f"  - direction: one of {json.dumps(DIRECTIONS)}\n"
         f"  - session: one of {json.dumps(SESSIONS)} (when to fetch data)\n"
         f"  - allowed_sessions: (optional) list from {json.dumps(ALLOWED_SESSIONS)} "
@@ -145,7 +146,7 @@ def _build_prompt(
         f"Design constraints:\n"
         f"- Max 8% Monte Carlo drawdown\n"
         f"- Profit factor target: 2.0-4.0\n"
-        f"- ALL strategies should use multi-timeframe (1h direction + 15m entry preferred)\n"
+        f"- ALL strategies should use multi-timeframe (5m signals + 1m entry + 15m trend filter preferred)\n"
         f"- At least 1 strategy should use an intermarket confirmation\n"
         f"- Diverse indicator mix — avoid duplicating primary_indicator types\n\n"
         f"Respond with: {{\"strategies\": [...]}}"
@@ -463,7 +464,7 @@ def _generate_fallback_strategies() -> list[dict]:
 
 def run(
     num_strategies: int = 5,
-    timeframe: str = "1h",
+    timeframe: str = "5m",
     feedback: Optional[dict] = None,
     retired_patterns: Optional[list] = None,
 ) -> dict:

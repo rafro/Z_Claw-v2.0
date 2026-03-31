@@ -32,7 +32,7 @@ MIN_TRADE_COUNT = 100
 
 def run(
     max_attempts: int = 10,
-    timeframe: str = "1h",
+    timeframe: str = "5m",
     min_monthly: float = 0.02,
     min_pf: float = 2.0,
     max_pf: float = 4.0,

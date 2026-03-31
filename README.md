@@ -336,7 +336,7 @@ The trading division is built for futures prop firm evaluation and funded accoun
 
 ### Daytrading Support
 - **4x daily execution**: 03:00 (Pre-London), 10:00 (NY Open), 15:00 (NY Afternoon), 18:00 (NY Close)
-- **Default timeframes**: 1h primary (direction) + 15m entry (timing) — optimized for daytrading
+- **Default timeframes**: 5m primary (signals) + 1m entry (precise timing) + 15m confirmation (trend filter) — optimized for daytrading
 - **Time-of-day filters**: ny_rth, ny_extended, london, asia sessions + allowed/blocked hours
 - **Session-aware data**: RTH-only bar filtering for cleaner analysis
 
